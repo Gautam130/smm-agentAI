@@ -1,24 +1,10 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+import { NextResponse } from 'next/server';
 
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    res.setHeader('Content-Length', '0');
-    return res.status(204).send('');
-  }
+export async function POST(request: Request) {
+  const { handle } = await request.json().catch(() => ({}));
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { handle } = req.body;
   if (!handle || typeof handle !== 'string') {
-    return res.status(400).json({ error: 'Handle is required' });
+    return NextResponse.json({ error: 'Handle is required' }, { status: 400 });
   }
 
   const cleanHandle = handle.replace('@', '').trim();
@@ -30,7 +16,6 @@ export default async function handler(req, res) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
       },
     });
 
@@ -38,7 +23,7 @@ export default async function handler(req, res) {
     const status = response.status;
 
     if (status === 200 && contentType.includes('text/html')) {
-      return res.status(200).json({
+      return NextResponse.json({
         exists: true,
         handle: cleanHandle,
         url: instagramUrl,
@@ -46,39 +31,37 @@ export default async function handler(req, res) {
         message: 'Profile exists and is public'
       });
     } else if (status === 404) {
-      return res.status(200).json({
+      return NextResponse.json({
         exists: false,
         handle: cleanHandle,
         url: instagramUrl,
         public: false,
-        message: 'Profile does not exist or has been deleted'
+        message: 'Profile does not exist'
       });
     } else if (status === 403) {
-      return res.status(200).json({
+      return NextResponse.json({
         exists: null,
         handle: cleanHandle,
         url: instagramUrl,
         public: false,
-        message: 'Profile may be private or blocked'
-      });
-    } else {
-      return res.status(200).json({
-        exists: null,
-        handle: cleanHandle,
-        url: instagramUrl,
-        public: null,
-        message: `Unable to verify (status: ${status})`
+        message: 'Profile may be private'
       });
     }
-  } catch (error) {
-    console.error('Instagram verification error:', error.message);
-    return res.status(200).json({
+    return NextResponse.json({
       exists: null,
       handle: cleanHandle,
       url: instagramUrl,
       public: null,
-      message: 'Verification failed - try again',
-      error: error.message
+      message: `Unable to verify (status: ${status})`
+    });
+  } catch (error) {
+    return NextResponse.json({
+      exists: null,
+      handle: cleanHandle,
+      url: instagramUrl,
+      public: null,
+      message: 'Verification failed',
+      error: (error as Error).message
     });
   }
 }
