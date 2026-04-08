@@ -212,7 +212,7 @@ function HomePage() {
         
         <p style={{ fontSize: '16px', color: '#a1a1aa', lineHeight: 1.7, marginBottom: '32px', position: 'relative', zIndex: 1 }}>Your AI social media agent — just describe what you need</p>
         
-        <div style={{ position: 'relative', marginBottom: '12px', position: 'relative', zIndex: 1 }}>
+        <div style={{ marginBottom: '12px', position: 'relative', zIndex: 1 }}>
           <textarea value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} placeholder="e.g. I run a cafe in Jaipur — what should I post this week?
 e.g. Write 5 Instagram Reels hooks for my skincare brand
 e.g. Find yoga influencers in Delhi for my brand" rows={3} style={{ width: '100%', background: '#111111', border: '1.5px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '16px 56px 16px 18px', fontSize: '14px', color: '#ffffff', resize: 'none', outline: 'none', lineHeight: 1.6, transition: 'border 0.2s' }} />
