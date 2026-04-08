@@ -11,11 +11,6 @@ interface NavItem {
   badge?: string;
 }
 
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
-
 const navGroups: { label: string; items: NavItem[] }[] = [
   {
     label: 'Quick Access',
@@ -155,6 +150,9 @@ function PageContent({ page }: { page: string }) {
     case 'content': return <ContentPage />;
     case 'research': return <ResearchPage />;
     case 'influencer': return <InfluencerPage />;
+    case 'calendar': return <CalendarPage />;
+    case 'strategy': return <StrategyPage />;
+    case 'settings': return <SettingsPage />;
     default: return <ComingSoon page={page} />;
   }
 }
@@ -173,7 +171,7 @@ function HomePage() {
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; setResults(prev => prev + decoder.decode(value, { stream: true })); } }
-    } catch (error) { setResults('Error connecting to API'); }
+    } catch { setResults('Error connecting to API'); }
     finally { setLoading(false); }
   };
 
@@ -205,20 +203,17 @@ function ContentPage() {
   const [tone, setTone] = useState('Professional');
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
-  const [variations, setVariations] = useState<string[]>([]);
 
   const generateContent = async () => {
     if (!topic.trim()) return;
     setLoading(true);
     setContent('');
-    setVariations([]);
     try {
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: `You are an expert social media content creator. Create engaging ${platform} content. Tone: ${tone}. Provide 3 variations.` }, { role: 'user', content: `Create content for: ${topic}. Include hashtags and caption.` }] }) });
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: `You are an expert social media content creator. Create engaging ${platform} content. Tone: ${tone}.` }, { role: 'user', content: `Create content for: ${topic}. Include hashtags and caption.` }] }) });
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
-      let fullContent = '';
-      if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; fullContent += decoder.decode(value, { stream: true }); setContent(fullContent); } }
-    } catch (e) { setContent('Error generating content'); }
+      if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; setContent(prev => prev + decoder.decode(value, { stream: true })); } }
+    } catch { setContent('Error generating content'); }
     finally { setLoading(false); }
   };
 
@@ -248,12 +243,7 @@ function ContentPage() {
           {loading ? 'Generating...' : '✨ Generate Content'}
         </button>
       </div>
-      {content && (
-        <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Generated Content</h3>
-          <div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6', color: '#e4e4e7' }}>{content}</div>
-        </div>
-      )}
+      {content && <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)' }}><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Generated Content</h3><div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6' }}>{content}</div></div>}
     </div>
   );
 }
@@ -274,12 +264,12 @@ function ResearchPage() {
       const data = await res.json();
       setResults(data.results || []);
       if (data.results?.length > 0) {
-        const summaryRes = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: 'You are a research assistant. Summarize the search results concisely.' }, { role: 'user', content: `Summarize these search results about "${query}":\n\n${data.results.slice(0,5).map((r: any) => `- ${r.title}: ${r.snippet}`).join('\n')}` }] }) });
+        const summaryRes = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: 'You are a research assistant. Summarize the search results concisely.' }, { role: 'user', content: `Summarize these search results about "${query}":\n\n${data.results.slice(0,5).map((r: unknown) => `- ${(r as {title: string}).title}: ${(r as {snippet: string}).snippet}`).join('\n')}` }] }) });
         const reader = summaryRes.body?.getReader();
         const decoder = new TextDecoder();
         if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; setAiSummary(prev => prev + decoder.decode(value, { stream: true })); } }
       }
-    } catch (e) { console.error(e); }
+    } catch { console.error('Search error'); }
     finally { setLoading(false); }
   };
 
@@ -292,23 +282,8 @@ function ResearchPage() {
           <button onClick={doSearch} disabled={loading} style={{ padding: '14px 28px', backgroundColor: '#00ffcc', color: '#080808', borderRadius: '12px', fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>{loading ? 'Searching...' : '🔍 Search'}</button>
         </div>
       </div>
-      {aiSummary && (
-        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '20px', marginBottom: '16px', borderLeft: '3px solid #00ffcc' }}>
-          <div style={{ fontSize: '12px', color: '#00ffcc', marginBottom: '8px', fontWeight: 600 }}>AI SUMMARY</div>
-          <div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6' }}>{aiSummary}</div>
-        </div>
-      )}
-      {results.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {results.map((r, i) => (
-            <a key={i} href={r.url} target="_blank" rel="noopener" style={{ backgroundColor: '#111111', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', color: 'inherit', display: 'block' }}>
-              <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '6px', color: '#00ffcc' }}>{r.title}</div>
-              <div style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '8px' }}>{r.snippet?.substring(0, 200)}...</div>
-              <div style={{ fontSize: '12px', color: '#71717a' }}>{r.domain}</div>
-            </a>
-          ))}
-        </div>
-      )}
+      {aiSummary && <div style={{ backgroundColor: '#0a0a0a', borderRadius: '12px', padding: '20px', marginBottom: '16px', borderLeft: '3px solid #00ffcc' }}><div style={{ fontSize: '12px', color: '#00ffcc', marginBottom: '8px', fontWeight: 600 }}>AI SUMMARY</div><div style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>{aiSummary}</div></div>}
+      {results.map((r, i) => <a key={i} href={r.url} target="_blank" rel="noopener" style={{ backgroundColor: '#111111', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '12px' }}><div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '6px', color: '#00ffcc' }}>{r.title}</div><div style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '8px' }}>{r.snippet?.substring(0, 200)}...</div><div style={{ fontSize: '12px', color: '#71717a' }}>{r.domain}</div></a>)}
     </div>
   );
 }
@@ -317,7 +292,7 @@ function InfluencerPage() {
   const [niche, setNiche] = useState('');
   const [city, setCity] = useState('India');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<{title: string; snippet: string; url: string}[]>([]);
 
   const searchInfluencers = async () => {
     if (!niche.trim()) return;
@@ -327,7 +302,7 @@ function InfluencerPage() {
       const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: `${niche} influencer ${city}`, provider: 'serper', maxResults: 10 }) });
       const data = await res.json();
       setResults(data.results || []);
-    } catch (e) { console.error(e); }
+    } catch { console.error('Error'); }
     finally { setLoading(false); }
   };
 
@@ -345,21 +320,132 @@ function InfluencerPage() {
             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="India" style={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none' }} />
           </div>
         </div>
-        <button onClick={searchInfluencers} disabled={loading} style={{ padding: '14px 28px', backgroundColor: '#a855f7', color: '#ffffff', borderRadius: '12px', fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>
-          {loading ? 'Searching...' : '🔍 Find Influencers'}
-        </button>
+        <button onClick={searchInfluencers} disabled={loading} style={{ padding: '14px 28px', backgroundColor: '#a855f7', color: '#ffffff', borderRadius: '12px', fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>{loading ? 'Searching...' : '🔍 Find Influencers'}</button>
       </div>
-      {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-          {results.map((r, i) => (
-            <div key={i} style={{ backgroundColor: '#111111', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{r.title || 'Influencer'}</div>
-              <div style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '12px' }}>{r.snippet?.substring(0, 100)}...</div>
-              <a href={r.url} target="_blank" rel="noopener" style={{ color: '#00ffcc', fontSize: '13px' }}>View Profile →</a>
+      {results.map((r, i) => <div key={i} style={{ backgroundColor: '#111111', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '12px' }}><div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>{r.title || 'Influencer'}</div><div style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '12px' }}>{r.snippet?.substring(0, 100)}...</div><a href={r.url} target="_blank" rel="noopener" style={{ color: '#00ffcc', fontSize: '13px' }}>View Profile →</a></div>)}
+    </div>
+  );
+}
+
+function CalendarPage() {
+  const [prompt, setPrompt] = useState('');
+  const [platform, setPlatform] = useState('Instagram');
+  const [loading, setLoading] = useState(false);
+  const [schedule, setSchedule] = useState('');
+
+  const generateCalendar = async () => {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    setSchedule('');
+    try {
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: 'Create a 7-day social media content calendar with dates, post ideas, and timing recommendations.' }, { role: 'user', content: `Create a content calendar for ${platform}. Topic: ${prompt}. Include specific dates and times.` }] }) });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; setSchedule(prev => prev + decoder.decode(value, { stream: true })); } }
+    } catch { setSchedule('Error generating calendar'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px' }}>📅 AI Content Calendar</h2>
+      <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase' }}>Campaign / Topic</label>
+            <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g. Product launch, festival sale" style={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase' }}>Platform</label>
+            <select value={platform} onChange={(e) => setPlatform(e.target.value)} style={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none' }}>
+              <option>Instagram</option><option>LinkedIn</option><option>Twitter/X</option><option>YouTube</option><option>Facebook</option>
+            </select>
+          </div>
+        </div>
+        <button onClick={generateCalendar} disabled={loading} style={{ padding: '14px 28px', backgroundColor: '#4ade80', color: '#080808', borderRadius: '12px', fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>{loading ? 'Generating...' : '📅 Generate Calendar'}</button>
+      </div>
+      {schedule && <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)' }}><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Your 7-Day Calendar</h3><div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6' }}>{schedule}</div></div>}
+    </div>
+  );
+}
+
+function StrategyPage() {
+  const [goal, setGoal] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [strategy, setStrategy] = useState('');
+
+  const generateStrategy = async () => {
+    if (!goal.trim()) return;
+    setLoading(true);
+    setStrategy('');
+    try {
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'system', content: 'You are a social media strategy expert. Create comprehensive marketing strategies with actionable steps.' }, { role: 'user', content: `Create a detailed social media strategy for: ${goal}. Include target audience, content pillars, posting strategy, and KPIs.` }] }) });
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; setStrategy(prev => prev + decoder.decode(value, { stream: true })); } }
+    } catch { setStrategy('Error generating strategy'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px' }}>🎯 Strategy Planner</h2>
+      <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase' }}>Marketing Goal</label>
+          <input type="text" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g. Increase brand awareness, drive sales, launch new product" style={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none' }} />
+        </div>
+        <button onClick={generateStrategy} disabled={loading} style={{ padding: '14px 28px', backgroundColor: '#ffb947', color: '#080808', borderRadius: '12px', fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}>{loading ? 'Generating...' : '🎯 Create Strategy'}</button>
+      </div>
+      {strategy && <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)' }}><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Your Strategy</h3><div style={{ whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6' }}>{strategy}</div></div>}
+    </div>
+  );
+}
+
+function SettingsPage() {
+  const [apiStatus, setApiStatus] = useState<Record<string, string>>({});
+
+  const testApi = async (name: string, endpoint: string) => {
+    try {
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: 'test' }) });
+      setApiStatus(prev => ({ ...prev, [name]: res.ok ? '✅ Connected' : '❌ Error' }));
+    } catch {
+      setApiStatus(prev => ({ ...prev, [name]: '❌ Not configured' }));
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px' }}>⚙️ Settings</h2>
+      
+      <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>API Status</h3>
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {[{ name: 'Chat (Mistral)', endpoint: '/api/chat' }, { name: 'Search (Serper)', endpoint: '/api/search' }].map(api => (
+            <div key={api.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: '#0a0a0a', borderRadius: '8px' }}>
+              <span style={{ fontSize: '14px' }}>{api.name}</span>
+              <button onClick={() => testApi(api.name, api.endpoint)} style={{ padding: '6px 12px', backgroundColor: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: '#a1a1aa', fontSize: '12px', cursor: 'pointer' }}>Test</button>
             </div>
           ))}
+          {Object.entries(apiStatus).map(([name, status]) => <div key={name} style={{ fontSize: '13px', color: status.includes('Connected') ? '#4ade80' : '#ffb947' }}>{name}: {status}</div>)}
         </div>
-      )}
+      </div>
+
+      <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: '24px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Environment Variables</h3>
+        <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '12px' }}>These are configured in Vercel. Add them in your project settings.</p>
+        <div style={{ backgroundColor: '#0a0a0a', borderRadius: '8px', padding: '16px', fontSize: '12px', fontFamily: 'monospace', color: '#a1a1aa', overflow: 'auto' }}>
+          <div>GROQ_API_KEY / MISTRAL_API_KEY</div>
+          <div>SERPER_API_KEY / EXA_KEY / GNEWS_KEY</div>
+          <div>FINNHUB_KEY / INSTAGRAM_ACCESS_TOKEN</div>
+          <div>SUPABASE_URL / SUPABASE_SERVICE_KEY</div>
+        </div>
+      </div>
+
+      <div style={{ backgroundColor: '#111111', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>About</h3>
+        <p style={{ fontSize: '13px', color: '#71717a' }}>SMM Agent v2.0 - Built with Next.js 16, React 19, and AI-powered features.</p>
+      </div>
     </div>
   );
 }
@@ -384,7 +470,7 @@ function MayaChat() {
       const decoder = new TextDecoder();
       let assistantMessage = '';
       if (reader) { while (true) { const { done, value } = await reader.read(); if (done) break; assistantMessage += decoder.decode(value, { stream: true }); setChatHistory(prev => [...prev.slice(0, -1), { role: 'assistant', content: assistantMessage }]); } }
-    } catch (e) { console.error(e); }
+    } catch { console.error('Chat error'); }
     finally { setLoading(false); }
   };
 
@@ -392,15 +478,7 @@ function MayaChat() {
     <div style={{ maxWidth: '800px', margin: '0 auto', height: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column' }}>
       <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px' }}>💬 Ask Maya - Your AI Assistant</h2>
       <div style={{ flex: 1, backgroundColor: '#111111', borderRadius: '16px', padding: '16px', overflowY: 'auto', marginBottom: '16px' }}>
-        {chatHistory.length === 0 ? (
-          <div style={{ color: '#71717a', textAlign: 'center', marginTop: '40%' }}>Start a conversation with Maya...</div>
-        ) : (
-          chatHistory.map((msg, i) => (
-            <div key={i} style={{ marginBottom: '16px', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-              <div style={{ display: 'inline-block', maxWidth: '80%', padding: '12px 16px', borderRadius: '16px', background: msg.role === 'user' ? 'rgba(0,255,204,0.1)' : '#1a1a1a', color: msg.role === 'user' ? '#00ffcc' : '#ffffff', border: msg.role === 'user' ? '1px solid rgba(0,255,204,0.3)' : 'none', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-            </div>
-          ))
-        )}
+        {chatHistory.length === 0 ? <div style={{ color: '#71717a', textAlign: 'center', marginTop: '40%' }}>Start a conversation with Maya...</div> : chatHistory.map((msg, i) => <div key={i} style={{ marginBottom: '16px', textAlign: msg.role === 'user' ? 'right' : 'left' }}><div style={{ display: 'inline-block', maxWidth: '80%', padding: '12px 16px', borderRadius: '16px', background: msg.role === 'user' ? 'rgba(0,255,204,0.1)' : '#1a1a1a', color: msg.role === 'user' ? '#00ffcc' : '#ffffff', border: msg.role === 'user' ? '1px solid rgba(0,255,204,0.3)' : 'none', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{msg.content}</div></div>)}
         {loading && <div style={{ color: '#00ffcc' }}>Maya is thinking...</div>}
         <div ref={chatEndRef} />
       </div>
