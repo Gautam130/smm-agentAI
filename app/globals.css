@@ -346,6 +346,16 @@ button {
   box-shadow: 0 8px 30px rgba(251, 191, 36, 0.4), 0 0 40px rgba(251, 191, 36, 0.3);
 }
 
+.run-btn.btn-red {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+}
+
+.run-btn.btn-red:hover {
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.3);
+}
+
 /* Form Elements */
 .field {
   margin-bottom: 20px;
@@ -604,6 +614,13 @@ select option {
   height: 6px;
   border-radius: 50%;
   background: var(--amber);
+}
+
+.dot-red {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
 }
 
 .action-btn {
@@ -1199,6 +1216,97 @@ select option {
   animation: pulse-glow 2s infinite;
 }
 
+.client-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--bg-glass);
+  border: 0.5px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-premium);
+}
+
+.client-card:hover {
+  border-color: var(--border-glass-hover);
+  background: var(--bg-glass-hover);
+}
+
+.client-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-purple-dim);
+  color: var(--accent-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.client-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.client-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.client-posts {
+  text-align: right;
+}
+
+.posts-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.posts-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all var(--duration-fast) var(--ease-premium);
+}
+
+.delete-btn:hover {
+  background: var(--red-dim);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.status-badge.inactive {
+  background: var(--amber-dim);
+  color: var(--amber);
+}
+
 /* ── TOPBAR ── */
 .tb-left .tb-title {
   font-family: var(--head);
@@ -1645,6 +1753,31 @@ select option {
   background: var(--accent-dim);
   color: var(--accent);
   box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.tab-btn.active-pur {
+  background: var(--accent-purple-dim);
+  color: var(--accent-purple);
+  box-shadow: 0 0 15px var(--accent-purple-glow);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-glass);
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-glass);
+  margin-bottom: 20px;
+}
+
+.info-box {
+  font-size: 12px;
+  color: var(--red);
+  padding: 12px;
+  background: rgba(248, 113, 113, 0.05);
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
 /* ── CARDS ── */

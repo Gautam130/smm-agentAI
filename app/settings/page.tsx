@@ -34,43 +34,22 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <div style={{ 
-        background: 'rgba(255,255,255,0.03)', 
-        border: '1px solid rgba(255,255,255,0.08)', 
-        borderRadius: '16px',
-        padding: '28px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', var(--head)", fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>
-          ⚙️ Settings
-        </h2>
-        <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '24px' }}>
-          API keys are configured in Vercel. You don't need to enter them here.
-        </p>
-        
-        <div style={{ 
-          background: 'rgba(0,255,204,0.05)', 
-          border: '1px solid rgba(0,255,204,0.2)', 
-          borderRadius: '12px', 
-          padding: '16px',
-          marginBottom: '16px'
-        }}>
-          <div style={{ fontSize: '14px', color: '#00ffcc', fontWeight: 600, marginBottom: '8px' }}>
-            ✓ API Keys Configured
-          </div>
-          <div style={{ fontSize: '12px', color: '#a1a1aa' }}>
-            Your API keys are set in Vercel environment variables. The AI chat should work automatically.
-          </div>
+    <>
+      <h2 className="module-title">⚙️ Settings</h2>
+      <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '24px' }}>
+        API keys are configured in Vercel. You don't need to enter them here.
+      </p>
+      
+      <div className="notice n-green" style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '14px', color: '#4ade80', fontWeight: 600, marginBottom: '8px' }}>
+          ✓ API Keys Configured
+        </div>
+        <div style={{ fontSize: '12px', color: '#a1a1aa' }}>
+          Your API keys are set in Vercel environment variables. The AI chat should work automatically.
         </div>
       </div>
       
-      <div style={{ 
-        background: 'rgba(255,255,255,0.03)', 
-        border: '1px solid rgba(255,255,255,0.08)', 
-        borderRadius: '16px',
-        padding: '28px',
-      }}>
+      <div className="dashboard-card">
         <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>🔌 API Status</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -87,6 +66,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
