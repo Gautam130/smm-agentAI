@@ -160,6 +160,11 @@ export function useMaya() {
         signal: abortRef.current.signal
       });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
+
       if (!res.body) throw new Error('No response body');
 
       const reader = res.body.getReader();
@@ -189,29 +194,36 @@ export function useMaya() {
                   return updated;
                 });
               }
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
             } catch {}
           }
         }
       }
     } catch(e: any) {
       if (e.name !== 'AbortError') {
-        fullText = 'Something went wrong. Try again.';
+        fullText = e.message || 'Something went wrong. Try again.';
       }
     }
 
+    // Finalize message - clear streaming flag
     setMessages(prev => {
-      const updated = [...prev];
-      updated[updated.length - 1] = {
-        role: 'assistant',
-        text: fullText || 'No response received.',
-        streaming: false
-      };
-      return updated;
+      const newMsgs = [...prev];
+      const lastIdx = newMsgs.length - 1;
+      if (lastIdx >= 0) {
+        newMsgs[lastIdx] = {
+          role: 'assistant',
+          text: fullText || 'No response received.',
+          streaming: false
+        };
+      }
+      return newMsgs;
     });
 
     setIsLoading(false);
     loadingRef.current = false;
-  }, [messages]);
+  }, []);
 
   const clearChat = useCallback(() => {
     setMessages([]);
