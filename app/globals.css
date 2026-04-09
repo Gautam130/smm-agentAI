@@ -417,6 +417,7 @@ select option {
 .w900 {
   max-width: 900px;
   margin: 0 auto;
+  padding: 0 20px;
 }
 
 /* Module Card */
@@ -1363,6 +1364,7 @@ select option {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 .module-icon {
