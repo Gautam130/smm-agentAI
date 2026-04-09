@@ -105,30 +105,28 @@ export function useMaya() {
 
     const intent = detectIntent(userMsg);
 
+    // Fetch search data in background (non-blocking) - will append if received
     let liveData = '';
-    if (intent.needsSearch) {
+    const searchPromise = intent.needsSearch ? (async () => {
       try {
         const res = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: userMsg, maxResults: 6 })
+          body: JSON.stringify({ query: userMsg, maxResults: 4 }) // reduced for speed
         });
         const data = await res.json();
         if (data.results?.length) {
-          liveData = data.results.map((r: {title: string, snippet: string}) => 
+          return data.results.slice(0, 4).map((r: {title: string, snippet: string}) => 
             `- ${r.title}: ${r.snippet}`
           ).join('\n');
         }
-      } catch(e) {
-        console.warn('Maya search failed:', e);
-      }
-    }
+      } catch(e) { console.warn('Maya search failed:', e); }
+      return '';
+    })() : Promise.resolve('');
 
-    const liveNote = liveData
-      ? `\n\n=== LIVE SEARCH DATA ===\n${liveData}\n=== END ===\n\nUse this data. Cite sources specifically.`
-      : '';
+    // Start chat immediately WITHOUT search data - optimization for speed
     const modeInstruction = getModeInstruction(intent.mode);
-    const systemContent = CHAT_SYS + liveNote + modeInstruction;
+    const systemContent = CHAT_SYS + modeInstruction;
 
     const historyLimit = intent.isCasual ? 6 : 24;
     const recentHistory = messages.slice(-historyLimit).map(m => ({
