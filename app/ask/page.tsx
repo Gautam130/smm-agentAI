@@ -21,16 +21,18 @@ export default function AskMayaPage() {
     setInput('');
     setLoading(true);
 
-    console.log('Sending request to /api/chat...');
-
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMsg] })
+        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        signal: controller.signal
       });
 
-      console.log('Response status:', res.status, res.statusText);
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -43,8 +45,6 @@ export default function AskMayaPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let aiResponse = '';
-
-      console.log('Reading stream...');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -61,7 +61,6 @@ export default function AskMayaPage() {
               const parsed = JSON.parse(data);
               if (parsed.choices?.[0]?.delta?.content) {
                 aiResponse += parsed.choices[0].delta.content;
-                console.log('Got chunk:', parsed.choices[0].delta.content.substring(0, 50));
               }
               if (parsed.error) {
                 throw new Error(parsed.error);
@@ -71,8 +70,6 @@ export default function AskMayaPage() {
         }
       }
 
-      console.log('Final response:', aiResponse.substring(0, 100));
-
       if (!aiResponse.trim()) {
         aiResponse = 'Got empty response. Try again.';
       }
@@ -80,7 +77,8 @@ export default function AskMayaPage() {
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
     } catch (err: any) {
       console.error('Chat error:', err);
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message || 'Failed to connect'}` }]);
+      const errorMsg = err.name === 'AbortError' ? 'Request timed out' : (err.message || 'Failed to connect');
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errorMsg}` }]);
     }
     setLoading(false);
   };
