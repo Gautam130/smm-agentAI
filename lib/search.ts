@@ -658,6 +658,110 @@ async function tryApiRoute(provider, query, maxResults = 8) {
   return null;
 }
 
+// GNews - News search via API route
+async function searchGNews(query = '', maxResults = 8) {
+  const result = await tryApiRoute('gnews', query, maxResults);
+  if (result) {
+    return { ...result, provider: 'gnews' };
+  }
+  return { results: [], weak: true, error: true, provider: 'gnews' };
+}
+
+// DuckDuckGo - Fallback search
+async function searchDuckDuckGo(query = '', maxResults = 8) {
+  const result = await tryApiRoute('duckduckgo', query, maxResults);
+  if (result) {
+    return { ...result, provider: 'duckduckgo' };
+  }
+  return { results: [], weak: true, error: true, provider: 'duckduckgo' };
+}
+
+// RSS Feed search
+async function searchRSS(feedUrl = '', maxResults = 5) {
+  try {
+    const result = await tryApiRoute('rss', '', { feedUrl, maxResults });
+    if (result) {
+      return { ...result, provider: 'rss' };
+    }
+  } catch(e) {}
+  return { results: [], weak: true, error: true, provider: 'rss' };
+}
+
+// India News Feeds - Aggregated Indian news sources
+async function searchIndiaNewsFeeds(maxResults = 5) {
+  const feeds = [
+    'https://feeds.feedburner.com/ndtvnews-top-stories',
+    'https://timesofindia.indiatimes.com/rssfeed.cms'
+  ];
+  const results = [];
+  for (const feedUrl of feeds.slice(0, 2)) {
+    try {
+      const r = await searchRSS(feedUrl, Math.ceil(maxResults / 2));
+      if (r.results) results.push(...r.results);
+    } catch(e) {}
+  }
+  return { results: results.slice(0, maxResults), provider: 'india_news_feeds' };
+}
+
+// HackerNews - Tech/startup news (free, no API key)
+async function searchHackerNews(query = '', maxResults = 8) {
+  try {
+    const q = encodeURIComponent(query || 'technology');
+    const res = await fetchWithTimeout(
+      `https://hn.algolia.com/api/v1/search?query=${q}&tags=story&hitsPerPage=${maxResults}`,
+      {},
+      8000
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const results = (data.hits || []).map(hit => ({
+        title: hit.title || '',
+        snippet: `Points: ${hit.points || 0} | Comments: ${hit.num_comments || 0}`,
+        url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
+        domain: 'news.ycombinator.com',
+        publishedDate: hit.created_at
+      }));
+      return { results, provider: 'hackernews' };
+    }
+  } catch(e) {}
+  return { results: [], weak: true, error: true, provider: 'hackernews' };
+}
+
+// NEWS_FEEDS - List of Indian news RSS feeds
+const NEWS_FEEDS = [
+  { name: 'NDTV', url: 'https://feeds.feedburner.com/ndtvnews-top-stories' },
+  { name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeed.cms' },
+  { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/rss/feed' },
+  { name: 'Indian Express', url: 'https://indianexpress.com/rss/' },
+  { name: 'Business Standard', url: 'https://www.business-standard.com/rss' }
+];
+
+// Jina Reader - URL to clean Markdown
+async function fetchWithJina(url = '', timeout = 15000) {
+  try {
+    const res = await fetchWithTimeout(
+      `https://r.jina.ai/${encodeURIComponent(url)}`,
+      {},
+      timeout
+    );
+    if (res.ok) {
+      const text = await res.text();
+      return { content: text, title: '', success: true };
+    }
+  } catch(e) {}
+  return { content: '', success: false };
+}
+
+// Fetch multiple URLs with Jina
+async function fetchMultipleWithJina(urls = [], maxResults = 3) {
+  const results = [];
+  for (const { url } of urls.slice(0, maxResults)) {
+    const r = await fetchWithJina(url);
+    if (r.success) results.push(r);
+  }
+  return results;
+}
+
 // Unified search function - Serper primary, Exa fallback
 async function searchTavily(q, options = {}) {
   const { maxResults = 8 } = options;
@@ -1727,15 +1831,6 @@ And check: grynow.in, qoruz.com`;
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════
 
-window.INFLUENCER_DIRECTORY_DOMAINS = INFLUENCER_DIRECTORY_DOMAINS;
-window.INFLUENCER_TIERS = INFLUENCER_TIERS;
-window.TRUST_DOMAINS = TRUST_DOMAINS;
-window.PLATFORM_DOMAINS = PLATFORM_DOMAINS;
-window.normalizeNiche = normalizeNiche;
-window.NICHE_INTELLIGENCE = NICHE_INTELLIGENCE;
-window.buildNicheInfluencerQueries = buildNicheInfluencerQueries;
-window.validateHandleForNiche = validateHandleForNiche;
-
 // ═══════════════════════════════════════════════════════════════════
 // DEEP RESEARCH - Iterative multi-round search
 // ═══════════════════════════════════════════════════════════════════
@@ -1900,32 +1995,47 @@ async function searchTrends(niche, geo) {
   return out ? prefix + '### TRENDS [' + niche + ' / ' + geo + '] ###\n' + out + '### END TRENDS ###\n\n' : '';
 }
 
-window.findInfluencers = findInfluencers;
-window.buildInfluencerPrompt = buildInfluencerPrompt;
-window.smartSearch = smartSearch;
-window.deepResearchSearch = deepResearchSearch;
-window.generateSmartQueries = getContextualQueries;
-window.searchAnalytics = searchAnalytics;
-window.applyFilters = applyFilters;
-window.calculateRelevanceScore = calculateRelevanceScore;
-window.getTrustBadge = getTrustBadge;
-window.getRecencyBadge = getRecencyBadge;
+export {
+  // Core search
+  smartSearch,
+  deepResearchSearch,
+  searchTrends,
 
-// New search sources
-window.searchGNews = searchGNews;
-window.searchDuckDuckGo = searchDuckDuckGo;
-window.searchRSS = searchRSS;
-window.searchIndiaNewsFeeds = searchIndiaNewsFeeds;
-window.NEWS_FEEDS = NEWS_FEEDS;
+  // Search providers
+  searchGNews,
+  searchDuckDuckGo,
+  searchRSS,
+  searchIndiaNewsFeeds,
+  searchHackerNews,
+  NEWS_FEEDS,
 
-// Trends search
-window.searchTrends = searchTrends;
+  // Jina Reader
+  fetchWithJina,
+  fetchMultipleWithJina,
 
-// Jina Reader - URL to clean Markdown
-window.fetchWithJina = fetchWithJina;
-window.fetchMultipleWithJina = fetchMultipleWithJina;
+  // Influencer
+  findInfluencers,
+  buildInfluencerPrompt,
+  buildNicheInfluencerQueries,
+  validateHandleForNiche,
+  INFLUENCER_TIERS,
+  INFLUENCER_DIRECTORY_DOMAINS,
 
-// Hacker News - Tech/startup news (free, no API key)
-window.searchHackerNews = searchHackerNews;
+  // Data / config
+  TRUST_DOMAINS,
+  PLATFORM_DOMAINS,
+  NICHE_INTELLIGENCE,
+  normalizeNiche,
+
+  // Scoring / formatting
+  searchAnalytics,
+  applyFilters,
+  calculateRelevanceScore,
+  getTrustBadge,
+  getRecencyBadge,
+
+  // Aliases (window.generateSmartQueries = getContextualQueries)
+  getContextualQueries as generateSmartQueries,
+};
 
 
