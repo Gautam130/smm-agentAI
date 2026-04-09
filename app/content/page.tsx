@@ -29,9 +29,12 @@ export default function ContentPage() {
   const [thStyle, setThStyle] = useState('Storytelling (personal experience)');
   
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const [contentResult, setContentResult] = useState('');
+  const [hooksResult, setHooksResult] = useState('');
+  const [hashtagsResult, setHashtagsResult] = useState('');
+  const [threadResult, setThreadResult] = useState('');
 
-  const generate = async (prompt: string) => {
+  const generate = async (prompt: string, setResult: (v: string) => void) => {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult('');
@@ -71,10 +74,10 @@ export default function ContentPage() {
     setLoading(false);
   };
 
-  const runWrite = () => generate(`Generate a ${format} for ${platform}. Niche: ${niche}. Audience: ${audience}. Topic: ${topic}. Tone: ${tone}. Create ${variations}.`);
-  const runHooks = () => generate(`Generate 10 ${hookFormat} for: ${hookTopic}. Niche: ${hookNiche}.`);
-  const runHashtags = () => generate(`Generate hashtag set for ${htPlatform}. Niche: ${htNiche}. Topic: ${htTopic}.`);
-  const runThread = () => generate(`Write a ${thPlatform} about: ${thTopic}. Industry: ${thIndustry}. Style: ${thStyle}.`);
+  const runWrite = () => generate(`Generate a ${format} for ${platform}. Niche: ${niche}. Audience: ${audience}. Topic: ${topic}. Tone: ${tone}. Create ${variations}.`, setContentResult);
+  const runHooks = () => generate(`Generate 10 ${hookFormat} for: ${hookTopic}. Niche: ${hookNiche}.`, setHooksResult);
+  const runHashtags = () => generate(`Generate hashtag set for ${htPlatform}. Niche: ${htNiche}. Topic: ${htTopic}.`, setHashtagsResult);
+  const runThread = () => generate(`Write a ${thPlatform} about: ${thTopic}. Industry: ${thIndustry}. Style: ${thStyle}.`, setThreadResult);
 
   const tabs = [
     { id: 'write', label: 'Write content' },
@@ -83,16 +86,42 @@ export default function ContentPage() {
     { id: 'thread', label: 'LinkedIn / Thread' },
   ] as const;
 
+  const getCurrentResult = () => {
+    switch (activeTab) {
+      case 'write': return contentResult;
+      case 'hooks': return hooksResult;
+      case 'hashtags': return hashtagsResult;
+      case 'thread': return threadResult;
+    }
+  };
+
+  const setCurrentResult = (v: string) => {
+    switch (activeTab) {
+      case 'write': setContentResult(v); break;
+      case 'hooks': setHooksResult(v); break;
+      case 'hashtags': setHashtagsResult(v); break;
+      case 'thread': setThreadResult(v); break;
+    }
+  };
+
+  const getLabel = () => {
+    switch (activeTab) {
+      case 'write': return 'Generated Content';
+      case 'hooks': return '10 Hooks';
+      case 'hashtags': return 'Hashtag Set';
+      case 'thread': return 'Post / Thread';
+    }
+  };
+
   return (
     <div className="content-area" style={{ maxWidth: '900px', margin: '0 auto' }}>
       <div className="module-tile">
-        {/* Sub-tabs */}
         <div className="stabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               className={`stab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => { setActiveTab(tab.id); setResult(''); }}
+              onClick={() => { setActiveTab(tab.id); }}
             >
               {tab.label}
             </button>
@@ -163,8 +192,23 @@ export default function ContentPage() {
               </div>
             </div>
             <button className="run-btn" onClick={runWrite} disabled={loading || !topic}>
-              {loading ? <>Generating...</> : 'Generate content ✦'}
+              {loading ? 'Generating...' : 'Generate content ✦'}
             </button>
+            {contentResult && (
+              <div className="output-wrap">
+                <div className="output-header">
+                  <div className="output-label">
+                    {getLabel()}
+                    <button className="clear-btn" onClick={() => setContentResult('')} title="Clear">✕</button>
+                  </div>
+                  <div className="output-actions">
+                    <button className="save-output-btn">Save</button>
+                    <button className="copy-output" onClick={() => navigator.clipboard.writeText(contentResult)}>Copy</button>
+                  </div>
+                </div>
+                <div className="output-box">{contentResult}</div>
+              </div>
+            )}
           </>
         )}
 
@@ -191,8 +235,23 @@ export default function ContentPage() {
               <input value={hookNiche} onChange={(e) => setHookNiche(e.target.value)} placeholder="e.g. nutrition, personal finance, fashion" />
             </div>
             <button className="run-btn" onClick={runHooks} disabled={loading || !hookTopic}>
-              {loading ? <>Generating...</> : 'Generate 10 hooks ✦'}
+              {loading ? 'Generating...' : 'Generate 10 hooks ✦'}
             </button>
+            {hooksResult && (
+              <div className="output-wrap">
+                <div className="output-header">
+                  <div className="output-label">
+                    {getLabel()}
+                    <button className="clear-btn" onClick={() => setHooksResult('')} title="Clear">✕</button>
+                  </div>
+                  <div className="output-actions">
+                    <button className="save-output-btn">Save</button>
+                    <button className="copy-output" onClick={() => navigator.clipboard.writeText(hooksResult)}>Copy</button>
+                  </div>
+                </div>
+                <div className="output-box">{hooksResult}</div>
+              </div>
+            )}
           </>
         )}
 
@@ -218,8 +277,23 @@ export default function ContentPage() {
               <input value={htTopic} onChange={(e) => setHtTopic(e.target.value)} placeholder="e.g. new collection launch, styling tips" />
             </div>
             <button className="run-btn" onClick={runHashtags} disabled={loading || !htNiche}>
-              {loading ? <>Generating...</> : 'Generate hashtag set ✦'}
+              {loading ? 'Generating...' : 'Generate hashtag set ✦'}
             </button>
+            {hashtagsResult && (
+              <div className="output-wrap">
+                <div className="output-header">
+                  <div className="output-label">
+                    {getLabel()}
+                    <button className="clear-btn" onClick={() => setHashtagsResult('')} title="Clear">✕</button>
+                  </div>
+                  <div className="output-actions">
+                    <button className="save-output-btn">Save</button>
+                    <button className="copy-output" onClick={() => navigator.clipboard.writeText(hashtagsResult)}>Copy</button>
+                  </div>
+                </div>
+                <div className="output-box">{hashtagsResult}</div>
+              </div>
+            )}
           </>
         )}
 
@@ -254,26 +328,26 @@ export default function ContentPage() {
               </select>
             </div>
             <button className="run-btn" onClick={runThread} disabled={loading || !thTopic}>
-              {loading ? <>Generating...</> : 'Write post ✦'}
+              {loading ? 'Generating...' : 'Write post ✦'}
             </button>
+            {threadResult && (
+              <div className="output-wrap">
+                <div className="output-header">
+                  <div className="output-label">
+                    {getLabel()}
+                    <button className="clear-btn" onClick={() => setThreadResult('')} title="Clear">✕</button>
+                  </div>
+                  <div className="output-actions">
+                    <button className="save-output-btn">Save</button>
+                    <button className="copy-output" onClick={() => navigator.clipboard.writeText(threadResult)}>Copy</button>
+                  </div>
+                </div>
+                <div className="output-box">{threadResult}</div>
+              </div>
+            )}
           </>
         )}
       </div>
-      
-      {result && (
-        <div className="output-wrap show">
-          <div className="output-header">
-            <div className="output-label">Generated Content</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button className="save-output-btn">Save</button>
-              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
-            </div>
-          </div>
-          <div className="output-box">
-            {result}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

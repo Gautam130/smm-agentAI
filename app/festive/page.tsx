@@ -102,12 +102,18 @@ export default function FestivePage() {
       </div>
       
       {result && (
-        <div className="output-box output-yellow">
+        <div className="output-wrap">
           <div className="output-header">
-            <div className="output-label text-yellow">Festive Campaign</div>
-            <button className="action-btn">Copy</button>
+            <div className="output-label text-yellow">
+              <span className="dot-yellow"></span>
+              Festive Campaign
+              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+            </div>
+            <div className="output-actions">
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            </div>
           </div>
-          <div className="output-content">
+          <div className="output-box output-yellow">
             {result}
           </div>
         </div>

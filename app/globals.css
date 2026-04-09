@@ -433,6 +433,45 @@ select option {
   gap: 10px;
 }
 
+.output-label button.clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.output-label button.clear-btn:hover {
+  color: var(--red);
+}
+
+.output-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.excel-export-btn {
+  padding: 8px 16px;
+  background: var(--bg-glass);
+  border: 0.5px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--duration-fast) var(--ease-premium);
+}
+
+.excel-export-btn:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass-hover);
+  color: var(--text-primary);
+}
+
 .output-label::before {
   content: '';
   width: 10px;
@@ -526,6 +565,13 @@ select option {
   height: 6px;
   border-radius: 50%;
   background: var(--accent-purple);
+}
+
+.dot-yellow {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
 }
 
 .action-btn {
@@ -1349,6 +1395,116 @@ select option {
   line-height: 1.5;
   margin-bottom: 24px;
   border: 0.5px solid transparent;
+}
+
+.notice.n-green {
+  background: rgba(40, 167, 69, 0.08);
+  border-color: rgba(40, 167, 69, 0.2);
+  color: var(--green);
+}
+
+/* Panel Header */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 16px;
+}
+
+/* Chat Suggestions */
+.chat-suggestions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 16px;
+}
+
+.suggestion-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+
+.suggestion-btn:hover {
+  color: var(--accent);
+  border-color: rgba(0,212,170,0.3);
+}
+
+/* File Context */
+.file-context {
+  display: none;
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: rgba(0,212,170,0.1);
+  border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.file-context.show {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+.file-remove:hover {
+  color: var(--red);
+}
+
+/* Input Hint */
+.input-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.clear-chat-btn {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 5px;
+  transition: color 0.15s;
+}
+
+.clear-chat-btn:hover {
+  color: var(--red);
+}
+
+/* Cursor blink animation */
+.cursor-blink {
+  color: var(--accent);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .n-amber {

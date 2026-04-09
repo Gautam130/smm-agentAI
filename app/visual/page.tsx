@@ -228,11 +228,19 @@ export default function VisualPage() {
       </div>
       
       {result && (
-        <div className="output-box output-purple">
+        <div className="output-wrap">
           <div className="output-header">
-            <div className="output-label text-purple">Generated Brief</div>
+            <div className="output-label text-purple">
+              <span className="dot-purple"></span>
+              Generated Brief
+              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+            </div>
+            <div className="output-actions">
+              <button className="save-output-btn">Save</button>
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            </div>
           </div>
-          <div className="output-content">
+          <div className="output-box output-purple">
             {result}
           </div>
         </div>

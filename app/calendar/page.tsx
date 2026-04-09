@@ -132,26 +132,27 @@ Include post ideas with dates, content types, and themes.`;
         <button onClick={generate} disabled={loading || !brand} className="run-btn">
           {loading ? 'Generating...' : 'Generate full calendar ✦'}
         </button>
+        
+        {result && (
+          <div className="output-wrap">
+            <div className="output-header">
+              <div className="output-label">
+                <span className="dot-green"></span>
+                Content Calendar
+                <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              </div>
+              <div className="output-actions">
+                <button className="excel-export-btn">📄 Excel</button>
+                <button className="save-output-btn">Save</button>
+                <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+              </div>
+            </div>
+            <div className="output-box">
+              {result}
+            </div>
+          </div>
+        )}
       </div>
-      
-      {result && (
-        <div className="output-box">
-          <div className="output-header">
-            <div className="output-label">
-              <span className="dot-green"></span>
-              Content Calendar
-            </div>
-            <div className="output-actions">
-              <button className="action-btn">📄 Excel</button>
-              <button className="action-btn">Save</button>
-              <button className="action-btn">Copy</button>
-            </div>
-          </div>
-          <div className="output-content">
-            {result}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

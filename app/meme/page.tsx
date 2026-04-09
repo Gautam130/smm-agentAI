@@ -173,15 +173,18 @@ export default function MemePage() {
       </div>
       
       {result && (
-        <div className="output-box output-purple">
+        <div className="output-wrap">
           <div className="output-header">
             <div className="output-label text-purple">
               <span className="dot-purple"></span>
               Meme Concepts
+              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
             </div>
-            <button className="action-btn">Copy</button>
+            <div className="output-actions">
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            </div>
           </div>
-          <div className="output-content">
+          <div className="output-box output-purple">
             {result}
           </div>
         </div>
