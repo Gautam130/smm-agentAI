@@ -417,7 +417,9 @@ select option {
 .w900 {
   max-width: 900px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Module Card */
