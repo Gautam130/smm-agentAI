@@ -74,12 +74,11 @@ export default function MemePage() {
 
   return (
     <div className="w900">
-      <div className="module-card">
-        <div className="module-subtitle-green">
-          🎯 Indian meme marketing done right — the Zomato, Swiggy, boAt playbook for your brand.
-        </div>
-        
-        <div className="stabs">
+      <div className="module-subtitle-green">
+        🎯 Indian meme marketing done right — the Zomato, Swiggy, boAt playbook for your brand.
+      </div>
+      
+      <div className="stabs">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
               {tab.label}
@@ -170,8 +169,7 @@ export default function MemePage() {
             <button onClick={runNewsjack} disabled={loading || !trendingTopic} className="run-btn btn-purple">{loading ? 'Generating...' : 'Generate Newsjack Content ✦'}</button>
           </>
         )}
-      </div>
-      
+
       {result && (
         <div className="output-wrap">
           <div className="output-header">

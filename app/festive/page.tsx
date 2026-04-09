@@ -63,12 +63,11 @@ export default function FestivePage() {
 
   return (
     <div className="w900">
-      <div className="module-card">
-        <div className="module-subtitle-yellow">
-          🇮🇳 India's festive calendar is your biggest marketing opportunity. Plan campaigns that actually land.
-        </div>
-        
-        <div className="field mb-5">
+      <div className="module-subtitle-yellow">
+        🇮🇳 India's festive calendar is your biggest marketing opportunity. Plan campaigns that actually land.
+      </div>
+      
+      <div className="field mb-5">
           <label className="lbl">Select festival</label>
           <div className="festival-pills">
             {festivals.map((f) => (
@@ -99,8 +98,7 @@ export default function FestivePage() {
           <input value={offer} onChange={(e) => setOffer(e.target.value)} placeholder="e.g. 30% off, free gifting, limited edition packaging" />
         </div>
         <button onClick={generate} disabled={loading || !brand} className="run-btn btn-yellow">{loading ? 'Generating...' : 'Generate Festive Campaign ✦'}</button>
-      </div>
-      
+
       {result && (
         <div className="output-wrap">
           <div className="output-header">

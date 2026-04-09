@@ -82,12 +82,11 @@ export default function VisualPage() {
 
   return (
     <div className="w900">
-      <div className="module-card">
-        <div className="module-subtitle-purple">
-          🎨 Brief your designers and videographers properly — no more vague "make something nice" requests.
-        </div>
-        
-        <div className="stabs">
+      <div className="module-subtitle-purple">
+        🎨 Brief your designers and videographers properly — no more vague "make something nice" requests.
+      </div>
+      
+      <div className="stabs">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
               {tab.label}
@@ -225,8 +224,7 @@ export default function VisualPage() {
             <button onClick={runStory} disabled={loading || !vsMessage} className="run-btn btn-purple">{loading ? 'Generating...' : 'Generate Story Brief ✦'}</button>
           </>
         )}
-      </div>
-      
+
       {result && (
         <div className="output-wrap">
           <div className="output-header">

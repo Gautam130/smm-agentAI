@@ -69,12 +69,11 @@ Include post ideas with dates, content types, and themes.`;
 
   return (
     <div className="w900">
-      <div className="module-card">
-        <h2 className="module-title">
-          📅 AI Content Calendar
-        </h2>
-        
-        <div className="g3 mb-4">
+      <h2 className="module-title">
+        📅 AI Content Calendar
+      </h2>
+      
+      <div className="g3 mb-4">
           <div className="field">
             <label className="lbl">Brand / niche</label>
             <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. organic food brand" />
@@ -152,7 +151,6 @@ Include post ideas with dates, content types, and themes.`;
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
