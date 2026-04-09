@@ -580,21 +580,59 @@ select option {
   box-shadow: 0 0 0 3px rgba(0, 255, 204, 0.05);
 }
 
-.chat-send {
+.chat-send, #chat-send-btn {
   padding: 12px 20px;
-  background: linear-gradient(135deg, var(--accent) 0%, #00ccaa 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-purple) 100%);
+  color: var(--bg-deep);
   border: none;
   border-radius: 12px;
-  color: var(--bg-deep);
-  font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-family: var(--font);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 
-.chat-send:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--accent-glow);
+#chat-send-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+#chat-send-btn:active {
+  transform: translateY(0);
+}
+
+#chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Chat Upload Button */
+#chat-upload-btn {
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#chat-upload-btn:hover {
+  background: rgba(0, 212, 170, 0.1);
+  border-color: rgba(0, 212, 170, 0.3);
+  color: var(--accent);
 }
 
 /* Badges */
