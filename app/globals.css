@@ -1368,3 +1368,122 @@ select option {
   background: var(--accent-purple);
   color: #ffffff;
 }
+
+/* ── AGENT INPUT ── */
+#agent-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 18px 60px 18px 20px;
+  font-size: 15px;
+  font-family: var(--font);
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+  transition: all var(--duration-fast) var(--ease-premium);
+}
+
+#agent-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+#agent-send-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent) 0%, #00ccaa 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-premium);
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+#agent-send-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 25px var(--accent-glow);
+}
+
+/* ── QUICK PROMPTS ── */
+#quick-prompts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+#quick-prompts button {
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  border: 0.5px solid var(--border-glass);
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--duration-fast) var(--ease-premium);
+}
+
+#quick-prompts button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* ── AGENT OUTPUT ── */
+#agent-output-box {
+  background: var(--bg-glass);
+  border: 0.5px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--text-primary);
+  min-height: 100px;
+  backdrop-filter: blur(15px);
+  overflow-x: auto;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+#agent-output-box table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+#agent-output-box pre,
+#agent-output-box code {
+  overflow-x: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+#agent-output-box a {
+  word-break: break-all;
+}
+
+/* ── H BADGE ── */
+.hbadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-glass);
+  border: 0.5px solid var(--border-glass);
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  backdrop-filter: blur(10px);
+}
