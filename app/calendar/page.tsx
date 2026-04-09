@@ -68,32 +68,26 @@ Include post ideas with dates, content types, and themes.`;
   const years = Array.from({ length: 10 }, (_, i) => String(2026 + i));
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ 
-        background: 'rgba(255,255,255,0.03)', 
-        border: '1px solid rgba(255,255,255,0.08)', 
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', var(--head)", fontSize: '18px', fontWeight: 700, marginBottom: '24px' }}>
+    <div className="w900">
+      <div className="module-card">
+        <h2 className="module-title">
           📅 AI Content Calendar
         </h2>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-          <div>
-            <label style={labelStyle}>Brand / niche</label>
-            <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. organic food brand" style={inputStyle} />
+        <div className="g3 mb-4">
+          <div className="field">
+            <label className="lbl">Brand / niche</label>
+            <input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. organic food brand" />
           </div>
-          <div>
-            <label style={labelStyle}>Month</label>
-            <select value={month} onChange={(e) => setMonth(e.target.value)} style={inputStyle}>
+          <div className="field">
+            <label className="lbl">Month</label>
+            <select value={month} onChange={(e) => setMonth(e.target.value)}>
               {months.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
-          <div>
-            <label style={labelStyle}>Frequency</label>
-            <select value={frequency} onChange={(e) => setFrequency(e.target.value)} style={inputStyle}>
+          <div className="field">
+            <label className="lbl">Frequency</label>
+            <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
               <option>3 per week</option>
               <option>5 per week</option>
               <option>Daily (7/week)</option>
@@ -102,58 +96,58 @@ Include post ideas with dates, content types, and themes.`;
           </div>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-          <div>
-            <label style={labelStyle}>Year</label>
-            <select value={year} onChange={(e) => setYear(e.target.value)} style={inputStyle}>
+        <div className="g3 mb-4">
+          <div className="field">
+            <label className="lbl">Year</label>
+            <select value={year} onChange={(e) => setYear(e.target.value)}>
               {years.map(y => <option key={y}>{y}</option>)}
             </select>
           </div>
-          <div>
-            <label style={labelStyle}>Start date</label>
-            <input type="number" value={startDate} onChange={(e) => setStartDate(e.target.value)} min="1" max="31" style={inputStyle} />
+          <div className="field">
+            <label className="lbl">Start date</label>
+            <input type="number" value={startDate} onChange={(e) => setStartDate(e.target.value)} min="1" max="31" />
           </div>
-          <div>
-            <label style={labelStyle}>End date</label>
-            <input type="number" value={endDate} onChange={(e) => setEndDate(e.target.value)} min="1" max="31" style={inputStyle} />
-          </div>
-        </div>
-        
-        <div style={{ marginBottom: '16px' }}>
-          <label style={labelStyle}>Specific dates to highlight</label>
-          <input value={specificDates} onChange={(e) => setSpecificDates(e.target.value)} placeholder="e.g. 5th product launch, 14th Valentine's Day, 22nd weekend sale" style={inputStyle} />
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <label style={labelStyle}>Content pillars</label>
-            <input value={pillars} onChange={(e) => setPillars(e.target.value)} placeholder="e.g. education, product showcase, testimonials, behind-the-scenes, trending" style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>Key dates / campaigns</label>
-            <input value={events} onChange={(e) => setEvents(e.target.value)} placeholder="e.g. Holi on 14th, product launch 18th, weekend sale 22-23rd" style={inputStyle} />
+          <div className="field">
+            <label className="lbl">End date</label>
+            <input type="number" value={endDate} onChange={(e) => setEndDate(e.target.value)} min="1" max="31" />
           </div>
         </div>
         
-        <button onClick={generate} disabled={loading || !brand} style={btnStyle}>
+        <div className="field mb-4">
+          <label className="lbl">Specific dates to highlight</label>
+          <input value={specificDates} onChange={(e) => setSpecificDates(e.target.value)} placeholder="e.g. 5th product launch, 14th Valentine's Day, 22nd weekend sale" />
+        </div>
+        
+        <div className="g2 mb-5">
+          <div className="field">
+            <label className="lbl">Content pillars</label>
+            <input value={pillars} onChange={(e) => setPillars(e.target.value)} placeholder="e.g. education, product showcase, testimonials, behind-the-scenes, trending" />
+          </div>
+          <div className="field">
+            <label className="lbl">Key dates / campaigns</label>
+            <input value={events} onChange={(e) => setEvents(e.target.value)} placeholder="e.g. Holi on 14th, product launch 18th, weekend sale 22-23rd" />
+          </div>
+        </div>
+        
+        <button onClick={generate} disabled={loading || !brand} className="run-btn">
           {loading ? 'Generating...' : 'Generate full calendar ✦'}
         </button>
       </div>
       
       {result && (
-        <div style={resultStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#00ffcc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00ffcc' }}></span>
+        <div className="output-box">
+          <div className="output-header">
+            <div className="output-label">
+              <span className="dot-green"></span>
               Content Calendar
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button style={actionBtnStyle}>📄 Excel</button>
-              <button style={actionBtnStyle}>Save</button>
-              <button style={actionBtnStyle}>Copy</button>
+            <div className="output-actions">
+              <button className="action-btn">📄 Excel</button>
+              <button className="action-btn">Save</button>
+              <button className="action-btn">Copy</button>
             </div>
           </div>
-          <div style={{ fontSize: '14px', lineHeight: 1.85, color: '#ffffff', whiteSpace: 'pre-wrap' }}>
+          <div className="output-content">
             {result}
           </div>
         </div>
@@ -161,56 +155,3 @@ Include post ideas with dates, content types, and themes.`;
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '11px',
-  color: '#71717a',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '1px',
-  marginBottom: '8px',
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: '#111111',
-  border: '0.5px solid rgba(255,255,255,0.08)',
-  borderRadius: '12px',
-  padding: '14px 18px',
-  fontSize: '14px',
-  color: '#ffffff',
-  outline: 'none',
-};
-
-const btnStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '10px',
-  padding: '14px 28px',
-  background: 'linear-gradient(135deg, #00ffcc 0%, #00ccaa 100%)',
-  color: '#080808',
-  border: 'none',
-  borderRadius: '12px',
-  fontSize: '14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const resultStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '16px',
-  padding: '24px',
-  borderLeft: '2px solid #00ffcc',
-};
-
-const actionBtnStyle: React.CSSProperties = {
-  fontSize: '11px',
-  padding: '4px 10px',
-  borderRadius: '6px',
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'transparent',
-  color: '#a1a1aa',
-  cursor: 'pointer',
-};
