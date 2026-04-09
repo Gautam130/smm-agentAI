@@ -115,18 +115,17 @@ export default function ContentPage() {
 
   return (
     <div className="content-area" style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div className="module-tile">
-        <div className="stabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`stab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => { setActiveTab(tab.id); }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="stabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`stab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => { setActiveTab(tab.id); }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
         {activeTab === 'write' && (
           <>
@@ -347,7 +346,6 @@ export default function ContentPage() {
             )}
           </>
         )}
-      </div>
     </div>
   );
 }
