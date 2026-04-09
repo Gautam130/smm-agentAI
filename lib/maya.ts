@@ -96,10 +96,12 @@ export function useMaya() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const loadingRef = useRef(false);
 
   const sendMessage = useCallback(async (userMsg: string) => {
-    if (!userMsg.trim() || isLoading) return;
+    if (!userMsg.trim() || loadingRef.current) return;
 
+    loadingRef.current = true;
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
@@ -208,7 +210,8 @@ export function useMaya() {
     });
 
     setIsLoading(false);
-  }, [messages, isLoading]);
+    loadingRef.current = false;
+  }, [messages]);
 
   const clearChat = useCallback(() => {
     setMessages([]);

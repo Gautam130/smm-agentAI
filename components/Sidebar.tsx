@@ -160,21 +160,21 @@ export default function Sidebar() {
         background: 'linear-gradient(180deg, #0a0a0a 0%, rgba(10,10,10,0.5) 100%)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #00ffcc 0%, #a855f7 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '11px',
-            color: '#080808',
-            boxShadow: '0 4px 20px rgba(0,255,204,0.2)',
-          }}>
-            MA
-          </div>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #00ffcc 0%, #a855f7 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '11px',
+              color: '#080808',
+              boxShadow: '0 4px 20px rgba(0,255,204,0.2)',
+            }}>
+              SMM
+            </div>
           <div style={{
             fontFamily: "'Plus Jakarta Sans', sans-serif",
             fontSize: '16px',
