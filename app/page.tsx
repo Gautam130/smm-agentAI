@@ -30,19 +30,34 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [{ role: 'user', content: query }] })
       });
-      const reader = res.body?.getReader();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.body) throw new Error('No response');
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          setResults(prev => prev + decoder.decode(value, { stream: true }));
+      let text = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.choices?.[0]?.delta?.content) {
+                text += parsed.choices[0].delta.content;
+              }
+            } catch {}
+          }
         }
       }
-    } catch {
-      setResults('Error connecting to API. Please check your API keys in settings.');
+      setResults(text || 'No response');
+    } catch (e: any) {
+      setResults(`Error: ${e.message}`);
     }
-    finally { setLoading(false); }
+    setLoading(false);
   };
 
   const handleQuickPrompt = (prompt: string) => {
