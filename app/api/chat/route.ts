@@ -82,31 +82,47 @@ export async function POST(request: Request) {
         }
 
         if (OPENROUTER_KEY) {
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${OPENROUTER_KEY}`,
-              'HTTP-Referer': 'https://smm-agent.vercel.app',
-              'X-Title': 'SMM Agent'
-            },
-            body: JSON.stringify({
-              model: 'meta-llama/llama-3.3-70b-instruct',
-              messages,
-              temperature,
-              max_tokens: smartMaxTokens,
-              stream: true
-            })
-          });
-
-          if (response.ok && response.body) {
-            const reader = response.body.getReader();
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              controller.enqueue(value);
+          const openrouterModels = [
+            'anthropic/claude-3.5-haiku',
+            'meta-llama/llama-3.3-70b-instruct',
+            'google/gemini-2.0-flash-exp:free',
+            'mistralai/mistral-nemo:free'
+          ];
+          for (const model of openrouterModels) {
+            if (controller.desiredSize === null) break;
+            try {
+              const response = await fetch(
+                'https://openrouter.ai/api/v1/chat/completions',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENROUTER_KEY}`,
+                    'HTTP-Referer': 'https://smm-agent-sandy.vercel.app',
+                    'X-Title': 'SMM Agent'
+                  },
+                  body: JSON.stringify({
+                    model,
+                    messages,
+                    temperature,
+                    max_tokens: smartMaxTokens,
+                    stream: true
+                  })
+                }
+              );
+              if (response.ok && response.body) {
+                const reader = response.body.getReader();
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  controller.enqueue(value);
+                }
+                return;
+              }
+            } catch(e) {
+              console.error(`OpenRouter ${model} failed:`, e);
+              continue;
             }
-            return;
           }
         }
 

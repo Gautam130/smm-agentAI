@@ -10,7 +10,7 @@ export default function SettingsPage() {
   }, []);
 
   const checkApiStatus = async () => {
-    setApiStatus({ checking: true, checking: true, checking: true });
+    setApiStatus({ groq: 'checking', mistral: 'checking', search: 'checking' });
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',

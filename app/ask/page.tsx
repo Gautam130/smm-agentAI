@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useMaya } from '@/lib/maya';
 
 const suggestions = [
   'Best Instagram strategy for D2C India',
@@ -10,77 +11,27 @@ const suggestions = [
 ];
 
 export default function AskMayaPage() {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const { messages, isLoading, sendMessage, clearChat } = useMaya();
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setLoading(true);
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-
-      if (!res.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let aiResponse = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                aiResponse += parsed.choices[0].delta.content;
-              }
-              if (parsed.error) {
-                throw new Error(parsed.error);
-              }
-            } catch {}
-          }
-        }
-      }
-
-      if (!aiResponse.trim()) {
-        aiResponse = 'Got empty response. Try again.';
-      }
-
-      setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
-    } catch (err: any) {
-      console.error('Chat error:', err);
-      const errorMsg = err.name === 'AbortError' ? 'Request timed out' : (err.message || 'Failed to connect');
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errorMsg}` }]);
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-    setLoading(false);
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim() || isLoading) return;
+    sendMessage(input);
+    setInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   return (
@@ -91,7 +42,6 @@ export default function AskMayaPage() {
         borderRadius: '16px',
         overflow: 'hidden',
       }}>
-        {/* Suggestions */}
         <div style={{ 
           display: 'flex', 
           gap: '6px', 
@@ -117,10 +67,26 @@ export default function AskMayaPage() {
               {s}
             </button>
           ))}
+          {messages.length > 0 && (
+            <button 
+              onClick={clearChat}
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                borderRadius: '14px',
+                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'rgba(255,100,100,0.1)',
+                color: '#f87171',
+                cursor: 'pointer',
+                fontFamily: 'var(--font)',
+              }}
+            >
+              Clear Chat
+            </button>
+          )}
         </div>
 
-        {/* Chat History */}
-        <div style={{ 
+        <div ref={chatRef} style={{ 
           minHeight: '400px', 
           maxHeight: '520px', 
           overflowY: 'auto', 
@@ -170,38 +136,16 @@ export default function AskMayaPage() {
                   border: '1px solid rgba(255,255,255,0.08)',
                   color: '#ffffff',
                   textAlign: 'left',
+                  whiteSpace: 'pre-wrap',
                 }}>
-                  {msg.content}
+                  {msg.text}
+                  {msg.streaming && <span style={{ animation: 'pulse 1s infinite' }}>▋</span>}
                 </div>
               </div>
             ))
           )}
-          {loading && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #00ffcc 0%, #a855f7 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                M
-              </div>
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '16px',
-                background: '#111111',
-                color: '#a1a1aa',
-              }}>
-                ▋
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Input */}
         <div style={{ 
           display: 'flex', 
           gap: '10px', 
@@ -213,7 +157,7 @@ export default function AskMayaPage() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            onKeyDown={handleKeyDown}
             placeholder="Ask anything... e.g. I run a chai brand in Jaipur targeting 18-30 year olds. What should I post this week?"
             rows={2}
             style={{
@@ -230,17 +174,17 @@ export default function AskMayaPage() {
             }}
           />
           <button
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
+            onClick={handleSend}
+            disabled={isLoading || !input.trim()}
             style={{
               padding: '12px 20px',
-              background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #00ffcc 0%, #00ccaa 100%)',
+              background: isLoading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #00ffcc 0%, #00ccaa 100%)',
               border: 'none',
               borderRadius: '12px',
-              color: loading ? '#71717a' : '#080808',
+              color: isLoading ? '#71717a' : '#080808',
               fontSize: '13px',
               fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
             }}
           >
             Send ↑

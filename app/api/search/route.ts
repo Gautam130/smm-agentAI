@@ -3,7 +3,24 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const { provider = 'serper', maxResults = 8, query } = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({}));
+  
+  // Multi-query batch handler
+  if (body.queries && Array.isArray(body.queries)) {
+    const results = await Promise.all(
+      body.queries.map(async (q: {query: string; provider: string; maxResults: number}) => {
+        const r = await fetch(request.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(q)
+        });
+        return r.json().catch(() => ({ results: [] }));
+      })
+    );
+    return NextResponse.json({ results, provider: 'multi' });
+  }
+
+  const { provider = 'serper', maxResults = 8, query } = body;
 
   const SERPER_KEY = process.env.SERPER_API_KEY || process.env.SERPER_KEY;
   const EXA_KEY = process.env.EXA_KEY;
@@ -107,6 +124,71 @@ export async function POST(request: Request) {
         return NextResponse.json({ results, provider: 'gnews' });
       }
     } catch (e) { console.error('GNews error:', e); }
+  }
+
+  // DuckDuckGo provider
+  if (provider === 'duckduckgo') {
+    try {
+      const encoded = encodeURIComponent(query);
+      const r = await fetch(
+        `https://html.duckduckgo.com/html/?q=${encoded}&kl=in-en`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
+      );
+      if (r.ok) {
+        const html = await r.text();
+        const results: {title:string;snippet:string;url:string;domain:string}[] = [];
+        const matches = html.matchAll(
+          /class="result__title"[^>]*>.*?href="([^"]+)"[^>]*>([^<]+)<\/a>[\s\S]*?class="result__snippet"[^>]*>([^<]+)/g
+        );
+        for (const m of matches) {
+          results.push({
+            title: m[2].trim(),
+            snippet: m[3].trim(),
+            url: m[1],
+            domain: m[1].replace(/^https?:\/\//, '').split('/')[0]
+          });
+          if (results.length >= maxResults) break;
+        }
+        return NextResponse.json({ results, provider: 'duckduckgo' });
+      }
+    } catch(e) { console.error('DDG error:', e); }
+  }
+
+  // Finnhub provider
+  if (provider === 'finnhub' && FINNHUB_KEY) {
+    try {
+      const symbol = query.toUpperCase().replace(/\s+/g,'');
+      const [quote, profile] = await Promise.all([
+        fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`).then(r=>r.json()),
+        fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`).then(r=>r.json())
+      ]);
+      return NextResponse.json({
+        results: [{
+          title: `${profile.name || symbol} (${symbol})`,
+          snippet: `Price: $${quote.c} | Change: ${quote.d >= 0 ? '+' : ''}${quote.d} (${quote.dp?.toFixed(2)}%) | High: $${quote.h} | Low: $${quote.l}`,
+          url: `https://finance.yahoo.com/quote/${symbol}`,
+          domain: 'finnhub.io'
+        }],
+        provider: 'finnhub'
+      });
+    } catch(e) { console.error('Finnhub error:', e); }
+  }
+
+  // Jina URL fetcher
+  if (provider === 'jina') {
+    const { url: targetUrl } = body;
+    if (targetUrl) {
+      try {
+        const r = await fetch(`https://r.jina.ai/${encodeURIComponent(targetUrl)}`, {
+          headers: { 'Accept': 'text/plain' }
+        });
+        if (r.ok) {
+          const content = await r.text();
+          return NextResponse.json({ content, success: true, provider: 'jina' });
+        }
+      } catch(e) { console.error('Jina error:', e); }
+    }
+    return NextResponse.json({ content: '', success: false, provider: 'jina' });
   }
 
   return NextResponse.json({ results: [], error: 'No providers available', provider });
