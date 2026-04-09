@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
 
 const inter = Inter({
   variable: "--font",
@@ -29,7 +31,40 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        background: '#080808',
+        color: '#ffffff',
+        fontFamily: 'var(--font)',
+      }}>
+        <div className="shell" style={{ 
+          display: 'flex', 
+          height: '100vh', 
+          overflow: 'hidden',
+          width: '100%',
+        }}>
+          <Sidebar />
+          <main style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            overflow: 'hidden',
+            background: '#080808',
+          }}>
+            <Topbar />
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              padding: '32px',
+              position: 'relative',
+              zIndex: 1,
+            }}>
+              {children}
+            </div>
+          </main>
+        </div>
+      </body>
     </html>
   );
 }
