@@ -49,60 +49,61 @@ export default function RepurposePage() {
     setLoading(false);
   };
 
-  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '11px', color: '#71717a', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' };
-  const inputStyle: React.CSSProperties = { width: '100%', background: '#111111', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px 18px', fontSize: '14px', color: '#ffffff', outline: 'none' };
-  const btnStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '14px 28px', background: 'linear-gradient(135deg, #00ffcc 0%, #00ccaa 100%)', color: '#080808', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' };
-  const resultStyle: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', borderLeft: '2px solid #00ffcc' };
-
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-        <div style={{ fontSize: '12px', color: '#4ade80', marginBottom: '16px', padding: '12px', background: 'rgba(74,222,128,0.05)', borderRadius: '8px' }}>
-          ♻️ Paste any content — blog post, video script, caption, article — and get it adapted for every platform.
-        </div>
-        
-        <div style={{ marginBottom: '16px' }}>
-          <label style={labelStyle}>Original content</label>
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Paste your original content here..." rows={8} style={{ ...inputStyle, resize: 'vertical' }} />
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <label style={labelStyle}>Repurpose into</label>
-            <select value={formats} onChange={(e) => setFormats(e.target.value)} style={inputStyle}>
-              <option>All 6 formats (Reel, Story, Thread, Carousel, LinkedIn, Email)</option>
-              <option>Reel caption only</option>
-              <option>Carousel script only</option>
-              <option>Twitter/X thread only</option>
-              <option>LinkedIn post only</option>
-              <option>Email newsletter snippet</option>
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>Tone</label>
-            <select value={tone} onChange={(e) => setTone(e.target.value)} style={inputStyle}>
-              <option>Keep original tone</option>
-              <option>Make more casual & fun</option>
-              <option>Make more professional</option>
-              <option>Make more punchy & short</option>
-            </select>
-          </div>
-        </div>
-        
-        <button onClick={generate} disabled={loading || !content} style={btnStyle}>
-          {loading ? 'Repurposing...' : 'Repurpose Now ✦'}
-        </button>
+    <>
+      <div className="notice n-green">
+        ♻️ Paste any content — blog post, video script, caption, article — and get it adapted for every platform.
       </div>
       
+      <div className="field">
+        <label className="lbl">Original content</label>
+        <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Paste your original content here..." rows={8} />
+      </div>
+      
+      <div className="g2 mb-4">
+        <div className="field">
+          <label className="lbl">Repurpose into</label>
+          <select value={formats} onChange={(e) => setFormats(e.target.value)}>
+            <option>All 6 formats (Reel, Story, Thread, Carousel, LinkedIn, Email)</option>
+            <option>Reel caption only</option>
+            <option>Carousel script only</option>
+            <option>Twitter/X thread only</option>
+            <option>LinkedIn post only</option>
+            <option>Email newsletter snippet</option>
+          </select>
+        </div>
+        <div className="field">
+          <label className="lbl">Tone</label>
+          <select value={tone} onChange={(e) => setTone(e.target.value)}>
+            <option>Keep original tone</option>
+            <option>Make more casual & fun</option>
+            <option>Make more professional</option>
+            <option>Make more punchy & short</option>
+          </select>
+        </div>
+      </div>
+      
+      <button onClick={generate} disabled={loading || !content} className="run-btn">
+        {loading ? 'Repurposing...' : 'Repurpose Now ✦'}
+      </button>
+      
       {result && (
-        <div style={resultStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#00ffcc', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00ffcc' }}></span>Repurposed Content</div>
-            <button style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#a1a1aa', cursor: 'pointer' }}>Copy</button>
+        <div className="output-wrap">
+          <div className="output-header">
+            <div className="output-label">
+              <span className="dot-green"></span>
+              Repurposed Content
+              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+            </div>
+            <div className="output-actions">
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            </div>
           </div>
-          <div style={{ fontSize: '14px', lineHeight: 1.85, color: '#ffffff', whiteSpace: 'pre-wrap' }}>{result}</div>
+          <div className="output-box">
+            {result}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

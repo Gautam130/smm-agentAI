@@ -53,83 +53,40 @@ export default function StrategyPage() {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ 
-        background: 'rgba(255,255,255,0.03)', 
-        border: '1px solid rgba(255,255,255,0.08)', 
-        borderRadius: '16px',
-        padding: '28px',
-        marginBottom: '24px',
-      }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', var(--head)", fontSize: '18px', fontWeight: 700, marginBottom: '24px' }}>
-          📊 Strategy & Audit
-        </h2>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: '#71717a', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
-            Describe your business
-          </label>
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. A D2C fashion brand in India, targeting young professionals. Need a strategy to grow on Instagram."
-            rows={3}
-            style={{
-              width: '100%',
-              background: '#111111',
-              border: '0.5px solid rgba(255,255,255,0.08)',
-              borderRadius: '12px',
-              padding: '14px 18px',
-              fontSize: '14px',
-              color: '#ffffff',
-              outline: 'none',
-              resize: 'none',
-              fontFamily: 'var(--font)',
-            }}
-          />
-        </div>
-        
-        <button
-          onClick={analyze}
-          disabled={loading || !prompt.trim()}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '14px 28px',
-            background: loading ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-            color: loading ? '#71717a' : '#ffffff',
-            border: 'none',
-            borderRadius: '12px',
-            fontSize: '14px',
-            fontWeight: 700,
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {loading ? 'Analyzing...' : 'Generate Strategy'}
-        </button>
+    <>
+      <h2 className="module-title">📊 Strategy & Audit</h2>
+      
+      <div className="field">
+        <label className="lbl">Describe your business</label>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="e.g. A D2C fashion brand in India, targeting young professionals. Need a strategy to grow on Instagram."
+          rows={3}
+        />
       </div>
       
+      <button onClick={analyze} disabled={loading || !prompt.trim()} className="run-btn btn-purple">
+        {loading ? 'Analyzing...' : 'Generate Strategy'}
+      </button>
+      
       {result && (
-        <div style={{ 
-          background: 'rgba(255,255,255,0.03)', 
-          border: '1px solid rgba(255,255,255,0.08)', 
-          borderRadius: '16px',
-          padding: '24px',
-          borderLeft: '2px solid #a855f7',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#a855f7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a855f7' }}></span>
+        <div className="output-wrap">
+          <div className="output-header">
+            <div className="output-label text-purple">
+              <span className="dot-purple"></span>
               Your Strategy
+              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
             </div>
-            <button style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#a1a1aa', cursor: 'pointer' }}>Copy</button>
+            <div className="output-actions">
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            </div>
           </div>
-          <div style={{ fontSize: '14px', lineHeight: 1.85, color: '#ffffff', whiteSpace: 'pre-wrap' }}>
+          <div className="output-box output-purple">
             {result}
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
