@@ -1,33 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-
-interface Client {
-  id: number;
-  name: string;
-  platform: string;
-  niche: string;
-  posts: number;
-  status: 'active' | 'inactive';
-}
+import { useClients } from '@/components/ClientContext';
 
 export default function ClientPage() {
-  const [clients, setClients] = useState<Client[]>([
-    { id: 1, name: 'FreshBrew Teas', platform: 'Instagram', niche: 'Food & Beverage', posts: 45, status: 'active' },
-    { id: 2, name: 'FitLife Gym', platform: 'LinkedIn', niche: 'Fitness', posts: 23, status: 'active' },
-  ]);
+  const { clients, setClients, deleteClient } = useClients();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
 
   const addClient = () => {
     if (!newName.trim()) return;
-    setClients([...clients, { id: Date.now(), name: newName, platform: 'Instagram', niche: '', posts: 0, status: 'active' }]);
+    const newClient = { id: Date.now(), name: newName, platform: 'Instagram', niche: '', posts: 0, status: 'active' as const };
+    setClients(prev => [...prev, newClient]);
     setNewName('');
     setShowAdd(false);
-  };
-
-  const deleteClient = (id: number) => {
-    setClients(clients.filter(c => c.id !== id));
   };
 
   return (
@@ -86,7 +72,7 @@ export default function ClientPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {clients.map((client) => (
-          <div key={client.id} className="client-card" style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div key={client.id} style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#a855f7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
               {client.name.charAt(0)}
             </div>

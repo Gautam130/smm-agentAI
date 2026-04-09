@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
+import { ClientProvider } from "@/components/ClientContext";
 
 const inter = Inter({
   variable: "--font",
@@ -38,31 +39,33 @@ export default function RootLayout({
         color: '#ffffff',
         fontFamily: 'var(--font)',
       }}>
-        <div className="shell" style={{ 
-          display: 'flex', 
-          height: '100vh', 
-          overflow: 'hidden',
-          width: '100%',
-        }}>
-          <Sidebar />
-          <main style={{ 
-            flex: 1, 
+        <ClientProvider>
+          <div className="shell" style={{ 
             display: 'flex', 
-            flexDirection: 'column', 
+            height: '100vh', 
             overflow: 'hidden',
-            background: '#080808',
+            width: '100%',
           }}>
-            <Topbar />
-            <div style={{ 
+            <Sidebar />
+            <main style={{ 
               flex: 1, 
-              overflowY: 'auto', 
-              position: 'relative',
-              zIndex: 1,
+              display: 'flex', 
+              flexDirection: 'column', 
+              overflow: 'hidden',
+              background: '#080808',
             }}>
-              {children}
-            </div>
-          </main>
-        </div>
+              <Topbar />
+              <div style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                position: 'relative',
+                zIndex: 1,
+              }}>
+                {children}
+              </div>
+            </main>
+          </div>
+        </ClientProvider>
       </body>
     </html>
   );

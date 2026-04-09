@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useClients } from './ClientContext';
 
 interface NavItem {
   label: string;
@@ -123,6 +124,10 @@ function Badge({ type }: { type?: string }) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { clients, activeClient, setActiveClient, addClient } = useClients();
+  const [showAdd, setShowAdd] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     create: true,
     manage: true,
@@ -138,6 +143,14 @@ export default function Sidebar() {
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
+  };
+
+  const handleAddClient = () => {
+    if (newClientName.trim()) {
+      addClient(newClientName.trim());
+      setNewClientName('');
+      setShowAdd(false);
+    }
   };
 
   return (
@@ -204,33 +217,85 @@ export default function Sidebar() {
           Active Client
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <select style={{
-            flex: 1,
-            background: '#111111',
-            border: '0.5px solid rgba(255,255,255,0.08)',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            fontSize: '13px',
-            color: '#ffffff',
-            outline: 'none',
-            cursor: 'pointer',
-          }}>
+          <select 
+            value={activeClient?.id || ''}
+            onChange={(e) => {
+              const client = clients.find(c => c.id === Number(e.target.value));
+              setActiveClient(client || null);
+            }}
+            style={{
+              flex: 1,
+              background: '#111111',
+              border: '0.5px solid rgba(255,255,255,0.08)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              fontSize: '13px',
+              color: '#ffffff',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+          >
             <option value="">Select client...</option>
+            {clients.map(client => (
+              <option key={client.id} value={client.id}>{client.name}</option>
+            ))}
           </select>
-          <button style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '12px',
-            background: 'rgba(0,255,204,0.1)',
-            border: '0.5px solid rgba(0,255,204,0.3)',
-            color: '#00ffcc',
-            fontSize: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>+</button>
+          <button 
+            onClick={() => setShowAdd(!showAdd)}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '12px',
+              background: 'rgba(0,255,204,0.1)',
+              border: '0.5px solid rgba(0,255,204,0.3)',
+              color: '#00ffcc',
+              fontSize: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            +
+          </button>
         </div>
+        
+        {showAdd && (
+          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+            <input
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="Client name"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddClient()}
+              style={{
+                flex: 1,
+                background: '#080808',
+                border: '0.5px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                color: '#ffffff',
+                outline: 'none',
+              }}
+            />
+            <button
+              onClick={handleAddClient}
+              style={{
+                padding: '8px 14px',
+                background: '#00ffcc',
+                color: '#080808',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Add
+            </button>
+          </div>
+        )}
+        
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -247,7 +312,7 @@ export default function Sidebar() {
             background: '#00ffcc',
             animation: 'pulse-glow 2s infinite',
           }}></span>
-          No client selected
+          {activeClient ? activeClient.name : 'No client selected'}
         </div>
       </div>
 
