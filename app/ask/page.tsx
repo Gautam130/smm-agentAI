@@ -27,19 +27,51 @@ export default function AskMayaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMsg] })
       });
-      const reader = res.body?.getReader();
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      if (!res.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let aiResponse = '';
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          aiResponse += decoder.decode(value, { stream: true });
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.choices?.[0]?.delta?.content) {
+                aiResponse += parsed.choices[0].delta.content;
+              }
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+            } catch {}
+          }
         }
       }
+
+      if (!aiResponse.trim()) {
+        aiResponse = 'Got empty response. Try again.';
+      }
+
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error connecting to API' }]);
+    } catch (err: any) {
+      console.error('Chat error:', err);
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message || 'Failed to connect'}` }]);
     }
     setLoading(false);
   };
