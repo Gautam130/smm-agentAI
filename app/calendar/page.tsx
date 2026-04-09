@@ -68,7 +68,7 @@ Include post ideas with dates, content types, and themes.`;
   const years = Array.from({ length: 10 }, (_, i) => String(2026 + i));
 
   return (
-    <div className="w900">
+    <>
       <h2 className="module-title">
         📅 AI Content Calendar
       </h2>
@@ -151,6 +151,6 @@ Include post ideas with dates, content types, and themes.`;
             </div>
           </div>
         )}
-    </div>
+    </>
   );
 }

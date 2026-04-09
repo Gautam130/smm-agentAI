@@ -62,7 +62,7 @@ export default function FestivePage() {
   };
 
   return (
-    <div className="w900">
+    <>
       <div className="module-subtitle-yellow">
         🇮🇳 India's festive calendar is your biggest marketing opportunity. Plan campaigns that actually land.
       </div>
@@ -116,6 +116,6 @@ export default function FestivePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

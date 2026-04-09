@@ -114,7 +114,7 @@ export default function ContentPage() {
   };
 
   return (
-    <div style={{ maxWidth: '900px' }}>
+    <>
       <div className="stabs">
         {tabs.map((tab) => (
           <button
@@ -346,6 +346,6 @@ export default function ContentPage() {
             )}
           </>
         )}
-    </div>
+    </>
   );
 }

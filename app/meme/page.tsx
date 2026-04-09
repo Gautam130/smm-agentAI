@@ -73,7 +73,7 @@ export default function MemePage() {
   ] as const;
 
   return (
-    <div className="w900">
+    <>
       <div className="module-subtitle-green">
         🎯 Indian meme marketing done right — the Zomato, Swiggy, boAt playbook for your brand.
       </div>
@@ -187,6 +187,6 @@ export default function MemePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

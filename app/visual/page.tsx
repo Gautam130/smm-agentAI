@@ -81,7 +81,7 @@ export default function VisualPage() {
   ] as const;
 
   return (
-    <div className="w900">
+    <>
       <div className="module-subtitle-purple">
         🎨 Brief your designers and videographers properly — no more vague "make something nice" requests.
       </div>
@@ -243,6 +243,6 @@ export default function VisualPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
