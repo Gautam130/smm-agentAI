@@ -28,10 +28,10 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', var(--head)", fontSize: '18px', fontWeight: 700 }}>📊 Analytics Dashboard</h2>
-        <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)} style={{ background: '#111111', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#ffffff', outline: 'none' }}>
+        <h2 className="module-title">📊 Analytics Dashboard</h2>
+        <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
           <option>7 days</option>
           <option>30 days</option>
           <option>90 days</option>
@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {kpiCards.map((kpi, i) => (
-          <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px' }}>
+          <div key={i} className="kpi-card">
             <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>{kpi.label}</div>
             <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>{kpi.value}</div>
             <div style={{ fontSize: '12px', color: kpi.color }}>{kpi.change} vs last period</div>
@@ -48,11 +48,11 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
+      <div className="dashboard-card" style={{ marginBottom: '24px' }}>
         <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px' }}>Recent Post Performance</h3>
         <div style={{ display: 'grid', gap: '12px' }}>
           {posts.map((post) => (
-            <div key={post.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: '#111111', borderRadius: '12px' }}>
+            <div key={post.id} className="post-row">
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>{post.type}</div>
                 <div style={{ fontSize: '12px', color: '#71717a' }}>{post.date}</div>
@@ -68,11 +68,11 @@ export default function DashboardPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
+        <div className="dashboard-card">
           <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px' }}>Audience Growth</h3>
           <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a' }}>Chart placeholder</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
+        <div className="dashboard-card">
           <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px' }}>Top Content Types</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {['Reels 45%', 'Carousel 30%', 'Static 15%', 'Stories 10%'].map((item, i) => (
@@ -87,6 +87,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
