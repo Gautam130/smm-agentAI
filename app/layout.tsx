@@ -56,7 +56,6 @@ export default function RootLayout({
             <div style={{ 
               flex: 1, 
               overflowY: 'auto', 
-              padding: '32px',
               position: 'relative',
               zIndex: 1,
             }}>

@@ -437,7 +437,6 @@ select option {
 /* Output Box */
 .output-wrap {
   margin-top: 24px;
-  display: none;
   animation: fadeSlideIn 0.4s var(--ease-premium);
 }
 
