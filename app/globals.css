@@ -404,6 +404,36 @@ select option {
   gap: 20px;
 }
 
+/* Utility Classes */
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mb-5 {
+  margin-bottom: 20px;
+}
+
+/* Container */
+.w900 {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Module Card */
+.module-card {
+  background: var(--bg-glass);
+  border: 0.5px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(15px);
+  transition: all var(--duration-slow) var(--ease-premium);
+}
+
+.module-card:hover {
+  border-color: var(--border-glass-hover);
+}
+
 /* Output Box */
 .output-wrap {
   margin-top: 24px;
