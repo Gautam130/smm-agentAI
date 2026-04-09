@@ -114,7 +114,7 @@ export default function ContentPage() {
   };
 
   return (
-    <div className="content-area" style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '900px' }}>
       <div className="stabs">
         {tabs.map((tab) => (
           <button

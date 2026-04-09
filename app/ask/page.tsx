@@ -36,7 +36,7 @@ export default function AskMayaPage() {
   };
 
   return (
-    <div className="content-area" style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '900px' }}>
       <div className="panel-header">
         <div style={{ fontWeight: 600, fontSize: '14px' }}>Ask Maya</div>
       </div>
