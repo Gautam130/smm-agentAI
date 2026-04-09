@@ -21,12 +21,16 @@ export default function AskMayaPage() {
     setInput('');
     setLoading(true);
 
+    console.log('Sending request to /api/chat...');
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMsg] })
       });
+
+      console.log('Response status:', res.status, res.statusText);
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -39,6 +43,8 @@ export default function AskMayaPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let aiResponse = '';
+
+      console.log('Reading stream...');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -55,6 +61,7 @@ export default function AskMayaPage() {
               const parsed = JSON.parse(data);
               if (parsed.choices?.[0]?.delta?.content) {
                 aiResponse += parsed.choices[0].delta.content;
+                console.log('Got chunk:', parsed.choices[0].delta.content.substring(0, 50));
               }
               if (parsed.error) {
                 throw new Error(parsed.error);
@@ -63,6 +70,8 @@ export default function AskMayaPage() {
           }
         }
       }
+
+      console.log('Final response:', aiResponse.substring(0, 100));
 
       if (!aiResponse.trim()) {
         aiResponse = 'Got empty response. Try again.';
