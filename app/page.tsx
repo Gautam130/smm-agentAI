@@ -116,9 +116,13 @@ e.g. Find yoga influencers in Delhi for my brand"
       {showResults && (
         <div className="output-wrap show">
           <div className="output-header">
-            <div className="output-label">Agent response</div>
+            <div className="output-label">
+              <span className="dot-green"></span>
+              Agent response
+            </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(results)}>Copy</button>
+              <button className="save-output-btn">Save</button>
               <button className="copy-output" onClick={() => setShowResults(false)} style={{ border: 'none', background: 'transparent' }}>✕ Clear</button>
             </div>
           </div>
@@ -135,6 +139,9 @@ e.g. Find yoga influencers in Delhi for my brand"
         </div>
         <div className="hbadge">
           <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> saved outputs
+        </div>
+        <div className="hbadge">
+          No client selected
         </div>
       </div>
       
