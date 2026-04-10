@@ -16,8 +16,10 @@ export default function AskMayaPage() {
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -96,11 +98,13 @@ export default function AskMayaPage() {
         const result = await Tesseract.recognize(file, 'eng+hin', {
           logger: (m) => {
             if (m.status === 'recognizing text') {
-              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+              const pct = Math.round(m.progress * 100);
+              setOcrProgress(`Extracting text: ${pct}%`);
             }
           }
         });
         
+        setOcrProgress(null);
         const extractedText = result.data.text.trim();
         if (extractedText) {
           fileContent = `=== IMAGE TEXT (OCR) ===\n${file.name}\n\n${extractedText.substring(0, 15000)}\n=== END OCR ===`;
@@ -296,26 +300,49 @@ export default function AskMayaPage() {
               </button>
               {showAttachMenu && (
                 <div className="attach-dropdown">
+                  {/* Document option - PDF, DOC, TXT */}
                   <label className="attach-option">
                     <input 
                       type="file" 
                       ref={fileInputRef}
                       onChange={handleFileSelect}
                       style={{ display: 'none' }}
-                      accept=".pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg"
+                      accept=".pdf,.doc,.docx,.txt,.md"
                     />
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    Attachment
+                    Document
                   </label>
-                  <button onClick={() => { setShowAttachMenu(false); }}>
+                  
+                  {/* Image option - with OCR */}
+                  <label className="attach-option">
+                    <input 
+                      type="file" 
+                      ref={imageInputRef}
+                      onChange={handleFileSelect}
+                      style={{ display: 'none' }}
+                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp"
+                    />
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    Preferences
-                  </button>
+                    Image (OCR)
+                  </label>
+                  
+                  {ocrProgress && (
+                    <div style={{ 
+                      padding: '8px 12px', 
+                      fontSize: '11px', 
+                      color: '#00ffcc',
+                      borderTop: '1px solid rgba(255,255,255,0.1)',
+                    }}>
+                      {ocrProgress}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
