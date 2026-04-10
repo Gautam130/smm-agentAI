@@ -13,7 +13,7 @@ const suggestions = [
 export default function AskMayaPage() {
   const { messages, isLoading, sendMessage, clearChat } = useMaya();
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string; file?: File } | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
@@ -21,6 +21,24 @@ export default function AskMayaPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Store the object URL for cleanup
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
+  // Create preview URL when file changes
+  useEffect(() => {
+    if (attachedFile?.file) {
+      const url = URL.createObjectURL(attachedFile.file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [attachedFile?.file]);
 
   useEffect(() => {
     // Initialize voice recognition on mount
@@ -180,7 +198,8 @@ export default function AskMayaPage() {
     setAttachedFile({ 
       name: file.name, 
       size: (file.size / 1024).toFixed(1) + ' KB',
-      content: fileContent
+      content: fileContent,
+      file: file
     });
     setShowAttachMenu(false);
   };
@@ -296,7 +315,7 @@ export default function AskMayaPage() {
               maxWidth: '300px',
             }}>
               {/* Show image thumbnail if it's an image */}
-              {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) ? (
+              {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrl ? (
                 <div style={{ 
                   width: '40px', 
                   height: '40px', 
@@ -306,7 +325,7 @@ export default function AskMayaPage() {
                   flexShrink: 0,
                 }}>
                   <img 
-                    src={URL.createObjectURL(new Blob([attachedFile.content || '']))} 
+                    src={previewUrl} 
                     alt="preview"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
