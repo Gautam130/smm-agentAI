@@ -328,27 +328,39 @@ export default function Sidebar() {
             letterSpacing: '1.5px',
             padding: '12px 0 6px',
           }}>Quick Access</div>
-          {navItems[0].items.map((item) => (
+            {navItems[0].items.map((item) => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-              <button style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: '12px',
-                border: 'none',
-                background: isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent',
-                color: isActive(item.href) ? '#00ffcc' : '#a1a1aa',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}>
+              <button 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent',
+                  color: isActive(item.href) ? '#00ffcc' : '#a1a1aa',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(item.href)) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = '#ffffff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent';
+                  e.currentTarget.style.color = isActive(item.href) ? '#00ffcc' : '#a1a1aa';
+                }}
+              >
                 <span style={{ width: '18px', height: '18px', flexShrink: 0, opacity: isActive(item.href) ? 1 : 0.7 }}>
                   {item.icon}
                 </span>
@@ -407,23 +419,35 @@ export default function Sidebar() {
             }}>
               {group.items.map((item) => (
                 <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                  <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    background: isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent',
-                    color: isActive(item.href) ? '#00ffcc' : '#a1a1aa',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    textAlign: 'left',
-                    marginBottom: '2px',
-                  }}>
+                  <button 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      width: '100%',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      background: isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent',
+                      color: isActive(item.href) ? '#00ffcc' : '#a1a1aa',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      textAlign: 'left',
+                      marginBottom: '8px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive(item.href)) {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.color = '#ffffff';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isActive(item.href) ? 'rgba(0,255,204,0.1)' : 'transparent';
+                      e.currentTarget.style.color = isActive(item.href) ? '#00ffcc' : '#a1a1aa';
+                    }}
+                  >
                     <span style={{ width: '18px', height: '18px', flexShrink: 0, opacity: isActive(item.href) ? 1 : 0.7 }}>
                       {item.icon}
                     </span>
