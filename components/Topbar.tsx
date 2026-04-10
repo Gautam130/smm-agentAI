@@ -88,7 +88,7 @@ export default function Topbar() {
             background: '#00ffcc',
             animation: 'pulse-glow 2s infinite',
           }}></span>
-          Maya is online
+          Live Search ON
         </div>
       </div>
     </header>

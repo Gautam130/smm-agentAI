@@ -1055,6 +1055,42 @@ select option {
   animation: pulse-glow 2s infinite;
 }
 
+/* Premium Badges */
+.nbadge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  background: var(--bg-glass);
+  color: var(--text-muted);
+  border: 0.5px solid var(--border-glass);
+}
+
+.nb-green {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.nb-purple {
+  background: var(--accent-purple-dim);
+  color: var(--accent-purple);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.nb-amber {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.nb-live {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
 .hero-h1 {
   font-family: var(--head);
   font-size: 42px;
