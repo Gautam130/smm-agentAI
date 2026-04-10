@@ -83,8 +83,35 @@ export default function AskMayaPage() {
     let fileContent = '';
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isDocx = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc');
+    const isImage = file.type.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(file.name);
     
-    if (isPDF) {
+    if (isImage) {
+      // OCR for images using Tesseract.js
+      try {
+        fileContent = `[Analyzing image: ${file.name}...`;
+        
+        // Dynamic import Tesseract
+        const Tesseract = await import('tesseract.js');
+        
+        const result = await Tesseract.recognize(file, 'eng+hin', {
+          logger: (m) => {
+            if (m.status === 'recognizing text') {
+              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+            }
+          }
+        });
+        
+        const extractedText = result.data.text.trim();
+        if (extractedText) {
+          fileContent = `=== IMAGE TEXT (OCR) ===\n${file.name}\n\n${extractedText.substring(0, 15000)}\n=== END OCR ===`;
+        } else {
+          fileContent = `[Image: ${file.name} - No text detected in image]`;
+        }
+      } catch (err: any) {
+        console.error('OCR error:', err);
+        fileContent = `[Image: ${file.name} - Could not extract text: ${err.message}]`;
+      }
+    } else if (isPDF) {
       try {
         const pdfjs = await import('pdfjs-dist');
         const arrayBuffer = await file.arrayBuffer();
