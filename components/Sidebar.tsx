@@ -375,7 +375,7 @@ export default function Sidebar() {
 
         {/* Collapsible Groups */}
         {navGroups.map((group) => (
-          <div key={group.id} style={{ padding: '0 12px' }}>
+          <div key={group.id} style={{ padding: '0 12px', marginBottom: '8px' }}>
             <button
               onClick={() => toggleGroup(group.id)}
               style={{
