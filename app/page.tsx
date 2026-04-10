@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth';
 
 const quickPrompts = [
   { label: '🎬 Reel caption', prompt: 'Write a catchy Instagram Reel caption for my product' },
@@ -14,10 +15,14 @@ const quickPrompts = [
 ];
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState('');
   const [showResults, setShowResults] = useState(false);
+  
+  const userName = user?.email?.split('@')[0] || '';
+  const greeting = userName ? `Hi ${userName},` : '';
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -74,6 +79,7 @@ export default function HomePage() {
         </div>
         
         <h1 className="hero-h1">
+          {greeting && <span style={{ display: 'block', fontSize: '18px', fontWeight: 500, color: '#00ffcc', marginBottom: '8px' }}>{greeting}</span>}
           What do you want to <span>create today?</span>
         </h1>
         

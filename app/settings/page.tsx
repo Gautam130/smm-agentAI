@@ -1,6 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const DEFAULT_SETTINGS = {
+  outputRefinement: false,
+  deepThink: false,
+  darkMode: true,
+  qualityMode: 'balanced',
+  framework: 'none',
+  expertPrompt: '',
+  userName: '',
+  platform: '',
+  tone: '',
+  setupComplete: false,
+};
 
 export default function SettingsPage() {
   const [outputRefinement, setOutputRefinement] = useState(false);
@@ -10,6 +23,80 @@ export default function SettingsPage() {
   const [framework, setFramework] = useState('none');
   const [expertPrompt, setExpertPrompt] = useState('');
   const [promptSaved, setPromptSaved] = useState('');
+  const [userName, setUserName] = useState('');
+  const [platform, setPlatform] = useState('');
+  const [tone, setTone] = useState('');
+  const [setupComplete, setSetupComplete] = useState(false);
+
+  // Load settings from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('smm_settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        setOutputRefinement(settings.outputRefinement ?? false);
+        setDeepThink(settings.deepThink ?? false);
+        setDarkMode(settings.darkMode ?? true);
+        setQualityMode(settings.qualityMode ?? 'balanced');
+        setFramework(settings.framework ?? 'none');
+        setExpertPrompt(settings.expertPrompt ?? '');
+        setUserName(settings.userName ?? '');
+        setPlatform(settings.platform ?? '');
+        setTone(settings.tone ?? '');
+        setSetupComplete(settings.setupComplete ?? false);
+      }
+    }
+  }, []);
+
+  // Save settings to localStorage
+  const saveSettings = (updates: Partial<typeof DEFAULT_SETTINGS> & { [key: string]: any }) => {
+    if (typeof window !== 'undefined') {
+      const current = {
+        outputRefinement,
+        deepThink,
+        darkMode,
+        qualityMode,
+        framework,
+        expertPrompt,
+        userName,
+        platform,
+        tone,
+        setupComplete,
+      };
+      const newSettings = { ...current, ...updates };
+      localStorage.setItem('smm_settings', JSON.stringify(newSettings));
+    }
+  };
+
+  const handleOutputRefinement = (val: boolean) => {
+    setOutputRefinement(val);
+    saveSettings({ outputRefinement: val });
+  };
+
+  const handleDeepThink = (val: boolean) => {
+    setDeepThink(val);
+    saveSettings({ deepThink: val });
+  };
+
+  const handleUserName = (val: string) => {
+    setUserName(val);
+    saveSettings({ userName: val });
+  };
+
+  const handlePlatform = (val: string) => {
+    setPlatform(val);
+    saveSettings({ platform: val });
+  };
+
+  const handleTone = (val: string) => {
+    setTone(val);
+    saveSettings({ tone: val });
+  };
+
+  const completeSetup = () => {
+    setSetupComplete(true);
+    saveSettings({ setupComplete: true });
+  };
 
   const toggleStyle: React.CSSProperties = {
     position: 'relative',
@@ -60,6 +147,64 @@ export default function SettingsPage() {
     <>
       <h2 className="module-title">⚙️ Settings</h2>
 
+      {/* Maya Setup - First time user */}
+      {!setupComplete && (
+        <div style={{ ...cardStyle, border: '1px solid rgba(0,255,204,0.3)', background: 'rgba(0,255,204,0.03)' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>👋 Welcome! Set up Maya</div>
+          <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '16px' }}>Personalize your AI assistant</div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>What should Maya call you?</label>
+            <input 
+              value={userName}
+              onChange={(e) => handleUserName(e.target.value)}
+              placeholder="e.g. Gautam"
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Your primary platform</label>
+            <select 
+              value={platform}
+              onChange={(e) => handlePlatform(e.target.value)}
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+            >
+              <option value="">Select platform...</option>
+              <option value="Instagram">Instagram</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Twitter/X">Twitter/X</option>
+              <option value="Facebook">Facebook</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Default tone</label>
+            <select 
+              value={tone}
+              onChange={(e) => handleTone(e.target.value)}
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+            >
+              <option value="">Select tone...</option>
+              <option value="Conversational & fun">Conversational & fun</option>
+              <option value="Professional & authoritative">Professional & authoritative</option>
+              <option value="Hinglish (Hindi + English)">Hinglish (Hindi + English)</option>
+              <option value="Inspirational">Inspirational</option>
+              <option value="Bold & edgy">Bold & edgy</option>
+            </select>
+          </div>
+
+          <button 
+            onClick={completeSetup}
+            disabled={!userName}
+            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00ffcc, #a855f7)', border: 'none', borderRadius: '12px', color: '#080808', fontSize: '14px', fontWeight: 600, cursor: userName ? 'pointer' : 'not-allowed', opacity: userName ? 1 : 0.5 }}
+          >
+            Save & Continue →
+          </button>
+        </div>
+      )}
+
       {/* Agent Settings */}
       <div style={cardStyle}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>⚙️ Agent Settings</div>
@@ -71,7 +216,7 @@ export default function SettingsPage() {
             <div style={{ fontSize: '10px', color: '#71717a' }}>Auto-critique and improve outputs</div>
           </div>
           <label style={toggleStyle}>
-            <input type="checkbox" checked={outputRefinement} onChange={(e) => setOutputRefinement(e.target.checked)} style={toggleInputStyle} />
+            <input type="checkbox" checked={outputRefinement} onChange={(e) => handleOutputRefinement(e.target.checked)} style={toggleInputStyle} />
             <span style={toggleSliderStyle(outputRefinement)}></span>
             <span style={toggleThumbStyle(outputRefinement)}></span>
           </label>
@@ -83,7 +228,7 @@ export default function SettingsPage() {
             <div style={{ fontSize: '10px', color: '#71717a' }}>Chain-of-thought reasoning</div>
           </div>
           <label style={toggleStyle}>
-            <input type="checkbox" checked={deepThink} onChange={(e) => setDeepThink(e.target.checked)} style={toggleInputStyle} />
+            <input type="checkbox" checked={deepThink} onChange={(e) => handleDeepThink(e.target.checked)} style={toggleInputStyle} />
             <span style={toggleSliderStyle(deepThink)}></span>
             <span style={toggleThumbStyle(deepThink)}></span>
           </label>

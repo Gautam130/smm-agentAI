@@ -16,15 +16,13 @@ export default function AskMayaPage() {
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [deepResearch, setDeepResearch] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    if (chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-    
+    // Initialize voice recognition on mount
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -50,6 +48,12 @@ export default function AskMayaPage() {
           setIsListening(false);
         };
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -177,8 +181,35 @@ export default function AskMayaPage() {
 
   return (
     <>
-      <div className="panel-header">
+      <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontWeight: 600, fontSize: '14px' }}>Ask Maya</div>
+        <button
+          onClick={() => setDeepResearch(!deepResearch)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            background: deepResearch ? 'rgba(0,255,204,0.15)' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${deepResearch ? 'rgba(0,255,204,0.4)' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: '20px',
+            fontSize: '11px',
+            color: deepResearch ? '#00ffcc' : '#888',
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ fontSize: '12px' }}>🔍</span>
+          Deep Research
+          <span style={{
+            padding: '2px 6px',
+            borderRadius: '10px',
+            fontSize: '9px',
+            background: deepResearch ? '#00ffcc' : '#52525b',
+            color: deepResearch ? '#080808' : '#fff',
+          }}>
+            {deepResearch ? 'ON' : 'OFF'}
+          </span>
+        </button>
       </div>
       
       <div className="notice n-green">Ask your agent anything — it remembers the conversation within this session.</div>
