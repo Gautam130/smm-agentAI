@@ -293,6 +293,7 @@ export default function AskMayaPage() {
               gap: '8px',
               maxHeight: '60px',
               overflow: 'hidden',
+              maxWidth: '300px',
             }}>
               {/* Show image thumbnail if it's an image */}
               {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) ? (
