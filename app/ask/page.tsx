@@ -280,9 +280,73 @@ export default function AskMayaPage() {
           borderTop: 'none',
         }}>
           {attachedFile && (
-            <div className="file-context">
-              <span>{attachedFile.name}</span> — <span>{attachedFile.size}</span> attached
-              <button onClick={() => setAttachedFile(null)} className="file-remove">✕ remove</button>
+            <div style={{ 
+              margin: '6px 0', 
+              padding: '6px 10px', 
+              background: 'rgba(0,212,170,0.08)', 
+              border: '1px solid rgba(0,212,170,0.2)', 
+              borderRadius: '8px', 
+              fontSize: '12px', 
+              color: '#00ffcc',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              maxHeight: '60px',
+              overflow: 'hidden',
+            }}>
+              {/* Show image thumbnail if it's an image */}
+              {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) ? (
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '6px', 
+                  overflow: 'hidden',
+                  background: '#111',
+                  flexShrink: 0,
+                }}>
+                  <img 
+                    src={URL.createObjectURL(new Blob([attachedFile.content || '']))} 
+                    alt="preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              ) : (
+                <div style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  borderRadius: '6px', 
+                  background: 'rgba(0,212,170,0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+              )}
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {attachedFile.name}
+                </div>
+                <div style={{ fontSize: '10px', opacity: 0.7 }}>{attachedFile.size}</div>
+              </div>
+              <button 
+                onClick={() => setAttachedFile(null)} 
+                style={{ 
+                  background: 'transparent', 
+                  border: 'none', 
+                  color: '#00ffcc', 
+                  cursor: 'pointer',
+                  padding: '4px',
+                  fontSize: '14px',
+                }}
+              >
+                ✕
+              </button>
             </div>
           )}
 
