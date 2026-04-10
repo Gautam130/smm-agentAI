@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  // Disable default loading indicator - use instant navigation
+  // loading: null means no loading bar
 };
 
 export default nextConfig;
