@@ -330,7 +330,7 @@ export function useMaya() {
       }
     }
     
-    const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name occasionally in a natural, friendly way.` : '';
+    const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
     let systemContent = CHAT_SYS + modeInstruction + userContext;
 
     // Add live search data to system prompt
