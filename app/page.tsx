@@ -20,8 +20,18 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [userName, setUserName] = useState('');
   
-  const userName = user?.email?.split('@')[0] || '';
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('smm_settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        setUserName(settings.userName || '');
+      }
+    }
+  }, []);
+  
   const greeting = userName ? `Hi ${userName},` : '';
 
   const handleSearch = async () => {

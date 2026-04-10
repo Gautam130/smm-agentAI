@@ -319,7 +319,19 @@ export function useMaya() {
 
     // Start chat with search data
     const modeInstruction = getModeInstruction(intent.mode);
-    let systemContent = CHAT_SYS + modeInstruction;
+    
+    // Get user name from settings
+    let userName = '';
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('smm_settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        userName = settings.userName || '';
+      }
+    }
+    
+    const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name occasionally in a natural, friendly way.` : '';
+    let systemContent = CHAT_SYS + modeInstruction + userContext;
 
     // Add live search data to system prompt
     if (liveData) {

@@ -16,7 +16,6 @@ export default function AskMayaPage() {
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string } | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [deepResearch, setDeepResearch] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -181,35 +180,8 @@ export default function AskMayaPage() {
 
   return (
     <>
-      <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="panel-header">
         <div style={{ fontWeight: 600, fontSize: '14px' }}>Ask Maya</div>
-        <button
-          onClick={() => setDeepResearch(!deepResearch)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            background: deepResearch ? 'rgba(0,255,204,0.15)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${deepResearch ? 'rgba(0,255,204,0.4)' : 'rgba(255,255,255,0.1)'}`,
-            borderRadius: '20px',
-            fontSize: '11px',
-            color: deepResearch ? '#00ffcc' : '#888',
-            cursor: 'pointer',
-          }}
-        >
-          <span style={{ fontSize: '12px' }}>🔍</span>
-          Deep Research
-          <span style={{
-            padding: '2px 6px',
-            borderRadius: '10px',
-            fontSize: '9px',
-            background: deepResearch ? '#00ffcc' : '#52525b',
-            color: deepResearch ? '#080808' : '#fff',
-          }}>
-            {deepResearch ? 'ON' : 'OFF'}
-          </span>
-        </button>
       </div>
       
       <div className="notice n-green">Ask your agent anything — it remembers the conversation within this session.</div>
@@ -234,6 +206,16 @@ export default function AskMayaPage() {
                 {msg.role === 'user' ? 'You' : 'M'}
               </div>
               <div className={`chat-bubble ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'} ${msg.streaming && !msg.text ? 'typing' : ''}`}>
+                {msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && (
+                  <div style={{ marginBottom: '8px' }}>
+                    {msg.attachments.map((att: any, idx: number) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        {att.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
                 {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
                 <div className="chat-time">{getTime()}</div>
