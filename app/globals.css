@@ -296,7 +296,7 @@ button {
   font-weight: 700;
   font-family: var(--head);
   cursor: pointer;
-  transition: all var(--duration-slow) var(--ease-premium);
+  transition: transform 0.2s, box-shadow 0.2s;
   margin-top: 10px;
   letter-spacing: -0.2px;
   box-shadow: 0 4px 20px var(--accent-glow);
