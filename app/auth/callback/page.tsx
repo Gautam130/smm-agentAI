@@ -1,36 +1,50 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
+import { getSupabase } from '@/lib/supabase';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      // Successfully authenticated, redirect to home
-      router.push('/');
-    } else {
-      // No user, redirect to login
-      router.push('/login');
-    }
-  }, [user, router]);
+    const handleCallback = async () => {
+      const supabase = getSupabase();
+      
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session) {
+        router.push('/');
+      } else if (error) {
+        console.error('Auth error:', error);
+        router.push('/login?error=auth_failed');
+      } else {
+        router.push('/login');
+      }
+      setLoading(false);
+    };
 
-  return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      height: '100vh',
-      background: '#080808',
-      color: '#fff'
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔄</div>
-        <div>Signing you in...</div>
+    handleCallback();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        background: '#080808',
+        color: '#fff'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔄</div>
+          <div>Signing you in...</div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
