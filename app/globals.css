@@ -305,8 +305,7 @@ button {
 }
 
 .run-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px var(--accent-glow), 0 0 40px var(--accent-glow);
+  box-shadow: 0 6px 20px var(--accent-glow);
 }
 
 .run-btn:disabled {
@@ -383,8 +382,7 @@ input, textarea, select {
   font-family: var(--font);
   color: var(--text-primary);
   outline: none;
-  transition: all var(--duration-fast) var(--ease-premium);
-  backdrop-filter: blur(10px);
+  transition: border-color 0.15s;
   position: relative;
   z-index: 1;
 }
@@ -395,7 +393,7 @@ input:hover, textarea:hover, select:hover {
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(0, 255, 204, 0.05);
+  box-shadow: 0 0 15px var(--accent-glow);
 }
 
 select option {
