@@ -48,7 +48,7 @@ export default function ClientPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {clients.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#71717a', padding: '40px' }}>
+          <div style={{ textAlign: 'center', color: '#71717a', padding: '40px', background: '#111', borderRadius: '12px', border: '1px solid #333' }}>
             No clients yet. Add your first client above.
           </div>
         ) : (

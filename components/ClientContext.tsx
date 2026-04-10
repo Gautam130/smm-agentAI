@@ -23,10 +23,7 @@ interface ClientContextType {
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 export function ClientProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useState<Client[]>([
-    { id: 1, name: 'FreshBrew Teas', platform: 'Instagram', niche: 'Food & Beverage', posts: 45, status: 'active' },
-    { id: 2, name: 'FitLife Gym', platform: 'LinkedIn', niche: 'Fitness', posts: 23, status: 'active' },
-  ]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [activeClient, setActiveClient] = useState<Client | null>(null);
 
   const addClient = (name: string) => {
