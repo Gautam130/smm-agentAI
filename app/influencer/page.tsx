@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type TabType = 'find' | 'pitch' | 'brief' | 'track' | 'shortlist';
+type TabType = 'find' | 'pitch' | 'dmauto' | 'brief' | 'track' | 'shortlist';
 
 export default function InfluencerPage() {
   const [activeTab, setActiveTab] = useState<TabType>('find');
@@ -75,6 +75,7 @@ export default function InfluencerPage() {
   const tabs = [
     { id: 'find', label: 'Find influencers' },
     { id: 'pitch', label: 'Pitch DMs' },
+    { id: 'dmauto', label: 'Auto DM' },
     { id: 'brief', label: 'Creator brief' },
     { id: 'track', label: 'Campaign tracker' },
     { id: 'shortlist', label: 'My Shortlist' },
@@ -182,6 +183,36 @@ export default function InfluencerPage() {
           <button onClick={runPitch} disabled={loading || !pitchBrand} className="run-btn btn-purple">
             {loading ? 'Generating...' : 'Write pitch DMs ✦'}
           </button>
+        </>
+      )}
+
+      {activeTab === 'dmauto' && (
+        <>
+          <div className="notice mb-4" style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', padding: '16px', borderRadius: '12px' }}>
+            🤖 <strong>Auto DM System</strong> — Automatically send personalized DMs to influencers from your shortlist.
+          </div>
+          <div className="g2 mb-4">
+            <div className="field">
+              <label className="lbl">Campaign name</label>
+              <input placeholder="e.g. Diwali influencer outreach" />
+            </div>
+            <div className="field">
+              <label className="lbl">DM Template</label>
+              <select>
+                <option>Welcome - Free product</option>
+                <option>Collaboration offer</option>
+                <option>Follow up</option>
+                <option>Custom</option>
+              </select>
+            </div>
+          </div>
+          <div className="field mb-4">
+            <label className="lbl">Selected influencers (from Shortlist)</label>
+            <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No influencers in shortlist. Add influencers from "Find influencers" tab.
+            </div>
+          </div>
+          <button className="run-btn btn-purple">Start Auto DM ✦</button>
         </>
       )}
 
