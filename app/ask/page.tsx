@@ -298,90 +298,58 @@ export default function AskMayaPage() {
           border: '1px solid var(--border-glass)',
           borderTop: 'none',
         }}>
-          {attachedFile && (
-            <div style={{ 
-              margin: '6px 0', 
-              padding: '6px 10px', 
-              background: 'rgba(0,212,170,0.08)', 
-              border: '1px solid rgba(0,212,170,0.2)', 
-              borderRadius: '8px', 
-              fontSize: '12px', 
-              color: '#00ffcc',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
-              maxHeight: '60px',
-              overflow: 'hidden',
-              maxWidth: '300px',
-            }}>
-              {/* Show image thumbnail if it's an image */}
-              {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrl ? (
-                <div style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '6px', 
-                  overflow: 'hidden',
-                  background: '#111',
-                  flexShrink: 0,
-                }}>
-                  <img 
-                    src={previewUrl} 
-                    alt="preview"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                </div>
-              ) : (
-                <div style={{ 
-                  width: '32px', 
-                  height: '32px', 
-                  borderRadius: '6px', 
-                  background: 'rgba(0,212,170,0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                  </svg>
-                </div>
-              )}
-              <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {attachedFile.name}
-                </div>
-                <div style={{ fontSize: '10px', opacity: 0.7 }}>{attachedFile.size}</div>
-              </div>
-              <button 
-                onClick={() => setAttachedFile(null)} 
-                style={{ 
-                  background: 'transparent', 
-                  border: 'none', 
-                  color: '#00ffcc', 
-                  cursor: 'pointer',
-                  padding: '4px',
-                  fontSize: '14px',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
+          {/* NO SEPARATE BOX - attachment now inline with input */}
 
-          <div className="chat-input-row" style={{ border: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}>
-            <div style={{ position: 'relative' }}>
+          <div className="chat-input-row" style={{ border: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', flexWrap: 'wrap', gap: '8px', padding: '12px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button 
                 className="chat-attach-btn" 
                 title="Add"
                 onClick={() => setShowAttachMenu(!showAttachMenu)}
+                style={{ flexShrink: 0 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </button>
+              
+              {/* Inline attachment preview - ChatGPT style */}
+              {attachedFile && (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  padding: '4px 8px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  maxWidth: '200px',
+                }}>
+                  {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrl ? (
+                    <img 
+                      src={previewUrl} 
+                      alt="preview"
+                      style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{ flexShrink: 0 }}>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                  )}
+                  <span style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {attachedFile.name.length > 15 ? attachedFile.name.slice(0,15) + '...' : attachedFile.name}
+                  </span>
+                  <button 
+                    onClick={() => setAttachedFile(null)} 
+                    style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '2px', fontSize: '12px' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              
               {showAttachMenu && (
                 <div className="attach-dropdown">
                   {/* Attachment - Document option */}
@@ -442,6 +410,7 @@ export default function AskMayaPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything... e.g. I run a chai brand in Jaipur targeting 18-30 year olds. What should I post this week?"
+              style={{ flex: 1, minWidth: '100px' }}
               rows={2}
             />
             <button 
