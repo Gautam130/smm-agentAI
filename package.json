@@ -1,5 +1,5 @@
 {
-  "name": "smm-agent-next",
+  "name": "smm-agent-ai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
+    "mammoth": "^1.12.0",
     "next": "16.2.3",
+    "pdfjs-dist": "^5.6.205",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

@@ -1,10 +1,13 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 const titles: Record<string, string> = {
   '/': 'Home',
   '/ask': 'Ask Maya',
+  '/login': 'Login',
   '/client': 'Client',
   '/content': 'Content',
   '/visual': 'Visual Direction',
@@ -35,8 +38,16 @@ const titles: Record<string, string> = {
 
 export default function Topbar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  
   const title = titles[pathname] || 'SMM Agent';
   const sub = pathname === '/' ? 'Your AI social media manager' : '';
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <header style={{
@@ -69,6 +80,38 @@ export default function Topbar() {
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {user && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 12px',
+              background: 'rgba(168, 85, 247, 0.1)',
+              border: '0.5px solid rgba(168, 85, 247, 0.3)',
+              borderRadius: '20px',
+              fontSize: '12px',
+              color: '#a855f7',
+              fontWeight: 500,
+            }}>
+              {user.email?.split('@')[0]}
+            </div>
+            <button
+              onClick={handleSignOut}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                color: '#888',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              Sign Out
+            </button>
+          </>
+        )}
         <div style={{
           display: 'flex',
           alignItems: 'center',
