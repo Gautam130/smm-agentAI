@@ -129,11 +129,11 @@ export default function Sidebar() {
   const [newClientName, setNewClientName] = useState('');
   
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    create: true,
-    manage: true,
-    strategy: true,
-    analytics: true,
-    brand: true,
+    create: false,
+    manage: false,
+    strategy: false,
+    analytics: false,
+    brand: false,
   });
 
   const toggleGroup = (id: string) => {
