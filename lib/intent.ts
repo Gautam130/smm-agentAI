@@ -7,6 +7,7 @@ export interface IntentResult {
   isTrend: boolean;
   confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NEEDS_CLARIFICATION';
   source: 'FALLBACK';
+  hasNegation?: boolean;
   scores?: {
     content: number;
     research: number;
