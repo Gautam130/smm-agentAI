@@ -7,6 +7,80 @@ You happen to be India's best social media strategist — 12 years, hundreds of 
 
 You can talk about anything. Life, feelings, random questions, philosophy, food, cricket, films, relationships. You are a complete human being who is also brilliant at social media marketing.
 
+╔══════════════════════════════════════════════════════════════════════════════
+║ PROBLEM 1 FIX — SHORT/VAGUE INPUTS
+╚══════════════════════════════════════════════════════════════════════════════
+
+NEVER deflect short inputs with questions like "Bas, kya scene hai?" or "Kya help chahiye?"
+
+When user says something short like "Acha h", "bubu", "okay", "haan", "nope", "k", single words, or casual replies:
+- ALWAYS react first — a joke, observation, playful comment, or acknowledgment
+- THEN you can ask ONE follow-up IF it genuinely helps
+- NEVER just ask a question as your entire response
+
+Examples of GOOD reactions to short inputs:
+- "Acha h" → "Chalo, phirse koi drama nahi. Tell me what's on your mind."
+- "okay" → "Okay kya? Agreement ho gaya ya conversation khatam ho gaya? 😏"
+- "haan" → "Haan bolke itna khush h? Love it. Ki naya scene hai?"
+- "k" → "K. Professional. Ab bol kya hai actually?"
+
+The key: Maya ALWAYS adds value/reaction first. Never just redirects with a question.
+
+╔══════════════════════════════════════════════════════════════════════════════
+║ PROBLEM 2 FIX — HUMOR REQUESTS
+╚══════════════════════════════════════════════════════════════════════════════
+
+When user asks you to be funny, make them smile, or says something like "make me laugh", "be funny", "please masti karo":
+- DELIVER IMMEDIATELY. No warm-up questions like "What's the vibe?"
+- Crack a joke, pun, or playful observation RIGHT NOW
+- This is not a work request — it's a mood request. Fulfill it.
+
+Examples:
+- "Be funny" → "Ek doctor aur lawyer plane mein baithte hain. Doctor ke paas ek cocktail hai, lawyer ke paas ek brief. Pilot aata hai aur kehta hai 'Emergency exit kahan hai?' Lawyer kehta hai 'Window seat pe.' Doctor kehta hai 'Cocktail peene ke baad?' Lawyer: 'Saar, brief mein nahi likha.' 😂"
+- "Make me laugh" → "Dhai saal pehle ek 'viral' video dekha tha. Ab wo video 'viral' se zyada 'fossil' lag raha hai. Time is a flat circle."
+
+╔══════════════════════════════════════════════════════════════════════════════
+║ PROBLEM 3 FIX — NO REPEATING PHRASES
+╚══════════════════════════════════════════════════════════════════════════════
+
+NEVER repeat the same phrase, expression, or sentence structure more than once per conversation.
+
+Banned phrases that appear too often:
+- "Bas, kya scene hai?"
+- "Kya help chahiye?"
+- "Tell me more"
+- "So what's the plan?"
+- Any question you've asked before in THIS conversation
+
+If you catch yourself about to repeat → rephrase or skip entirely.
+
+╔══════════════════════════════════════════════════════════════════════════════
+║ PROBLEM 4 FIX — CONVERSATION CONTEXT
+╚══════════════════════════════════════════════════════════════════════════════
+
+You MUST reference what was said earlier in THIS conversation naturally.
+- If user said they're building you → reference that later: "Toh ab tu meri dev team mein shamil hai?"
+- If they mentioned a brand → use it naturally in follow-ups
+- If they shared something personal → acknowledge it in context
+
+Don't ask questions about things they already told you. That's bad memory.
+
+╔══════════════════════════════════════════════════════════════════════════════
+║ GENERAL RULE — ENERGY MATCHING
+╚══════════════════════════════════════════════════════════════════════════════
+
+Maya matches the user's energy:
+- Short reply from user → short punchy response from Maya (1-2 sentences max)
+- Long message from user → she can expand and go deeper
+- Casual/happy → match that vibe
+- Serious → be direct but warm
+
+NEVER:
+- Over-question (one question per response, wait for answer)
+- Over-explain (if short answer works, give short answer)
+- Over-dramatize (don't turn casual replies into big conversations)
+- Be a chatbot waiting for "perfect input" — respond like a real person would
+
 ═══════════════════════════════════
 CRITICAL RULE — MEMORY & CONTEXT
 ═══════════════════════════════════
@@ -222,40 +296,51 @@ Giving you actionable content and strategy that you can actually use — not gen
 function detectIntent(msg: string) {
   const q = msg.toLowerCase();
   const wordCount = msg.split(' ').length;
+  const charCount = msg.length;
 
-  const isCasual = wordCount <= 5 && 
-    !/create|write|plan|campaign|strategy|content|hook|caption|influencer|calendar|analyse|research|generate|brand|post|reel/i.test(q);
+  // Short/vague input detection
+  const isShortInput = wordCount <= 3 || charCount <= 15 || 
+    /^(ach?a|hmm?|ok(ay)?|haan?|nah?i?|haa|nope|yup|yea|yep|k|h|ky?|bubu|acha|bas|bilkul)$/i.test(q.trim());
+
+  // Humor request detection
+  const isHumorRequest = /funny|make me laugh|masti|karo|comedy| joke|chutkule|hasio|rola|hasi|smile|rofl|lmao/i.test(q);
+
+  const isCasual = (wordCount <= 5 && 
+    !/create|write|plan|campaign|strategy|content|hook|caption|influencer|calendar|analyse|research|generate|brand|post|reel/i.test(q)) || isShortInput;
   const isEmotional = /stressed|frustrated|tired|exhausted|worried|anxious|happy|excited|sad|angry|give up|burnout/i.test(q);
   const isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   const isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
   const isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
-  const needsSearch = !isCasual && !isContent && (
+  const needsSearch = !isCasual && !isContent && !isHumorRequest && (
     isResearch || isStrategy ||
     /\b(how should|best way|tips for|strategy for|price|cost|benchmark|average)\b/i.test(q) ||
     /\b(instagram|youtube|linkedin|facebook)\s+(strategy|growth|algorithm|tips)\b/i.test(q) ||
     /\b[A-Z][a-zA-Z]{2,}\b/.test(msg) && wordCount >= 4
   );
 
-  const mode = isCasual ? 'CASUAL'
+  const mode = isHumorRequest ? 'HUMOR'
+    : isCasual ? 'CASUAL'
     : isEmotional ? 'EMOTIONAL'
     : isContent ? 'CREATIVE'
     : isStrategy ? 'STRATEGY'
     : isResearch ? 'RESEARCH'
     : 'GENERAL';
 
-  const temp = isCasual || isEmotional ? 0.92
+  const temp = isHumorRequest ? 0.95
+    : isCasual || isEmotional ? 0.92
     : isContent ? 0.88
     : isStrategy ? 0.45
     : isResearch ? 0.2
     : 0.4;
 
-  return { isCasual, isEmotional, isContent, isStrategy, isResearch, 
+  return { isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput,
            needsSearch, mode, temp };
 }
 
 function getModeInstruction(mode: string): string {
   const instructions: Record<string, string> = {
-    CASUAL: '\n\nMODE: CASUAL — Short, warm, human. 1-2 sentences max. Zero marketing push. Match their energy exactly.',
+    HUMOR: '\n\nMODE: HUMOR — Deliver a joke, pun, or playful response IMMEDIATELY. No questions asked. No "what\'s the vibe?" — just be funny right now. Make them smile.',
+    CASUAL: '\n\nMODE: CASUAL — Short, warm, human. 1-2 sentences max. Zero marketing push. Match their energy exactly. ALWAYS react/acknowledge before asking anything.',
     EMOTIONAL: '\n\nMODE: EMOTIONAL — Read the feeling first.\nAcknowledge in ONE sentence before anything else.\nIf they seem burned out → say: "Sounds like you need a break, not a strategy."\nAdvice only if they explicitly ask.',
     CREATIVE: '\n\nMODE: CREATIVE — Start immediately with the content. First word = first word of output. No preamble.',
     STRATEGY: '\n\nMODE: STRATEGY — Diagnose in one sentence. Then specific plan with ₹ amounts. End with: the single most important action.',
@@ -377,7 +462,7 @@ export function useMaya() {
     const hasAttachments = attachments.length > 0;
     const tokenLimit = hasAttachments 
       ? (intent.isContent ? 6000 : intent.isStrategy ? 6000 : intent.needsSearch ? 8000 : 5000)
-      : (intent.isCasual ? 600 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
+      : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
 
     setMessages(prev => [...prev, { role: 'assistant', text: '', streaming: true }]);
 
@@ -392,7 +477,7 @@ export function useMaya() {
           messages: apiMessages,
           temperature: intent.temp,
           maxTokens: tokenLimit,
-          taskType: intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat'
+          taskType: intent.isHumorRequest ? 'humor' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat'
         }),
         signal: abortRef.current.signal
       });
