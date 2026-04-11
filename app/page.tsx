@@ -67,6 +67,10 @@ export default function HomePage() {
 
   const greeting = userName ? `Hi ${userName},` : '';
 
+  const cleanText = (text: string) => {
+    return text.replace(/(━+[^━]+━+)/g, '\n\n$1\n\n');
+  };
+
   const performLiveSearch = async (searchQuery: string): Promise<string> => {
     if (!liveSearchEnabled) return '';
     try {
@@ -360,7 +364,7 @@ export default function HomePage() {
             {streamingText ? (
               <div className="markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {streamingText}
+                  {cleanText(streamingText)}
                 </ReactMarkdown>
                 {loading && <span className="blink-cursor">▊</span>}
               </div>
