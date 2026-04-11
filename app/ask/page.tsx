@@ -22,6 +22,7 @@ export default function AskMayaPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const plusBtnRef = useRef<HTMLButtonElement>(null);
 
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
@@ -76,6 +77,23 @@ export default function AskMayaPage() {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showAttachMenu) return;
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const dropdown = document.querySelector('.attach-dropdown');
+      
+      if (dropdown && !dropdown.contains(target) && plusBtnRef.current && !plusBtnRef.current.contains(target)) {
+        setShowAttachMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showAttachMenu]);
 
   const handleSend = () => {
     if (!input.trim() && attachedFiles.length === 0) return;
@@ -302,6 +320,7 @@ export default function AskMayaPage() {
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
+        background: 'transparent',
       }}>
         {/* Messages area - scrolls, takes available space */}
         <div ref={chatRef} style={{ 
@@ -379,6 +398,7 @@ export default function AskMayaPage() {
           <div className="meta-input-bottom">
             {/* + Button - left */}
             <button 
+              ref={plusBtnRef}
               className="meta-plus-btn"
               title="Add"
               onClick={() => setShowAttachMenu(!showAttachMenu)}
