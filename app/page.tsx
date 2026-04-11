@@ -346,6 +346,7 @@ e.g. Find yoga influencers in Delhi for my brand"
               </div>
             ) : null}
           </div>
+          </div>
         </div>
       )}
       
