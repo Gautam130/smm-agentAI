@@ -18,6 +18,7 @@ export default function AskMayaPage() {
   const [isListening, setIsListening] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -75,6 +76,13 @@ export default function AskMayaPage() {
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -338,8 +346,8 @@ export default function AskMayaPage() {
               Ask Maya anything about your social media strategy
             </div>
           ) : (
-            messages.map((msg, i) => (
-              <div key={i} className={`chat-msg ${msg.role}`}>
+             messages.map((msg, i) => (
+               <div key={i} className={`chat-msg ${msg.role}`} ref={i === messages.length - 1 ? messagesEndRef : undefined}>
                 <div className={`chat-avatar ${msg.role === 'user' ? 'avatar-user' : 'avatar-ai'}`}>
                   {msg.role === 'user' ? 'You' : 'M'}
                 </div>
@@ -363,8 +371,8 @@ export default function AskMayaPage() {
           )}
         </div>
 
-        {/* Meta AI style input - flat dark, exact replica */}
-        <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
+         {/* Meta AI style input - flat dark, exact replica */}
+         <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`} style={{ flexShrink: 0 }}>
           {/* Attachment previews */}
           {attachedFiles.length > 0 && (
             <div className="meta-attachments">
