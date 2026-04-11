@@ -6,85 +6,13 @@ export interface IntentResult {
   isStrategy: boolean;
   isTrend: boolean;
   confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NEEDS_CLARIFICATION';
-  source: 'LLM' | 'FALLBACK';
+  source: 'FALLBACK';
   scores?: {
     content: number;
     research: number;
     strategy: number;
     trend: number;
   };
-}
-
-async function detectIntentLLM(query: string): Promise<IntentResult | null> {
-  const intentPrompt = `Classify this user query into ONE category.
-
-QUERY: "${query}"
-
-CATEGORIES:
-- CONTENT: Wants content created (captions, hooks, posts, scripts, reels, stories, threads)
-- RESEARCH: Wants information, analysis, insights about a topic, brand, market, competitor
-- STRATEGY: Wants strategic advice, planning, audits, growth diagnosis, positioning
-- TREND: Wants to know what's currently trending, hot, working now
-- CLARIFY: Unclear, ambiguous, or too vague to classify
-
-Respond with ONLY the category name, nothing else.`;
-
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: 'You are an intent classifier. Be precise.' },
-          { role: 'user', content: intentPrompt }
-        ],
-        temperature: 0.3,
-        maxTokens: 50,
-        taskType: 'intent'
-      })
-    });
-
-    if (!res.ok) return null;
-
-    const reader = res.body?.getReader();
-    if (!reader) return null;
-
-    const decoder = new TextDecoder();
-    let text = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.choices?.[0]?.delta?.content) {
-              text += parsed.choices[0].delta.content;
-            }
-          } catch {}
-        }
-      }
-    }
-
-    const intent = text.trim().toUpperCase();
-
-    if (intent === 'CONTENT') return { isContent: true, isResearch: false, isStrategy: false, isTrend: false, confidence: 'HIGH', source: 'LLM' };
-    if (intent === 'RESEARCH') return { isContent: false, isResearch: true, isStrategy: false, isTrend: false, confidence: 'HIGH', source: 'LLM' };
-    if (intent === 'STRATEGY') return { isContent: false, isResearch: false, isStrategy: true, isTrend: false, confidence: 'HIGH', source: 'LLM' };
-    if (intent === 'TREND') return { isContent: false, isResearch: false, isStrategy: false, isTrend: true, confidence: 'HIGH', source: 'LLM' };
-    if (intent === 'CLARIFY') return { isContent: false, isResearch: false, isStrategy: false, isTrend: false, confidence: 'NEEDS_CLARIFICATION', source: 'LLM' };
-  } catch (e) {
-    console.warn('LLM intent failed, using fallback:', e);
-  }
-
-  return null;
 }
 
 function detectIntentFallback(query: string): IntentResult {
@@ -134,11 +62,7 @@ function detectIntentFallback(query: string): IntentResult {
   };
 }
 
-export async function detectIntent(query: string): Promise<IntentResult> {
-  const llmResult = await detectIntentLLM(query);
-  if (llmResult) {
-    return llmResult;
-  }
+export function detectIntent(query: string): IntentResult {
   return detectIntentFallback(query);
 }
 

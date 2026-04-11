@@ -1,24 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { detectIntent, getTemperature, type IntentResult } from '@/lib/intent';
-import { classifyQuery, getQueryTier, getTierParams, type ClassificationResult, type QueryTier } from '@/lib/classify';
+import { classifyQuery, getQueryTier, getTierParams, type QueryTier } from '@/lib/classify';
 import { buildPrompt, CORE_IDENTITY, getBrandContext } from '@/lib/prompt';
-
-interface Section {
-  emoji: string;
-  title: string;
-  content: string;
-}
-
-interface StructuredResponse {
-  intent: string;
-  confidence: string;
-  warnings: string[];
-  sections: Section[];
-  feedback: boolean;
-}
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface SearchResult {
   title: string;
@@ -42,13 +30,14 @@ export default function HomePage() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [processingSteps, setProcessingSteps] = useState<string>('');
-  const [rawResponse, setRawResponse] = useState('');
-  const [structuredData, setStructuredData] = useState<StructuredResponse | null>(null);
+  const [streamingText, setStreamingText] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [userName, setUserName] = useState('');
   const [intentResult, setIntentResult] = useState<IntentResult | null>(null);
-  
+  const [deepResearch, setDeepResearch] = useState(false);
+  const [liveSearchEnabled, setLiveSearchEnabled] = useState(true);
+  const outputRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('smm_settings');
@@ -58,36 +47,22 @@ export default function HomePage() {
       }
     }
   }, []);
-  
+
   const greeting = userName ? `Hi ${userName},` : '';
 
-  const parseStructuredResponse = (text: string): StructuredResponse | null => {
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.sections && Array.isArray(parsed.sections)) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Parse error:', e);
-    }
-    return null;
-  };
-
   const performLiveSearch = async (searchQuery: string): Promise<string> => {
+    if (!liveSearchEnabled) return '';
     try {
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, maxResults: 8 })
+        body: JSON.stringify({ query: searchQuery, maxResults: deepResearch ? 12 : 8 })
       });
       if (res.ok) {
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           return data.results
-            .slice(0, 5)
+            .slice(0, deepResearch ? 8 : 5)
             .map((r: SearchResult) => `- ${r.title}: ${r.snippet || ''} (source: ${r.domain})`)
             .join('\n');
         }
@@ -101,33 +76,23 @@ export default function HomePage() {
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
-    setRawResponse('');
-    setStructuredData(null);
+    setStreamingText('');
     setIntentResult(null);
     setShowResults(true);
-    setProcessingSteps('Detecting intent...');
 
     try {
-      // Step 1: Detect intent (LLM + fallback)
-      const intent = await detectIntent(query);
+      const intent = detectIntent(query);
       setIntentResult(intent);
-      setProcessingSteps('Classifying query...');
 
-      // Step 2: Classify query
       const classification = classifyQuery(query);
-      const tier = getQueryTier(query);
+      const tier = deepResearch ? 3 : getQueryTier(query);
       const tierParams = getTierParams(tier);
 
-      setProcessingSteps(`Processing (Tier ${tier})...`);
-
-      // Step 3: Live search if needed (Tier > 1 and useLiveSearch)
       let liveContext = '';
-      if (classification.useLiveSearch && tier > 1) {
+      if (liveSearchEnabled && classification.useLiveSearch) {
         liveContext = await performLiveSearch(query);
       }
 
-      // Step 4: Build prompt
-      setProcessingSteps('Building prompt...');
       const brandCtx = getBrandContext();
       const finalPrompt = buildPrompt({
         query,
@@ -137,17 +102,13 @@ export default function HomePage() {
         brandCtx
       });
 
-      // Step 5: Determine taskType based on intent
       let taskType = 'general';
       if (intent.isContent) taskType = 'content';
       else if (intent.isStrategy) taskType = 'strategy';
-      else if (intent.isResearch) taskType = 'research';
-      else if (intent.isTrend) taskType = 'research';
+      else if (intent.isResearch || intent.isTrend) taskType = 'research';
 
       const temperature = getTemperature(intent);
 
-      // Step 6: Call API with assembled prompt
-      setProcessingSteps('Getting response...');
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,20 +143,16 @@ export default function HomePage() {
               const parsed = JSON.parse(data);
               if (parsed.choices?.[0]?.delta?.content) {
                 text += parsed.choices[0].delta.content;
+                setStreamingText(text);
               }
             } catch {}
           }
         }
       }
-      
-      setRawResponse(text);
-      const structured = parseStructuredResponse(text);
-      setStructuredData(structured);
     } catch (e: any) {
-      setRawResponse(`Error: ${e.message}`);
+      setStreamingText(`Error: ${e.message}`);
     }
     setLoading(false);
-    setProcessingSteps('');
   };
 
   const handleQuickPrompt = (prompt: string) => {
@@ -204,44 +161,22 @@ export default function HomePage() {
 
   const handleNewQuery = () => {
     setQuery('');
-    setRawResponse('');
-    setStructuredData(null);
+    setStreamingText('');
     setIntentResult(null);
     setShowResults(false);
-    setProcessingSteps('');
   };
 
   const handleCopy = () => {
-    const textToCopy = structuredData 
-      ? structuredData.sections.map(s => `${s.emoji} ${s.title}\n${s.content}`).join('\n\n')
-      : rawResponse;
-    navigator.clipboard.writeText(textToCopy);
-  };
-
-  const renderSectionContent = (content: string) => {
-    const lines = content.split('\n');
-    return lines.map((line, i) => {
-      if (line.startsWith('* ')) {
-        return <div key={i} className="section-bullet">• {line.slice(2)}</div>;
-      }
-      if (line.startsWith('The gap:') || line.startsWith('The uncomfortable truth:')) {
-        return <div key={i} className="section-subhead">{line}</div>;
-      }
-      if (line.startsWith('This week:') || line.startsWith('In 30 days:') || line.startsWith('Longer bet:') || line.startsWith('⚡ Start')) {
-        return <div key={i} className="section-timeline">{line}</div>;
-      }
-      if (line.trim() === '') return null;
-      return <div key={i}>{line}</div>;
-    });
+    navigator.clipboard.writeText(streamingText);
   };
 
   return (
-    <div className="content-area" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="content-area" style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* Hero Section */}
       <div className="home-hero" style={{ textAlign: 'center' }}>
         <div className="hero-eyebrow">
           <span className="hero-eyebrow-dot"></span>
-          Live web intelligence · 2026
+          AI Social Media Agent · 2026
         </div>
         
         <h1 className="hero-h1">
@@ -262,6 +197,7 @@ export default function HomePage() {
 e.g. Write 5 Instagram Reels hooks for my skincare brand
 e.g. Find yoga influencers in Delhi for my brand" 
             rows={3}
+            style={{ width: '100%', paddingRight: '50px' }}
           />
           <button 
             id="agent-send-btn"
@@ -275,6 +211,28 @@ e.g. Find yoga influencers in Delhi for my brand"
           </button>
         </div>
         
+        {/* Deep Research Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <input 
+              type="checkbox" 
+              checked={deepResearch} 
+              onChange={(e) => setDeepResearch(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
+            />
+            🔬 Deep Research (more thorough, uses live data)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <input 
+              type="checkbox" 
+              checked={liveSearchEnabled} 
+              onChange={(e) => setLiveSearchEnabled(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
+            />
+            🌐 Live Search
+          </label>
+        </div>
+        
         {/* Quick Prompts */}
         <div id="quick-prompts" style={{ marginBottom: '8px' }}>
           {quickPrompts.map((qp, i) => (
@@ -284,19 +242,20 @@ e.g. Find yoga influencers in Delhi for my brand"
           ))}
         </div>
         
-        <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line · <b>Ctrl+Enter</b> works too</div>
+        <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
       </div>
       
-      {/* Processing Steps */}
-      {loading && processingSteps && (
+      {/* Loading State with Blinking Cursor */}
+      {loading && (
         <div className="thinking-state">
           <div className="thinking-spinner"></div>
-          <span>{processingSteps}</span>
+          <span>Thinking</span>
+          <span className="blink-cursor">▊</span>
         </div>
       )}
       
       {/* Output */}
-      {showResults && !loading && (
+      {showResults && (
         <div className="output-wrap show">
           <div className="output-header">
             <div className="output-label">
@@ -306,62 +265,40 @@ e.g. Find yoga influencers in Delhi for my brand"
             <div style={{ display: 'flex', gap: '6px' }}>
               <button className="copy-output" onClick={handleCopy}>Copy</button>
               <button className="save-output-btn">Save</button>
-              <button className="copy-output" onClick={() => setShowResults(false)} style={{ border: 'none', background: 'transparent' }}>✕ Clear</button>
               <button className="new-query-btn" onClick={handleNewQuery}>New query</button>
             </div>
           </div>
           
-          {/* Intent Result Display */}
-          {intentResult && (
-            <div className="response-meta">
-              <span className="meta-intent">
-                Intent: {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
-              </span>
-              <span className={`meta-confidence ${intentResult.confidence.toLowerCase()}`}>
-                Confidence: {intentResult.confidence}
-              </span>
-              <span className="meta-warning">Source: {intentResult.source}</span>
-            </div>
-          )}
-          
-          {/* Meta Info from structured response */}
-          {structuredData && (
-            <div className="response-meta">
-              <span className="meta-intent">Intent: {structuredData.intent}</span>
-              <span className={`meta-confidence ${structuredData.confidence.toLowerCase()}`}>Confidence: {structuredData.confidence}</span>
-              {structuredData.warnings?.map((warning, i) => (
-                <span key={i} className="meta-warning">⚠️ {warning}</span>
-              ))}
-            </div>
-          )}
-          
-          <div id="agent-output-box" className="output-box">
-            {structuredData ? (
-              <div className="structured-output">
-                {structuredData.sections.map((section, i) => (
-                  <div key={i} className="output-section">
-                    <div className="section-title">
-                      <span className="section-emoji">{section.emoji}</span>
-                      {section.title}
-                    </div>
-                    <div className="section-content">
-                      {renderSectionContent(section.content)}
-                    </div>
-                  </div>
-                ))}
-                {structuredData.feedback && (
-                  <div className="feedback-section">
-                    <span>Was this helpful?</span>
-                    <div className="feedback-buttons">
-                      <button className="feedback-btn">👍 Good</button>
-                      <button className="feedback-btn">👎 Needs work</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              rawResponse
+          {/* Meta Row with Intent + Live Search Badge */}
+          <div className="response-meta">
+            {intentResult && (
+              <>
+                <span className="meta-intent">
+                  Intent: {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
+                </span>
+                <span className={`meta-confidence ${intentResult.confidence.toLowerCase()}`}>
+                  {intentResult.confidence}
+                </span>
+              </>
             )}
+            <span className={`meta-badge ${liveSearchEnabled ? 'badge-green' : 'badge-gray'}`}>
+              {liveSearchEnabled ? '🌐 Live Search ON' : '🌐 Live Search OFF'}
+            </span>
+            {deepResearch && (
+              <span className="meta-badge badge-purple">🔬 Deep Research</span>
+            )}
+          </div>
+          
+          {/* Progressive Markdown Rendering */}
+          <div id="agent-output-box" className="output-box" ref={outputRef}>
+            {streamingText ? (
+              <div className="markdown-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {streamingText}
+                </ReactMarkdown>
+                {loading && <span className="blink-cursor">▊</span>}
+              </div>
+            ) : null}
           </div>
         </div>
       )}
@@ -373,9 +310,6 @@ e.g. Find yoga influencers in Delhi for my brand"
         </div>
         <div className="hbadge">
           <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> saved outputs
-        </div>
-        <div className="hbadge">
-          No client selected
         </div>
       </div>
       

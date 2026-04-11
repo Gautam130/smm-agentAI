@@ -4,6 +4,8 @@ import "./globals.css";
 import { ClientProvider } from "@/components/ClientContext";
 import { AuthProvider } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
 
 const inter = Inter({
   variable: "--font",
@@ -42,7 +44,20 @@ export default function RootLayout({
         <AuthProvider>
           <ClientProvider>
             <ProtectedRoute>
-              {children}
+              <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+                <Sidebar />
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                  <Topbar />
+                  <main style={{ 
+                    flex: 1, 
+                    padding: '24px', 
+                    overflowY: 'auto',
+                    background: '#080808'
+                  }}>
+                    {children}
+                  </main>
+                </div>
+              </div>
             </ProtectedRoute>
           </ClientProvider>
         </AuthProvider>
