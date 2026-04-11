@@ -192,6 +192,29 @@ export default function HomePage() {
     navigator.clipboard.writeText(streamingText);
   };
 
+  const handleSave = () => {
+    if (streamingText.trim()) {
+      const saved = localStorage.getItem('smm_saved') || '[]';
+      try {
+        const arr = JSON.parse(saved);
+        arr.push({
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          text: streamingText,
+          query: query
+        });
+        localStorage.setItem('smm_saved', JSON.stringify(arr));
+      } catch {
+        localStorage.setItem('smm_saved', JSON.stringify([{
+          id: Date.now(),
+          timestamp: new Date().toISOString(),
+          text: streamingText,
+          query: query
+        }]));
+      }
+    }
+  };
+
   return (
     <div className="content-area" style={{ maxWidth: '1000px', margin: '0 auto' }}>
       {/* Hero Card - Always visible, expands when hasResults */}
@@ -363,8 +386,32 @@ export default function HomePage() {
               
               {/* Copy/Save buttons */}
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingBottom: '12px' }}>
-                <button onClick={handleCopy} style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Copy</button>
-                <button style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Save</button>
+                <button 
+                  onClick={handleCopy} 
+                  disabled={!streamingText.trim()}
+                  style={{ 
+                    padding: '6px 12px', 
+                    background: '#111', 
+                    border: '1px solid #222', 
+                    borderRadius: '8px', 
+                    color: streamingText.trim() ? '#888' : '#444', 
+                    fontSize: '12px', 
+                    cursor: streamingText.trim() ? 'pointer' : 'not-allowed' 
+                  }}
+                >Copy</button>
+                <button 
+                  onClick={handleSave} 
+                  disabled={!streamingText.trim()}
+                  style={{ 
+                    padding: '6px 12px', 
+                    background: '#111', 
+                    border: '1px solid #222', 
+                    borderRadius: '8px', 
+                    color: streamingText.trim() ? '#888' : '#444', 
+                    fontSize: '12px', 
+                    cursor: streamingText.trim() ? 'pointer' : 'not-allowed' 
+                  }}
+                >Save</button>
               </div>
             </div>
           </div>
