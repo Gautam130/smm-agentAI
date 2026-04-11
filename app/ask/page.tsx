@@ -21,6 +21,7 @@ export default function AskMayaPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
@@ -101,6 +102,19 @@ export default function AskMayaPage() {
       handleSend();
     }
   };
+
+  // Auto-grow textarea
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -284,17 +298,17 @@ export default function AskMayaPage() {
         ))}
       </div>
 
-      {/* Chat container - fixed height messages area */}
+      {/* Chat container */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        height: 'calc(100vh - 280px)', 
-        minHeight: '400px',
+        flex: 1,
+        minHeight: 0,
       }}>
-        {/* Messages area - fixed size, scrolls */}
+        {/* Messages area - flexible, fills available space */}
         <div ref={chatRef} style={{ 
-          flex: 'none', 
-          height: 'calc(100% - 140px)',
+          flex: 1, 
+          minHeight: '200px',
           overflowY: 'auto', 
           padding: '16px 12px',
           background: 'var(--bg-onyx)',
@@ -332,150 +346,106 @@ export default function AskMayaPage() {
           )}
         </div>
 
-        {/* Input area - fixed at bottom, no scrolling */}
-        <div style={{ 
-          background: 'var(--bg-onyx)', 
-          borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
-          border: '1px solid var(--border-glass)',
-          borderTop: 'none',
-          flex: 'none',
-          height: 'auto',
-          minHeight: '70px',
-        }}>
-          {/* Attachment chips at TOP - fixed position */}
+        {/* Meta AI style pill input */}
+        <div className={`chat-composer ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
+          {/* Attachment previews inside composer */}
           {attachedFiles.length > 0 && (
-            <div className="attachment-chips-fixed">
+            <div className="composer-attachments">
               {attachedFiles.map((file, idx) => (
-                <div key={idx} className="attachment-chip">
+                <div key={idx} className="composer-attachment">
                   {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
-                    <img 
-                      src={previewUrls.get(file.name)} 
-                      alt="preview"
-                      className="attachment-thumbnail"
-                    />
+                    <div className="attachment-preview-img">
+                      <img src={previewUrls.get(file.name)} alt={file.name} />
+                      <button className="attachment-remove" onClick={() => removeFile(idx)}>×</button>
+                    </div>
                   ) : (
-                    <div className="attachment-icon">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="attachment-preview-file">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                       </svg>
+                      <span className="file-name">{file.name.length > 10 ? file.name.slice(0,10) + '...' : file.name}</span>
+                      <span className="file-size">{file.size}</span>
+                      <button className="attachment-remove" onClick={() => removeFile(idx)}>×</button>
                     </div>
                   )}
-                  <span className="attachment-name">
-                    {file.name.length > 12 ? file.name.slice(0,12) + '...' : file.name}
-                  </span>
-                  <button 
-                    className="attachment-remove"
-                    onClick={() => removeFile(idx)}
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Input row at bottom */}
-          <div className="chat-input-row" style={{ border: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', flexWrap: 'wrap', gap: '8px', padding: attachedFiles.length > 0 ? '8px 12px 12px 12px' : '12px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button 
-                className="chat-attach-btn" 
-                title="Add"
-                onClick={() => setShowAttachMenu(!showAttachMenu)}
-                style={{ flexShrink: 0, opacity: attachedFiles.length >= 2 ? 0.5 : 1, cursor: attachedFiles.length >= 2 ? 'not-allowed' : 'pointer' }}
-                disabled={attachedFiles.length >= 2}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-              
-              {showAttachMenu && (
-                <div className="attach-dropdown">
-                  {/* Attachment - Document option */}
-                  <label className="attach-option">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      style={{ display: 'none' }}
-                      accept=".pdf,.doc,.docx,.txt,.md"
-                    />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                    </svg>
-                    Attachment
-                  </label>
-                  
-                  {/* Image option - with OCR */}
-                  <label className="attach-option">
-                    <input 
-                      type="file" 
-                      ref={imageInputRef}
-                      onChange={handleFileSelect}
-                      style={{ display: 'none' }}
-                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp"
-                    />
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    Upload Image
-                  </label>
-                  
-                  <button onClick={() => { setShowAttachMenu(false); }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3"></circle>
-                      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-                    </svg>
-                    Preferences
-                  </button>
-                  
-                  {ocrProgress && (
-                    <div style={{ 
-                      padding: '8px 12px', 
-                      fontSize: '11px', 
-                      color: '#00ffcc',
-                      borderTop: '1px solid rgba(255,255,255,0.1)',
-                    }}>
-                      {ocrProgress}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          {/* Pill input container */}
+          <div className="pill-input-wrapper">
+            <button 
+              className="pill-attach-btn"
+              title="Add"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              disabled={attachedFiles.length >= 2}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+
+            {showAttachMenu && (
+              <div className="attach-dropdown">
+                <label className="attach-option">
+                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                  Attachment
+                </label>
+                <label className="attach-option">
+                  <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Upload Image
+                </label>
+                <button onClick={() => setShowAttachMenu(false)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                  </svg>
+                  Preferences
+                </button>
+                {ocrProgress && (
+                  <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    {ocrProgress}
+                  </div>
+                )}
+              </div>
+            )}
+
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask anything... e.g. I run a chai brand in Jaipur targeting 18-30 year olds. What should I post this week?"
-              style={{ flex: 1, minWidth: '100px' }}
-              rows={2}
+              onInput={adjustTextareaHeight}
+              placeholder={attachedFiles.length > 0 ? "Add a message..." : "Ask anything..."}
+              className="pill-textarea"
+              rows={1}
             />
+
             <button 
-              className={`voice-btn ${isListening ? 'listening' : ''}`} 
-              title={isListening ? 'Stop recording' : 'Voice input'}
-              onClick={toggleVoice}
+              className={`pill-send-btn ${isLoading ? 'loading' : ''}`}
+              onClick={handleSend}
+              disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
             >
-              {isListening ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="6" width="12" height="12" rx="2"/>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
-                </svg>
-              )}
-            </button>
-            <button className="chat-send" onClick={handleSend} disabled={isLoading || !input.trim()}>
-              Send ↑
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
             </button>
           </div>
-          
-          {/* Input hint below text bar */}
-          <div className="input-hint" style={{ padding: '4px 12px 8px 12px', borderTop: '1px solid var(--border-glass)', marginTop: '4px' }}>
+
+          {/* Input hint */}
+          <div className="input-hint">
             <span>Enter to send • Shift+Enter for new line</span>
             {messages.length > 0 && (
               <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
