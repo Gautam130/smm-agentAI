@@ -39,10 +39,12 @@ export default function HomePage() {
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const outputScrollRef = useRef<HTMLDivElement>(null);
+
   // Auto-scroll to output when streaming starts
   useEffect(() => {
-    if (streamingText && outputRef.current) {
-      outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (streamingText && outputScrollRef.current) {
+      outputScrollRef.current.scrollTop = 0;
     }
   }, [streamingText]);
 
@@ -336,7 +338,16 @@ e.g. Find yoga influencers in Delhi for my brand"
           </div>
           
           {/* Progressive Markdown Rendering */}
-          <div id="agent-output-box" className="output-box" ref={outputRef}>
+          <div 
+            id="agent-output-box" 
+            className="output-box" 
+            ref={outputScrollRef}
+            style={{ 
+              maxHeight: '60vh', 
+              overflowY: 'auto',
+              scrollBehavior: 'smooth'
+            }}
+          >
             {streamingText ? (
               <div className="markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
