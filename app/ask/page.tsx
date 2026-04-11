@@ -284,17 +284,17 @@ export default function AskMayaPage() {
         ))}
       </div>
 
-      {/* Chat container - grows upward when files attached */}
+      {/* Chat container - fixed height messages area */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        flex: 1,
-        minHeight: 0,
+        height: 'calc(100vh - 280px)', 
+        minHeight: '400px',
       }}>
-        {/* Messages area - flexible, shrinks/grows as needed */}
+        {/* Messages area - fixed size, scrolls */}
         <div ref={chatRef} style={{ 
-          flex: 1, 
-          minHeight: '150px',
+          flex: 'none', 
+          height: 'calc(100% - 140px)',
           overflowY: 'auto', 
           padding: '16px 12px',
           background: 'var(--bg-onyx)',
@@ -332,14 +332,15 @@ export default function AskMayaPage() {
           )}
         </div>
 
-        {/* Input area - grows upward when files attached */}
+        {/* Input area - fixed height, scrolls content inside */}
         <div style={{ 
           background: 'var(--bg-onyx)', 
           borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
           border: '1px solid var(--border-glass)',
           borderTop: 'none',
-          transition: 'flex 0.3s ease',
-          flexShrink: 0,
+          flex: 'none',
+          height: '140px',
+          overflowY: 'auto',
         }}>
           {/* Attachment chips at TOP - container grows upward */}
           <div 
