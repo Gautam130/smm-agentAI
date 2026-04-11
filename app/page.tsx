@@ -193,131 +193,117 @@ export default function HomePage() {
   };
 
   return (
-    <div className="content-area" style={{ maxWidth: '100%', margin: '0 auto' }}>
-      {/* Split layout when hasResults */}
-      {hasResults ? (
-        <div style={{ display: 'flex', minHeight: 'calc(100vh - 100px)', transition: 'all 0.4s ease' }}>
-          {/* Left Panel - Input (35%) */}
+    <div className="content-area" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Hero Card - Always visible, expands when hasResults */}
+      <div className="home-hero" style={{ 
+        textAlign: 'center',
+        overflow: 'hidden',
+        transition: 'max-height 0.5s ease',
+        maxHeight: hasResults ? '1200px' : '800px'
+      }}>
+        
+        {/* Greeting + Headline */}
+        <div className="hero-eyebrow">
+          <span className="hero-eyebrow-dot"></span>
+          AI Social Media Agent · 2026
+        </div>
+        
+        <h1 className="hero-h1">
+          {greeting && <span style={{ display: 'block', fontSize: '18px', fontWeight: 500, color: '#00ffcc', marginBottom: '8px' }}>{greeting}</span>}
+          What do you want to <span>create today?</span>
+        </h1>
+        
+        <p className="hero-p">Your AI social media agent — just describe what you need</p>
+        
+        {/* Input Box */}
+        <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: '0 auto 12px' }}>
+          <textarea 
+            ref={inputRef}
+            id="agent-input"
+            value={query} 
+            onChange={(e) => setQuery(e.target.value)} 
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} 
+            placeholder={hasResults ? "Ask another question..." : "e.g. I run a cafe in Jaipur — what should I post this week?"}
+            rows={hasResults ? 1 : 3}
+            style={{ 
+              width: '100%', 
+              paddingRight: '50px',
+              fontSize: '14px'
+            }}
+          />
+          <button 
+            id="agent-send-btn"
+            onClick={handleSearch} 
+            disabled={loading}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+          </button>
+        </div>
+        
+        {/* Toggles */}
+        {hasResults ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px', fontSize: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={deepResearch} onChange={(e) => setDeepResearch(e.target.checked)} style={{ width: '14px', height: '14px', accentColor: '#00ffcc' }} />
+              🔬 Deep Research
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={liveSearchEnabled} onChange={(e) => setLiveSearchEnabled(e.target.checked)} style={{ width: '14px', height: '14px', accentColor: '#00ffcc' }} />
+              🌐 Live Search
+            </label>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={deepResearch} onChange={(e) => setDeepResearch(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }} />
+              🔬 Deep Research
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={liveSearchEnabled} onChange={(e) => setLiveSearchEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }} />
+              🌐 Live Search
+            </label>
+          </div>
+        )}
+        
+        {/* Quick Prompts - Always visible */}
+        <div id="quick-prompts" style={{ marginBottom: '8px' }}>
+          {quickPrompts.map((qp, i) => (
+            <button key={i} onClick={() => handleQuickPrompt(qp.prompt)}>
+              {qp.label}
+            </button>
+          ))}
+        </div>
+        
+        {!hasResults && (
+          <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
+        )}
+        
+        {/* RESPONSE SECTION - Expands below */}
+        {hasResults && (
           <div style={{ 
-            width: '35%', 
-            padding: '24px',
-            borderRight: '1px solid #1a1a1a',
-            transition: 'width 0.4s ease',
-            display: 'flex',
-            flexDirection: 'column'
+            borderTop: '1px solid #1a3a2a',
+            marginTop: '16px',
+            paddingTop: '16px',
+            maxHeight: '600px',
+            overflow: 'hidden',
+            transition: 'max-height 0.5s ease'
           }}>
-            {/* Mini hero with input only */}
-            <div style={{ textAlign: 'center', width: '100%' }}>
-              <div style={{ fontSize: '11px', color: '#00ffcc', marginBottom: '8px', fontWeight: 600 }}>
-                AI Social Media Agent
+            {/* Header: Agent response + New query button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ffcc' }}></span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>Agent response</span>
               </div>
-              
-              <h1 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>
-                What do you want to <span style={{ color: '#00ffcc' }}>create?</span>
-              </h1>
-              
-              {/* Input */}
-              <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '100%' }}>
-                <textarea 
-                  ref={inputRef}
-                  id="agent-input"
-                  value={query} 
-                  onChange={(e) => setQuery(e.target.value)} 
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} 
-                  placeholder="Ask another question..."
-                  rows={2}
-                  style={{ 
-                    width: '100%', 
-                    paddingRight: '40px',
-                    fontSize: '13px',
-                    background: '#111',
-                    border: '1px solid #222',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    resize: 'none'
-                  }}
-                />
-                <button 
-                  id="agent-send-btn"
-                  onClick={handleSearch} 
-                  disabled={loading}
-                  style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'linear-gradient(135deg, #00FFCC, #A855F7)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    width: '28px',
-                    height: '28px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5">
-                    <line x1="12" y1="19" x2="12" y2="5"></line>
-                    <polyline points="5 12 12 5 19 12"></polyline>
-                  </svg>
-                </button>
-              </div>
-              
-              {/* Toggles */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '11px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#888' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={deepResearch} 
-                    onChange={(e) => setDeepResearch(e.target.checked)}
-                    style={{ width: '12px', height: '12px', accentColor: '#00ffcc' }}
-                  />
-                  🔬 Deep
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#888' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={liveSearchEnabled} 
-                    onChange={(e) => setLiveSearchEnabled(e.target.checked)}
-                    style={{ width: '12px', height: '12px', accentColor: '#00ffcc' }}
-                  />
-                  🌐 Live
-                </label>
-              </div>
-              
-              {/* Quick prompts */}
-              <div style={{ marginTop: '16px' }}>
-                {quickPrompts.slice(0, 4).map((qp, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => handleQuickPrompt(qp.prompt)}
-                    style={{
-                      display: 'inline-block',
-                      margin: '4px',
-                      padding: '6px 12px',
-                      background: '#111',
-                      border: '1px solid #222',
-                      borderRadius: '16px',
-                      color: '#888',
-                      fontSize: '11px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {qp.label}
-                  </button>
-                ))}
-              </div>
-              
-              {/* New query button */}
               <button 
                 onClick={handleNewQuery}
                 style={{
-                  marginTop: '24px',
-                  padding: '10px 20px',
+                  padding: '8px 16px',
                   background: 'transparent',
                   border: '1px solid #333',
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   color: '#888',
                   fontSize: '12px',
                   cursor: 'pointer'
@@ -326,164 +312,87 @@ export default function HomePage() {
                 + New query
               </button>
             </div>
-          </div>
-          
-          {/* Right Panel - Response (65%) */}
-          <div style={{ 
-            width: '65%', 
-            padding: '24px',
-            transition: 'width 0.4s ease',
-            overflowY: 'auto'
-          }}>
-            <div className="output-container" ref={outputRef}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ffcc' }}></span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>Agent response</span>
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={handleCopy} style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Copy</button>
-                  <button style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Save</button>
-                </div>
-              </div>
-              
-              {/* Meta badges */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                {intentResult && (
-                  <>
-                    <span style={{ padding: '4px 10px', background: 'rgba(0,255,204,0.1)', border: '0.5px solid rgba(0,255,204,0.3)', borderRadius: '12px', fontSize: '11px', color: '#00ffcc' }}>
-                      {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
-                    </span>
-                    <span style={{ padding: '4px 10px', background: intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.1)' : 'rgba(255,200,0,0.1)', border: `0.5px solid ${intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.3)' : 'rgba(255,200,0,0.3)'}`, borderRadius: '12px', fontSize: '11px', color: intentResult.confidence === 'HIGH' ? '#00ffcc' : '#ffc800' }}>
-                      {intentResult.confidence}
-                    </span>
-                  </>
-                )}
-                <span style={{ padding: '4px 10px', background: liveSearchEnabled ? 'rgba(0,255,204,0.1)' : 'rgba(255,255,255,0.05)', border: `0.5px solid ${liveSearchEnabled ? 'rgba(0,255,204,0.3)' : '#333'}`, borderRadius: '12px', fontSize: '11px', color: liveSearchEnabled ? '#00ffcc' : '#666' }}>
-                  🌐 {liveSearchEnabled ? 'Live Search' : 'OFF'}
-                </span>
-                {deepResearch && (
-                  <span style={{ padding: '4px 10px', background: 'rgba(168,85,247,0.1)', border: '0.5px solid rgba(168,85,247,0.3)', borderRadius: '12px', fontSize: '11px', color: '#a855f7' }}>
-                    🔬 Deep
+            
+            {/* Meta badges */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '0 12px', flexWrap: 'wrap' }}>
+              {intentResult && (
+                <>
+                  <span style={{ padding: '4px 10px', background: 'rgba(0,255,204,0.1)', border: '0.5px solid rgba(0,255,204,0.3)', borderRadius: '12px', fontSize: '11px', color: '#00ffcc' }}>
+                    {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
                   </span>
-                )}
-              </div>
+                  <span style={{ padding: '4px 10px', background: intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.1)' : 'rgba(255,200,0,0.1)', border: `0.5px solid ${intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.3)' : 'rgba(255,200,0,0.3)'}`, borderRadius: '12px', fontSize: '11px', color: intentResult.confidence === 'HIGH' ? '#00ffcc' : '#ffc800' }}>
+                    {intentResult.confidence}
+                  </span>
+                </>
+              )}
+              <span style={{ padding: '4px 10px', background: liveSearchEnabled ? 'rgba(0,255,204,0.1)' : 'rgba(255,255,255,0.05)', border: `0.5px solid ${liveSearchEnabled ? 'rgba(0,255,204,0.3)' : '#333'}`, borderRadius: '12px', fontSize: '11px', color: liveSearchEnabled ? '#00ffcc' : '#666' }}>
+                🌐 {liveSearchEnabled ? 'Live Search' : 'OFF'}
+              </span>
+              {deepResearch && (
+                <span style={{ padding: '4px 10px', background: 'rgba(168,85,247,0.1)', border: '0.5px solid rgba(168,85,247,0.3)', borderRadius: '12px', fontSize: '11px', color: '#a855f7' }}>
+                  🔬 Deep
+                </span>
+              )}
+            </div>
+            
+            {/* Response content - scrollable */}
+            <div 
+              ref={outputScrollRef}
+              style={{ 
+                maxHeight: '200px', 
+                overflowY: 'auto',
+                padding: '0 12px',
+                scrollBehavior: 'smooth'
+              }}
+            >
+              {loading && !streamingText && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '14px', padding: '12px' }}>
+                  <div style={{ width: '16px', height: '16px', border: '2px solid #333', borderTopColor: '#00ffcc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                  <span>Thinking</span>
+                  <span style={{ animation: 'blink 1s infinite' }}>▊</span>
+                </div>
+              )}
+              {streamingText && (
+                <div className="markdown-content" style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.7' }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {cleanText(streamingText)}
+                  </ReactMarkdown>
+                  {loading && <span style={{ animation: 'blink 1s infinite', color: '#00ffcc' }}>▊</span>}
+                </div>
+              )}
               
-              {/* Response content */}
-              <div 
-                ref={outputScrollRef}
-                style={{ 
-                  maxHeight: 'calc(100vh - 280px)', 
-                  overflowY: 'auto',
-                  scrollBehavior: 'smooth'
-                }}
-              >
-                {loading && !streamingText && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '14px' }}>
-                    <div style={{ width: '16px', height: '16px', border: '2px solid #333', borderTopColor: '#00ffcc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                    <span>Thinking</span>
-                    <span style={{ animation: 'blink 1s infinite' }}>▊</span>
-                  </div>
-                )}
-                {streamingText && (
-                  <div style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.7' }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {cleanText(streamingText)}
-                    </ReactMarkdown>
-                    {loading && <span style={{ animation: 'blink 1s infinite', color: '#00ffcc' }}>▊</span>}
-                  </div>
-                )}
+              {/* Copy/Save buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingBottom: '12px' }}>
+                <button onClick={handleCopy} style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Copy</button>
+                <button style={{ padding: '6px 12px', background: '#111', border: '1px solid #222', borderRadius: '8px', color: '#888', fontSize: '12px', cursor: 'pointer' }}>Save</button>
               </div>
             </div>
           </div>
+        )}
+      </div>
+      
+      {/* Loading indicator (when not in expanded response) */}
+      {loading && hasResults && streamingText && (
+        <div className="thinking-state">
+          <div className="thinking-spinner"></div>
+          <span>Thinking</span>
+          <span className="blink-cursor">▊</span>
         </div>
-      ) : (
-        /* Full width layout when no results */
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div className="home-hero" style={{ textAlign: 'center' }}>
-            <div className="hero-eyebrow">
-              <span className="hero-eyebrow-dot"></span>
-              AI Social Media Agent · 2026
-            </div>
-            
-            <h1 className="hero-h1">
-              {greeting && <span style={{ display: 'block', fontSize: '18px', fontWeight: 500, color: '#00ffcc', marginBottom: '8px' }}>{greeting}</span>}
-              What do you want to <span>create today?</span>
-            </h1>
-            
-            <p className="hero-p">Your AI social media agent — just describe what you need</p>
-            
-            {/* Input */}
-            <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: '0 auto 12px' }}>
-              <textarea 
-                ref={inputRef}
-                id="agent-input"
-                value={query} 
-                onChange={(e) => setQuery(e.target.value)} 
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} 
-                placeholder="e.g. I run a cafe in Jaipur — what should I post this week?"
-                rows={3}
-                style={{ width: '100%', paddingRight: '50px', fontSize: '14px' }}
-              />
-              <button 
-                id="agent-send-btn"
-                onClick={handleSearch} 
-                disabled={loading}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="19" x2="12" y2="5"></line>
-                  <polyline points="5 12 12 5 19 12"></polyline>
-                </svg>
-              </button>
-            </div>
-            
-            {/* Toggles */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                <input type="checkbox" checked={deepResearch} onChange={(e) => setDeepResearch(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }} />
-                🔬 Deep Research
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                <input type="checkbox" checked={liveSearchEnabled} onChange={(e) => setLiveSearchEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }} />
-                🌐 Live Search
-              </label>
-            </div>
-            
-            {/* Quick Prompts */}
-            <div id="quick-prompts" style={{ marginBottom: '8px' }}>
-              {quickPrompts.map((qp, i) => (
-                <button key={i} onClick={() => handleQuickPrompt(qp.prompt)}>
-                  {qp.label}
-                </button>
-              ))}
-            </div>
-            
-            <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
-          </div>
-          
-          {/* Loading */}
-          {loading && (
-            <div className="thinking-state">
-              <div className="thinking-spinner"></div>
-              <span>Thinking</span>
-              <span className="blink-cursor">▊</span>
-            </div>
-          )}
-          
-          {/* Stats Row */}
+      )}
+      
+      {/* Stats Row - Show when no results */}
+      {!hasResults && (
+        <>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
             <div className="hbadge"><span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> queued today</div>
             <div className="hbadge"><span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> saved outputs</div>
           </div>
           
-          {/* Section Divider */}
           <div className="section-header">
             <div className="section-title">Or go directly to a module</div>
             <div className="section-line"></div>
           </div>
           
-          {/* Module Cards */}
           <div className="quick-grid">
             {[
               { title: 'Content', desc: 'Captions, hooks, threads', icon: '✍️', tag: 'AI', class: 'nb-green', href: '/content' },
@@ -503,7 +412,7 @@ export default function HomePage() {
               </a>
             ))}
           </div>
-        </div>
+        </>
       )}
       
       <style>{`
