@@ -314,39 +314,6 @@ export default function HomePage() {
       {/* Output - Show when has results */}
       {hasResults && (
         <div className="output-container" ref={outputRef} style={{ position: 'relative' }}>
-          {/* Sticky New Query Button */}
-          <div style={{ 
-            position: 'sticky', 
-            top: 0, 
-            zIndex: 10, 
-            display: 'flex', 
-            justifyContent: 'center',
-            padding: '12px 0',
-            background: 'linear-gradient(180deg, #080808 60%, transparent)',
-          }}>
-            <button 
-              onClick={handleNewQuery}
-              style={{
-                padding: '10px 20px',
-                background: 'rgba(0, 255, 204, 0.1)',
-                border: '0.5px solid rgba(0, 255, 204, 0.3)',
-                borderRadius: '20px',
-                color: '#00ffcc',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-              New query
-            </button>
-          </div>
-          
           <div className="output-wrap show">
           <div className="output-header">
             <div className="output-label">

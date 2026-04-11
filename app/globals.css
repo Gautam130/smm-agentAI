@@ -3150,3 +3150,8 @@ select option {
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* Response content spacing */
+.markdown-content p { margin-bottom: 8px; }
+.markdown-content li { margin-bottom: 6px; line-height: 1.8; }
+.markdown-content strong { display: inline; }
