@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
@@ -80,33 +78,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  // User logged in - show full app
-  return (
-    <div className="shell" style={{ 
-      display: 'flex', 
-      height: '100vh', 
-      overflow: 'hidden',
-      width: '100%',
-    }}>
-      <Sidebar />
-      <main style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        overflow: 'hidden',
-        background: '#000000',
-      }}>
-        <Topbar />
-        <div style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
-          position: 'relative',
-          zIndex: 1,
-          background: '#000000',
-        }}>
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  // User logged in - return children (layout already in layout.tsx)
+  return <>{children}</>;
 }
