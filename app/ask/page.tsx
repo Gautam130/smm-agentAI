@@ -395,7 +395,7 @@ export default function AskMayaPage() {
           />
 
           {/* Bottom row - Buttons */}
-          <div className="meta-input-bottom">
+          <div className="meta-input-bottom" style={{ position: 'relative' }}>
             {/* + Button - left */}
             <button 
               ref={plusBtnRef}
@@ -411,7 +411,7 @@ export default function AskMayaPage() {
             </button>
 
             {showAttachMenu && (
-              <div className="attach-dropdown">
+              <div className="attach-dropdown" style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: '8px' }}>
                 <label className="attach-option">
                   <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
