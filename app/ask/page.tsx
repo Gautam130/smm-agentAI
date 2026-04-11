@@ -13,7 +13,7 @@ const suggestions = [
 export default function AskMayaPage() {
   const { messages, isLoading, sendMessage, clearChat } = useMaya();
   const [input, setInput] = useState('');
-  const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; content?: string; file?: File } | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
@@ -22,23 +22,23 @@ export default function AskMayaPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  // Store the object URL for cleanup
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Store preview URLs for each file
+  const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
   
-  // Create preview URL when file changes
-  useEffect(() => {
-    if (attachedFile?.file) {
-      const url = URL.createObjectURL(attachedFile.file);
-      setPreviewUrl(url);
-    } else {
-      setPreviewUrl(null);
-    }
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [attachedFile?.file]);
+  const addFilePreview = (fileName: string, file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrls(prev => new Map(prev).set(fileName, url));
+  };
+  
+  const removeFilePreview = (fileName: string) => {
+    setPreviewUrls(prev => {
+      const newMap = new Map(prev);
+      const url = newMap.get(fileName);
+      if (url) URL.revokeObjectURL(url);
+      newMap.delete(fileName);
+      return newMap;
+    });
+  };
 
   useEffect(() => {
     // Initialize voice recognition on mount
@@ -77,15 +77,21 @@ export default function AskMayaPage() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!input.trim() && !attachedFile) return;
+    if (!input.trim() && attachedFiles.length === 0) return;
     if (isLoading) return;
     
-    const messageToSend = input.trim() || 'Please analyze this file';
-    sendMessage(messageToSend, attachedFile ? [attachedFile] : []);
+    const messageToSend = input.trim() || 'Please analyze these files';
+    sendMessage(messageToSend, attachedFiles);
     setInput('');
-    setAttachedFile(null);
+    setAttachedFiles([]);
+    // Clean up preview URLs
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setPreviewUrls(new Map());
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
     }
   };
 
@@ -99,6 +105,19 @@ export default function AskMayaPage() {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Check for duplicates
+    const fileSize = (file.size / 1024).toFixed(1) + ' KB';
+    if (attachedFiles.some(f => f.name === file.name && f.size === fileSize)) {
+      alert('File already attached');
+      return;
+    }
+    
+    // Check max files (2)
+    if (attachedFiles.length >= 2) {
+      alert('Maximum 2 files allowed');
+      return;
+    }
     
     let fileContent = '';
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -195,12 +214,17 @@ export default function AskMayaPage() {
       fileContent = `[File: ${file.name}]`;
     }
     
-    setAttachedFile({ 
+    const newFile = { 
       name: file.name, 
       size: (file.size / 1024).toFixed(1) + ' KB',
       content: fileContent,
       file: file
-    });
+    };
+    
+    setAttachedFiles(prev => [...prev, newFile]);
+    if (isImage) {
+      addFilePreview(file.name, file);
+    }
     setShowAttachMenu(false);
   };
 
@@ -222,6 +246,20 @@ export default function AskMayaPage() {
         console.log('Voice start error:', e);
       }
     }
+  };
+
+  const removeFile = (index: number) => {
+    const file = attachedFiles[index];
+    if (file) {
+      removeFilePreview(file.name);
+      setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const clearAllFiles = () => {
+    attachedFiles.forEach(f => removeFilePreview(f.name));
+    setAttachedFiles([]);
+    setPreviewUrls(new Map());
   };
 
   const getTime = () => {
@@ -306,7 +344,8 @@ export default function AskMayaPage() {
                 className="chat-attach-btn" 
                 title="Add"
                 onClick={() => setShowAttachMenu(!showAttachMenu)}
-                style={{ flexShrink: 0 }}
+                style={{ flexShrink: 0, opacity: attachedFiles.length >= 2 ? 0.5 : 1, cursor: attachedFiles.length >= 2 ? 'not-allowed' : 'pointer' }}
+                disabled={attachedFiles.length >= 2}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -314,39 +353,36 @@ export default function AskMayaPage() {
                 </svg>
               </button>
               
-              {/* Inline attachment preview - ChatGPT style */}
-              {attachedFile && (
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '6px',
-                  padding: '4px 8px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  maxWidth: '200px',
-                }}>
-                  {attachedFile.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrl ? (
-                    <img 
-                      src={previewUrl} 
-                      alt="preview"
-                      style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }}
-                    />
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{ flexShrink: 0 }}>
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                  )}
-                  <span style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {attachedFile.name.length > 15 ? attachedFile.name.slice(0,15) + '...' : attachedFile.name}
-                  </span>
-                  <button 
-                    onClick={() => setAttachedFile(null)} 
-                    style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', padding: '2px', fontSize: '12px' }}
-                  >
-                    ✕
-                  </button>
+              {/* Inline attachment preview - Claude.ai style - horizontal scrollable chips */}
+              {attachedFiles.length > 0 && (
+                <div className="attachment-chips-container">
+                  {attachedFiles.map((file, idx) => (
+                    <div key={idx} className="attachment-chip">
+                      {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
+                        <img 
+                          src={previewUrls.get(file.name)} 
+                          alt="preview"
+                          className="attachment-thumbnail"
+                        />
+                      ) : (
+                        <div className="attachment-icon">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                        </div>
+                      )}
+                      <span className="attachment-name">
+                        {file.name.length > 12 ? file.name.slice(0,12) + '...' : file.name}
+                      </span>
+                      <button 
+                        className="attachment-remove"
+                        onClick={() => removeFile(idx)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               
