@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages: apiMessages, temperature = 0.7, maxTokens = 4000, taskType = 'general' } = body;
+    const { messages: baseMessages, temperature = 0.7, maxTokens = 4000, taskType = 'general' } = body;
 
     const smartMaxTokens = 
       taskType === 'research' ? 6000 :
@@ -39,10 +39,9 @@ export async function POST(req: NextRequest) {
 For non-marketing questions, respond normally in plain text. Always be helpful and specific.`
     };
 
-    const baseMessages = messages;
     const systemPrompt = systemPrompts[taskType];
     
-    const apiMessages = systemPrompt 
+    const messagesWithSystem = systemPrompt 
       ? [{ role: 'system', content: systemPrompt }, ...baseMessages]
       : baseMessages;
 
@@ -99,7 +98,7 @@ For non-marketing questions, respond normally in plain text. Always be helpful a
           },
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
-            messages: apiMessages,
+            messages: messagesWithSystem,
             temperature,
             max_tokens: smartMaxTokens,
             stream: true
@@ -121,7 +120,7 @@ For non-marketing questions, respond normally in plain text. Always be helpful a
           },
           body: JSON.stringify({
             model: 'mistral-large-latest',
-            messages: apiMessages,
+            messages: messagesWithSystem,
             temperature,
             max_tokens: smartMaxTokens,
             stream: true
@@ -145,7 +144,7 @@ For non-marketing questions, respond normally in plain text. Always be helpful a
           },
           body: JSON.stringify({
             model: 'meta-llama/llama-3.3-70b-instruct',
-            messages: apiMessages,
+            messages: messagesWithSystem,
             temperature,
             max_tokens: smartMaxTokens,
             stream: true
