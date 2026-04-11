@@ -266,6 +266,8 @@ export default function AskMayaPage() {
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
+  const pagePadding = 16;
+
   return (
     <>
       <div className="panel-header">
@@ -282,16 +284,17 @@ export default function AskMayaPage() {
         ))}
       </div>
 
-      {/* WhatsApp-style chat container */}
+      {/* Chat container - grows upward when files attached */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        height: 'calc(100vh - 280px)', 
-        minHeight: '400px',
+        flex: 1,
+        minHeight: 0,
       }}>
-        {/* Messages area - scrolls */}
+        {/* Messages area - flexible, shrinks/grows as needed */}
         <div ref={chatRef} style={{ 
           flex: 1, 
+          minHeight: '150px',
           overflowY: 'auto', 
           padding: '16px 12px',
           background: 'var(--bg-onyx)',
@@ -329,14 +332,14 @@ export default function AskMayaPage() {
           )}
         </div>
 
-        {/* Input area - fixed at bottom */}
+        {/* Input area - grows upward when files attached */}
         <div style={{ 
           background: 'var(--bg-onyx)', 
           borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
           border: '1px solid var(--border-glass)',
           borderTop: 'none',
-          transition: 'padding 0.3s ease',
-          padding: attachedFiles.length > 0 ? '12px 12px 4px 12px' : '12px',
+          transition: 'flex 0.3s ease',
+          flexShrink: 0,
         }}>
           {/* Attachment chips at TOP - container grows upward */}
           <div 

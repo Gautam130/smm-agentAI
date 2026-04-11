@@ -951,18 +951,21 @@ select option {
   background: var(--bg-onyx);
 }
 
-/* Claude.ai style attachment chips */
+/* Claude.ai style attachment chips - at top of input, grows upward */
 .attachment-chips-wrapper {
-  max-height: 0;
+  flex: 0 0 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, margin 0.3s ease;
-  margin-bottom: 0;
+  transition: flex 0.3s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .attachment-chips-wrapper.has-files {
-  max-height: 80px;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+  flex: 0 0 auto;
+  max-height: 70px;
+  margin-bottom: 0;
+  padding: 8px 12px 4px 12px;
   border-bottom: 1px solid var(--border-glass);
 }
 
