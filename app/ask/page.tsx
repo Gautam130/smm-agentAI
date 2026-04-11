@@ -301,7 +301,7 @@ export default function AskMayaPage() {
   const pagePadding = 16;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', padding: '0 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', padding: '0 16px', background: '#000000' }}>
       <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
       
       <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
@@ -320,7 +320,7 @@ export default function AskMayaPage() {
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
-        background: 'transparent',
+        background: '#000000',
       }}>
         {/* Messages area - scrolls, takes available space */}
         <div ref={chatRef} style={{ 
@@ -328,7 +328,7 @@ export default function AskMayaPage() {
           minHeight: 0,
           overflowY: 'auto', 
           padding: '16px 12px',
-          background: 'var(--bg-onyx)',
+          background: '#000000',
           borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
           border: '1px solid var(--border-glass)',
           borderBottom: 'none',

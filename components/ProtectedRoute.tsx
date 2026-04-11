@@ -94,7 +94,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         display: 'flex', 
         flexDirection: 'column', 
         overflow: 'hidden',
-        background: '#080808',
+        background: '#000000',
       }}>
         <Topbar />
         <div style={{ 
@@ -102,6 +102,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           overflowY: 'auto', 
           position: 'relative',
           zIndex: 1,
+          background: '#000000',
         }}>
           {children}
         </div>
