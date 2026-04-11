@@ -473,14 +473,15 @@ export default function AskMayaPage() {
               Send ↑
             </button>
           </div>
+          
+          {/* Input hint below text bar */}
+          <div className="input-hint" style={{ padding: '4px 12px 8px 12px', borderTop: '1px solid var(--border-glass)', marginTop: '4px' }}>
+            <span>Enter to send • Shift+Enter for new line</span>
+            {messages.length > 0 && (
+              <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="input-hint">
-        <span>Press Enter to send • Shift+Enter for new line</span>
-        {messages.length > 0 && (
-          <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
-        )}
       </div>
     </>
   );
