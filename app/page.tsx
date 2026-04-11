@@ -37,6 +37,14 @@ export default function HomePage() {
   const [deepResearch, setDeepResearch] = useState(false);
   const [liveSearchEnabled, setLiveSearchEnabled] = useState(true);
   const outputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-scroll to output when streaming starts
+  useEffect(() => {
+    if (streamingText && outputRef.current) {
+      outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [streamingText]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -164,6 +172,9 @@ export default function HomePage() {
     setStreamingText('');
     setIntentResult(null);
     setShowResults(false);
+    // Scroll back to input
+    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    inputRef.current?.focus();
   };
 
   const handleCopy = () => {
@@ -189,6 +200,7 @@ export default function HomePage() {
         {/* Agent Input */}
         <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: '0 auto 12px' }}>
           <textarea 
+            ref={inputRef}
             id="agent-input"
             value={query} 
             onChange={(e) => setQuery(e.target.value)} 
@@ -256,7 +268,41 @@ e.g. Find yoga influencers in Delhi for my brand"
       
       {/* Output */}
       {showResults && (
-        <div className="output-wrap show">
+        <div className="output-container" ref={outputRef} style={{ position: 'relative' }}>
+          {/* Sticky New Query Button */}
+          <div style={{ 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 10, 
+            display: 'flex', 
+            justifyContent: 'center',
+            padding: '12px 0',
+            background: 'linear-gradient(180deg, #080808 60%, transparent)',
+          }}>
+            <button 
+              onClick={handleNewQuery}
+              style={{
+                padding: '10px 20px',
+                background: 'rgba(0, 255, 204, 0.1)',
+                border: '0.5px solid rgba(0, 255, 204, 0.3)',
+                borderRadius: '20px',
+                color: '#00ffcc',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              New query
+            </button>
+          </div>
+          
+          <div className="output-wrap show">
           <div className="output-header">
             <div className="output-label">
               <span className="dot-green"></span>
