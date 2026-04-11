@@ -3,6 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 
+interface Section {
+  emoji: string;
+  title: string;
+  content: string;
+}
+
+interface StructuredResponse {
+  intent: string;
+  confidence: string;
+  warnings: string[];
+  sections: Section[];
+  feedback: boolean;
+}
+
 const quickPrompts = [
   { label: '🎬 Reel caption', prompt: 'Write a catchy Instagram Reel caption for my product' },
   { label: '📅 7-day content plan', prompt: 'Create a 7-day content plan for my business' },
@@ -18,7 +32,8 @@ export default function HomePage() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState('');
+  const [rawResponse, setRawResponse] = useState('');
+  const [structuredData, setStructuredData] = useState<StructuredResponse | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [userName, setUserName] = useState('');
   
@@ -34,16 +49,35 @@ export default function HomePage() {
   
   const greeting = userName ? `Hi ${userName},` : '';
 
+  const parseStructuredResponse = (text: string): StructuredResponse | null => {
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.sections && Array.isArray(parsed.sections)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Parse error:', e);
+    }
+    return null;
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
-    setResults('');
+    setRawResponse('');
+    setStructuredData(null);
     setShowResults(true);
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: query }] })
+        body: JSON.stringify({ 
+          messages: [{ role: 'user', content: query }],
+          taskType: 'home-search'
+        })
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (!res.body) throw new Error('No response');
@@ -68,15 +102,48 @@ export default function HomePage() {
           }
         }
       }
-      setResults(text || 'No response');
+      setRawResponse(text);
+      const structured = parseStructuredResponse(text);
+      setStructuredData(structured);
     } catch (e: any) {
-      setResults(`Error: ${e.message}`);
+      setRawResponse(`Error: ${e.message}`);
     }
     setLoading(false);
   };
 
   const handleQuickPrompt = (prompt: string) => {
     setQuery(prompt);
+  };
+
+  const handleNewQuery = () => {
+    setQuery('');
+    setRawResponse('');
+    setStructuredData(null);
+    setShowResults(false);
+  };
+
+  const handleCopy = () => {
+    const textToCopy = structuredData 
+      ? structuredData.sections.map(s => `${s.emoji} ${s.title}\n${s.content}`).join('\n\n')
+      : rawResponse;
+    navigator.clipboard.writeText(textToCopy);
+  };
+
+  const renderSectionContent = (content: string) => {
+    const lines = content.split('\n');
+    return lines.map((line, i) => {
+      if (line.startsWith('* ')) {
+        return <div key={i} className="section-bullet">• {line.slice(2)}</div>;
+      }
+      if (line.startsWith('The gap:') || line.startsWith('The uncomfortable truth:')) {
+        return <div key={i} className="section-subhead">{line}</div>;
+      }
+      if (line.startsWith('This week:') || line.startsWith('In 30 days:') || line.startsWith('Longer bet:') || line.startsWith('⚡ Start')) {
+        return <div key={i} className="section-timeline">{line}</div>;
+      }
+      if (line.trim() === '') return null;
+      return <div key={i}>{line}</div>;
+    });
   };
 
   return (
@@ -131,8 +198,16 @@ e.g. Find yoga influencers in Delhi for my brand"
         <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line · <b>Ctrl+Enter</b> works too</div>
       </div>
       
+      {/* Thinking State */}
+      {loading && (
+        <div className="thinking-state">
+          <div className="thinking-spinner"></div>
+          <span>Thinking...</span>
+        </div>
+      )}
+      
       {/* Output */}
-      {showResults && (
+      {showResults && !loading && (
         <div className="output-wrap show">
           <div className="output-header">
             <div className="output-label">
@@ -140,13 +215,51 @@ e.g. Find yoga influencers in Delhi for my brand"
               Agent response
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
-              <button className="copy-output" onClick={() => navigator.clipboard.writeText(results)}>Copy</button>
+              <button className="copy-output" onClick={handleCopy}>Copy</button>
               <button className="save-output-btn">Save</button>
               <button className="copy-output" onClick={() => setShowResults(false)} style={{ border: 'none', background: 'transparent' }}>✕ Clear</button>
+              <button className="new-query-btn" onClick={handleNewQuery}>New query</button>
             </div>
           </div>
+          
+          {/* Meta Info */}
+          {structuredData && (
+            <div className="response-meta">
+              <span className="meta-intent">Intent: {structuredData.intent}</span>
+              <span className={`meta-confidence ${structuredData.confidence.toLowerCase()}`}>Confidence: {structuredData.confidence}</span>
+              {structuredData.warnings?.map((warning, i) => (
+                <span key={i} className="meta-warning">⚠️ {warning}</span>
+              ))}
+            </div>
+          )}
+          
           <div id="agent-output-box" className="output-box">
-            {loading ? 'Thinking...' : results}
+            {structuredData ? (
+              <div className="structured-output">
+                {structuredData.sections.map((section, i) => (
+                  <div key={i} className="output-section">
+                    <div className="section-title">
+                      <span className="section-emoji">{section.emoji}</span>
+                      {section.title}
+                    </div>
+                    <div className="section-content">
+                      {renderSectionContent(section.content)}
+                    </div>
+                  </div>
+                ))}
+                {structuredData.feedback && (
+                  <div className="feedback-section">
+                    <span>Was this helpful?</span>
+                    <div className="feedback-buttons">
+                      <button className="feedback-btn">👍 Good</button>
+                      <button className="feedback-btn">👎 Needs work</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              rawResponse
+            )}
           </div>
         </div>
       )}
