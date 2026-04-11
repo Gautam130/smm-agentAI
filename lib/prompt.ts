@@ -150,18 +150,14 @@ ${brandCtx ? '\n' + brandCtx : ''}
 
 CONTEXT: Location=${location} | Platform=${platform} | Brand=${brand}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📍 What's happening right now
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━ 📍 What's happening right now ━━━━
 
 Three bullet points. Each one is a real observation about this topic in
 ${location} right now — not advice, not a heading with a sub-point.
 Pull from search data if available. Use "currently" not "in 2026".
 Each bullet ends with one specific implication for a brand.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 The numbers
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━ 📊 The numbers ━━━━
 
 3–5 real data points written as a list:
 **[Metric]:** [Actual figure] — [one-line implication] [source.com]
@@ -170,9 +166,7 @@ Only include a metric if you have a real number from search data or
 high-confidence training knowledge. Skip any metric you'd have to invent.
 Mark estimated figures as (est.) inline.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧠 The strategic read
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━ 🧠 The strategic read ━━━━
 
 **Why this is actually happening:** One real paragraph. The psychology
 or market force behind the numbers. What everybody says vs what's true.
@@ -183,9 +177,7 @@ a smart brand could own right now.
 **The uncomfortable truth:** One thing that conventional "best practice"
 gets completely wrong here.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 What to do about it
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━ 🚀 What to do about it ━━━━
 
 **This week:** One specific action, doable on Monday morning.
 Include ₹ estimate if it costs money. No vague actions.
