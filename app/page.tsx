@@ -32,13 +32,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [hasResults, setHasResults] = useState(false);
   const [userName, setUserName] = useState('');
   const [intentResult, setIntentResult] = useState<IntentResult | null>(null);
   const [deepResearch, setDeepResearch] = useState(false);
   const [liveSearchEnabled, setLiveSearchEnabled] = useState(true);
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
   const outputScrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to output when streaming starts
@@ -47,6 +47,13 @@ export default function HomePage() {
       outputScrollRef.current.scrollTop = 0;
     }
   }, [streamingText]);
+
+  // Set hasResults when loading starts
+  useEffect(() => {
+    if (loading) {
+      setHasResults(true);
+    }
+  }, [loading]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -89,6 +96,7 @@ export default function HomePage() {
     setStreamingText('');
     setIntentResult(null);
     setShowResults(true);
+    setHasResults(true);
 
     try {
       const intent = detectIntent(query);
@@ -174,8 +182,7 @@ export default function HomePage() {
     setStreamingText('');
     setIntentResult(null);
     setShowResults(false);
-    // Scroll back to input
-    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHasResults(false);
     inputRef.current?.focus();
   };
 
@@ -185,33 +192,50 @@ export default function HomePage() {
 
   return (
     <div className="content-area" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-      {/* Hero Section */}
+      {/* Hero Section - Full when no results, minimal when has results */}
       <div className="home-hero" style={{ textAlign: 'center' }}>
-        <div className="hero-eyebrow">
-          <span className="hero-eyebrow-dot"></span>
-          AI Social Media Agent · 2026
-        </div>
         
-        <h1 className="hero-h1">
-          {greeting && <span style={{ display: 'block', fontSize: '18px', fontWeight: 500, color: '#00ffcc', marginBottom: '8px' }}>{greeting}</span>}
-          What do you want to <span>create today?</span>
-        </h1>
+        {/* Show full hero when no results */}
+        {!hasResults && (
+          <>
+            <div className="hero-eyebrow">
+              <span className="hero-eyebrow-dot"></span>
+              AI Social Media Agent · 2026
+            </div>
+            
+            <h1 className="hero-h1">
+              {greeting && <span style={{ display: 'block', fontSize: '18px', fontWeight: 500, color: '#00ffcc', marginBottom: '8px' }}>{greeting}</span>}
+              What do you want to <span>create today?</span>
+            </h1>
+            
+            <p className="hero-p">Your AI social media agent — just describe what you need</p>
+            
+            {/* Quick Prompts */}
+            <div id="quick-prompts" style={{ marginBottom: '8px' }}>
+              {quickPrompts.map((qp, i) => (
+                <button key={i} onClick={() => handleQuickPrompt(qp.prompt)}>
+                  {qp.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         
-        <p className="hero-p">Your AI social media agent — just describe what you need</p>
-        
-        {/* Agent Input */}
-        <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: '0 auto 12px' }}>
+        {/* Agent Input - Always visible */}
+        <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: hasResults ? '20px auto 12px' : '0 auto 12px' }}>
           <textarea 
             ref={inputRef}
             id="agent-input"
             value={query} 
             onChange={(e) => setQuery(e.target.value)} 
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} 
-            placeholder="e.g. I run a cafe in Jaipur — what should I post this week?
-e.g. Write 5 Instagram Reels hooks for my skincare brand
-e.g. Find yoga influencers in Delhi for my brand" 
-            rows={3}
-            style={{ width: '100%', paddingRight: '50px' }}
+            placeholder={hasResults ? "Ask another question..." : "e.g. I run a cafe in Jaipur — what should I post this week?"}
+            rows={hasResults ? 1 : 3}
+            style={{ 
+              width: '100%', 
+              paddingRight: '50px',
+              fontSize: hasResults ? '14px' : '14px'
+            }}
           />
           <button 
             id="agent-send-btn"
@@ -225,38 +249,57 @@ e.g. Find yoga influencers in Delhi for my brand"
           </button>
         </div>
         
-        {/* Deep Research Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            <input 
-              type="checkbox" 
-              checked={deepResearch} 
-              onChange={(e) => setDeepResearch(e.target.checked)}
-              style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
-            />
-            🔬 Deep Research (more thorough, uses live data)
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            <input 
-              type="checkbox" 
-              checked={liveSearchEnabled} 
-              onChange={(e) => setLiveSearchEnabled(e.target.checked)}
-              style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
-            />
-            🌐 Live Search
-          </label>
-        </div>
+        {/* Deep Research Toggle - Show when no results */}
+        {!hasResults && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <input 
+                type="checkbox" 
+                checked={deepResearch} 
+                onChange={(e) => setDeepResearch(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
+              />
+              🔬 Deep Research
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <input 
+                type="checkbox" 
+                checked={liveSearchEnabled} 
+                onChange={(e) => setLiveSearchEnabled(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#00ffcc' }}
+              />
+              🌐 Live Search
+            </label>
+          </div>
+        )}
         
-        {/* Quick Prompts */}
-        <div id="quick-prompts" style={{ marginBottom: '8px' }}>
-          {quickPrompts.map((qp, i) => (
-            <button key={i} onClick={() => handleQuickPrompt(qp.prompt)}>
-              {qp.label}
-            </button>
-          ))}
-        </div>
+        {/* Show toggles inline when has results */}
+        {hasResults && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px', fontSize: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              <input 
+                type="checkbox" 
+                checked={deepResearch} 
+                onChange={(e) => setDeepResearch(e.target.checked)}
+                style={{ width: '14px', height: '14px', accentColor: '#00ffcc' }}
+              />
+              🔬 Deep Research
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              <input 
+                type="checkbox" 
+                checked={liveSearchEnabled} 
+                onChange={(e) => setLiveSearchEnabled(e.target.checked)}
+                style={{ width: '14px', height: '14px', accentColor: '#00ffcc' }}
+              />
+              🌐 Live Search
+            </label>
+          </div>
+        )}
         
-        <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
+        {!hasResults && (
+          <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
+        )}
       </div>
       
       {/* Loading State with Blinking Cursor */}
@@ -268,8 +311,8 @@ e.g. Find yoga influencers in Delhi for my brand"
         </div>
       )}
       
-      {/* Output */}
-      {showResults && (
+      {/* Output - Show when has results */}
+      {hasResults && (
         <div className="output-container" ref={outputRef} style={{ position: 'relative' }}>
           {/* Sticky New Query Button */}
           <div style={{ 
@@ -313,7 +356,6 @@ e.g. Find yoga influencers in Delhi for my brand"
             <div style={{ display: 'flex', gap: '6px' }}>
               <button className="copy-output" onClick={handleCopy}>Copy</button>
               <button className="save-output-btn">Save</button>
-              <button className="new-query-btn" onClick={handleNewQuery}>New query</button>
             </div>
           </div>
           
@@ -322,7 +364,7 @@ e.g. Find yoga influencers in Delhi for my brand"
             {intentResult && (
               <>
                 <span className="meta-intent">
-                  Intent: {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
+                  {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
                 </span>
                 <span className={`meta-confidence ${intentResult.confidence.toLowerCase()}`}>
                   {intentResult.confidence}
@@ -330,10 +372,10 @@ e.g. Find yoga influencers in Delhi for my brand"
               </>
             )}
             <span className={`meta-badge ${liveSearchEnabled ? 'badge-green' : 'badge-gray'}`}>
-              {liveSearchEnabled ? '🌐 Live Search ON' : '🌐 Live Search OFF'}
+              {liveSearchEnabled ? '🌐 Live Search' : '🌐 Live Search OFF'}
             </span>
             {deepResearch && (
-              <span className="meta-badge badge-purple">🔬 Deep Research</span>
+              <span className="meta-badge badge-purple">🔬 Deep</span>
             )}
           </div>
           
@@ -361,42 +403,46 @@ e.g. Find yoga influencers in Delhi for my brand"
         </div>
       )}
       
-      {/* Stats Row */}
-      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
-        <div className="hbadge">
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> queued today
-        </div>
-        <div className="hbadge">
-          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> saved outputs
-        </div>
-      </div>
-      
-      {/* Section Divider */}
-      <div className="section-header">
-        <div className="section-title">Or go directly to a module</div>
-        <div className="section-line"></div>
-      </div>
-      
-      {/* Module Cards */}
-      <div className="quick-grid">
-        {[
-          { title: 'Content', desc: 'Captions, hooks, threads', icon: '✍️', tag: 'AI', class: 'nb-green', href: '/content' },
-          { title: 'Calendar', desc: 'Full month content plan', icon: '📅', tag: 'AI', class: 'nb-green', href: '/calendar' },
-          { title: 'Influencers', desc: 'Find, pitch, track', icon: '🤝', tag: 'Live', class: 'nb-purple', href: '/influencer' },
-          { title: 'Strategy', desc: 'Audit, trends, growth', icon: '📊', tag: 'Live', class: 'nb-purple', href: '/strategy' },
-          { title: 'Bulk Generate', desc: '10 posts in one shot', icon: '⚡', tag: 'New', class: 'nb-amber', href: '/bulk' },
-          { title: 'Listening', desc: 'Monitor, newsjack', icon: '🌐', tag: 'Live', class: 'nb-green', href: '/listen' },
-          { title: 'Engagement', desc: 'Replies, DMs, crisis', icon: '💬', tag: 'AI', class: 'nb-purple', href: '/engage' },
-          { title: 'Post Diagnosis', desc: 'Why did this flop?', icon: '🔬', tag: 'AI', class: 'nb-amber', href: '/diagnose' },
-        ].map((card, i) => (
-          <a key={i} href={card.href} className="q-card">
-            <span className="q-icon">{card.icon}</span>
-            <div className="q-title">{card.title}</div>
-            <div className="q-desc">{card.desc}</div>
-            <span className={`nbadge ${card.class}`}>{card.tag}</span>
-          </a>
-        ))}
-      </div>
+      {/* Stats Row - Show when no results */}
+      {!hasResults && (
+        <>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '28px' }}>
+            <div className="hbadge">
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> queued today
+            </div>
+            <div className="hbadge">
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>0</span> saved outputs
+            </div>
+          </div>
+          
+          {/* Section Divider */}
+          <div className="section-header">
+            <div className="section-title">Or go directly to a module</div>
+            <div className="section-line"></div>
+          </div>
+          
+          {/* Module Cards */}
+          <div className="quick-grid">
+            {[
+              { title: 'Content', desc: 'Captions, hooks, threads', icon: '✍️', tag: 'AI', class: 'nb-green', href: '/content' },
+              { title: 'Calendar', desc: 'Full month content plan', icon: '📅', tag: 'AI', class: 'nb-green', href: '/calendar' },
+              { title: 'Influencers', desc: 'Find, pitch, track', icon: '🤝', tag: 'Live', class: 'nb-purple', href: '/influencer' },
+              { title: 'Strategy', desc: 'Audit, trends, growth', icon: '📊', tag: 'Live', class: 'nb-purple', href: '/strategy' },
+              { title: 'Bulk Generate', desc: '10 posts in one shot', icon: '⚡', tag: 'New', class: 'nb-amber', href: '/bulk' },
+              { title: 'Listening', desc: 'Monitor, newsjack', icon: '🌐', tag: 'Live', class: 'nb-green', href: '/listen' },
+              { title: 'Engagement', desc: 'Replies, DMs, crisis', icon: '💬', tag: 'AI', class: 'nb-purple', href: '/engage' },
+              { title: 'Post Diagnosis', desc: 'Why did this flop?', icon: '🔬', tag: 'AI', class: 'nb-amber', href: '/diagnose' },
+            ].map((card, i) => (
+              <a key={i} href={card.href} className="q-card">
+                <span className="q-icon">{card.icon}</span>
+                <div className="q-title">{card.title}</div>
+                <div className="q-desc">{card.desc}</div>
+                <span className={`nbadge ${card.class}`}>{card.tag}</span>
+              </a>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
