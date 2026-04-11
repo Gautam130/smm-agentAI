@@ -952,24 +952,30 @@ select option {
 }
 
 /* Claude.ai style attachment chips */
-.attachment-chips-container {
+.attachment-chips-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, margin 0.3s ease;
+  margin-bottom: 0;
+}
+
+.attachment-chips-wrapper.has-files {
+  max-height: 80px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.attachment-chips-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   padding: 4px 0;
-  max-width: 300px;
   scrollbar-width: none;
-  transition: all 0.3s ease;
-  max-height: 100px;
-  opacity: 1;
 }
 
-.attachment-chips-container:empty,
-.attachment-chips-container[data-empty="true"] {
-  max-height: 0;
-  padding: 0;
-  opacity: 0;
-  overflow: hidden;
+.attachment-chips-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .attachment-chips-container::-webkit-scrollbar {

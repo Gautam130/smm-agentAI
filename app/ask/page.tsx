@@ -335,10 +335,48 @@ export default function AskMayaPage() {
           borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
           border: '1px solid var(--border-glass)',
           borderTop: 'none',
+          transition: 'padding 0.3s ease',
+          padding: attachedFiles.length > 0 ? '12px 12px 4px 12px' : '12px',
         }}>
-          {/* NO SEPARATE BOX - attachment now inline with input */}
+          {/* Attachment chips at TOP - container grows upward */}
+          <div 
+            className={`attachment-chips-wrapper ${attachedFiles.length > 0 ? 'has-files' : ''}`}
+          >
+            {attachedFiles.length > 0 && (
+              <div className="attachment-chips-scroll">
+                {attachedFiles.map((file, idx) => (
+                  <div key={idx} className="attachment-chip">
+                    {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
+                      <img 
+                        src={previewUrls.get(file.name)} 
+                        alt="preview"
+                        className="attachment-thumbnail"
+                      />
+                    ) : (
+                      <div className="attachment-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                      </div>
+                    )}
+                    <span className="attachment-name">
+                      {file.name.length > 12 ? file.name.slice(0,12) + '...' : file.name}
+                    </span>
+                    <button 
+                      className="attachment-remove"
+                      onClick={() => removeFile(idx)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <div className="chat-input-row" style={{ border: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', flexWrap: 'wrap', gap: '8px', padding: '12px' }}>
+          {/* Input row at bottom */}
+          <div className="chat-input-row" style={{ border: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', flexWrap: 'wrap', gap: '8px', padding: '8px 0 0 0' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button 
                 className="chat-attach-btn" 
@@ -352,39 +390,6 @@ export default function AskMayaPage() {
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </button>
-              
-              {/* Inline attachment preview - Claude.ai style - horizontal scrollable chips */}
-              {attachedFiles.length > 0 && (
-                <div className="attachment-chips-container">
-                  {attachedFiles.map((file, idx) => (
-                    <div key={idx} className="attachment-chip">
-                      {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
-                        <img 
-                          src={previewUrls.get(file.name)} 
-                          alt="preview"
-                          className="attachment-thumbnail"
-                        />
-                      ) : (
-                        <div className="attachment-icon">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                        </div>
-                      )}
-                      <span className="attachment-name">
-                        {file.name.length > 12 ? file.name.slice(0,12) + '...' : file.name}
-                      </span>
-                      <button 
-                        className="attachment-remove"
-                        onClick={() => removeFile(idx)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
               
               {showAttachMenu && (
                 <div className="attach-dropdown">
