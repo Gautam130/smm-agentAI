@@ -305,10 +305,10 @@ export default function AskMayaPage() {
         flex: 1,
         minHeight: 0,
       }}>
-        {/* Messages area - flexible, fills available space */}
+        {/* Messages area - flexible, fills available space, scrolls */}
         <div ref={chatRef} style={{ 
           flex: 1, 
-          minHeight: '200px',
+          minHeight: 0,
           overflowY: 'auto', 
           padding: '16px 12px',
           background: 'var(--bg-onyx)',

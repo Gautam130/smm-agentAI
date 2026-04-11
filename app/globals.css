@@ -1052,6 +1052,7 @@ select option {
 .chat-composer {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   background: var(--bg-onyx);
   border: 1px solid var(--border-glass);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -1061,7 +1062,6 @@ select option {
 
 .chat-composer.has-attachments {
   border-radius: 24px;
-  margin: 4px 8px 8px 8px;
   padding: 8px;
   background: var(--bg-card);
 }
