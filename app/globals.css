@@ -1170,7 +1170,7 @@ select option {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #0081ff;
+  background: linear-gradient(135deg, #00FFCC, #A855F7);
   border: none;
   color: #ffffff;
   display: flex;
@@ -1182,7 +1182,7 @@ select option {
 }
 
 .meta-send-btn:hover:not(:disabled) {
-  background: #0070e0;
+  transform: scale(1.05);
 }
 
 .meta-send-btn:disabled {
@@ -2070,7 +2070,7 @@ select option {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent) 0%, #00ccaa 100%);
+  background: linear-gradient(135deg, #00FFCC, #A855F7);
   border: none;
   cursor: pointer;
   display: flex;
