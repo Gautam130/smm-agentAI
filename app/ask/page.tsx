@@ -366,79 +366,76 @@ export default function AskMayaPage() {
             </div>
           )}
 
-          {/* Input row bottom */}
-          <div className="input-row-bottom">
-            <button 
-              id="agent-plus-btn"
-              title="Add"
-              onClick={() => setShowAttachMenu(!showAttachMenu)}
-              disabled={attachedFiles.length >= 2}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            </button>
+          {/* + Button */}
+          <button 
+            id="agent-plus-btn"
+            title="Add"
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+            disabled={attachedFiles.length >= 2}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
 
-            {showAttachMenu && (
-              <div className="attach-dropdown">
-                <label className="attach-option">
-                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                  </svg>
-                  Attachment
-                </label>
-                <label className="attach-option">
-                  <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                  Upload Image
-                </label>
-                {ocrProgress && (
-                  <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    {ocrProgress}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <textarea
-              ref={textareaRef}
-              id="agent-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onInput={adjustTextareaHeight}
-              placeholder={attachedFiles.length > 0 ? "Add a message..." : "Message..."}
-              rows={1}
-            />
-
-            <div className="chat-actions-right">
-              <button 
-                className={input.trim() || attachedFiles.length > 0 ? 'instant-pill' : ''}
-                id="agent-send-btn"
-                onClick={handleSend}
-                disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="22" y1="2" x2="11" y2="13"></line>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          {showAttachMenu && (
+            <div className="attach-dropdown">
+              <label className="attach-option">
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                 </svg>
-              </button>
+                Attachment
+              </label>
+              <label className="attach-option">
+                <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Upload Image
+              </label>
+              {ocrProgress && (
+                <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                  {ocrProgress}
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {/* Input hint */}
-          <div className="input-hint">
-            <span>Enter to send • Shift+Enter for new line</span>
-            {messages.length > 0 && (
-              <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
-            )}
-          </div>
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            id="agent-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onInput={adjustTextareaHeight}
+            placeholder={attachedFiles.length > 0 ? "Add a message..." : "Message..."}
+            rows={1}
+          />
+
+          {/* Send Button */}
+          <button 
+            id="agent-send-btn"
+            onClick={handleSend}
+            disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        {/* Input hint */}
+        <div className="input-hint">
+          <span>Enter to send • Shift+Enter for new line</span>
+          {messages.length > 0 && (
+            <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
+          )}
         </div>
       </div>
     </div>

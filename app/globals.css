@@ -1049,6 +1049,7 @@ select option {
 }
 
 /* Meta AI Style Pill Input - Demo */
+/* OUTER CONTAINER - This is the only visible pill */
 .chat-input-row {
   position: relative;
   width: 100%;
@@ -1056,12 +1057,11 @@ select option {
   background: var(--bg-card);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border-glass);
+  border: 1px solid var(--accent);
   border-radius: 9999px;
   padding: 8px;
   box-shadow: 
-    0 1px 2px rgba(0,0,0,0.2), 
-    0 4px 12px rgba(0,0,0,0.15),
+    0 0 12px var(--accent-glow),
     inset 0 1px 0 rgba(255,255,255,0.05);
   transition: all 150ms ease-in-out;
   display: flex;
@@ -1069,42 +1069,29 @@ select option {
   flex-shrink: 0;
 }
 
-.chat-input-row:focus-within {
-  border-color: rgba(0, 255, 204, 0.3);
-  box-shadow: 
-    0 0 0 1px rgba(0, 255, 204, 0.2),
-    0 1px 2px rgba(0,0,0,0.2), 
-    0 4px 12px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-.chat-input-row.has-attachments {
-  border-radius: 24px;
-  padding: 12px;
-  flex-direction: column;
-  align-items: stretch;
-}
-
+/* TEXTAREA - Must be 100% transparent, no border */
 #agent-input {
   flex: 1;
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   outline: none;
   resize: none;
   padding: 10px 12px;
   margin: 0 4px;
   font-size: 16px;
   line-height: 1.4;
-  color: var(--text-primary);
+  color: #fff;
   font-family: var(--font);
   max-height: 200px;
   overflow-y: hidden;
+  border-radius: 0 !important;
 }
 
-#agent-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+#agent-input::placeholder { 
+  color: rgba(255, 255, 255, 0.5); 
 }
 
+/* + BUTTON */
 #agent-plus-btn {
   width: 36px;
   height: 36px;
@@ -1123,7 +1110,6 @@ select option {
 #agent-plus-btn:hover {
   background: var(--bg-glass);
   border-color: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 #agent-plus-btn:disabled {
@@ -1131,52 +1117,27 @@ select option {
   cursor: not-allowed;
 }
 
-.chat-actions-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.instant-pill {
-  background: var(--bg-glass);
-  border: 1px solid var(--border-glass);
-  border-radius: 9999px;
-  padding: 6px 12px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  transition: all 150ms ease-in-out;
-}
-
-.instant-pill:hover {
-  border-color: var(--accent);
-}
-
+/* SEND BUTTON */
 #agent-send-btn {
   width: 36px;
   height: 36px;
   border-radius: 9999px;
   border: none;
-  background: var(--bg-glass);
-  color: rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+  color: #000;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: not-allowed;
-  transition: all 150ms ease-in-out;
-  flex-shrink: 0;
-}
-
-#agent-send-btn:not([disabled]) {
-  background: linear-gradient(135deg, var(--accent), #00cc99);
-  color: #000;
   cursor: pointer;
+  flex-shrink: 0;
   box-shadow: 0 2px 8px var(--accent-glow);
 }
 
-#agent-send-btn:not([disabled]):hover {
-  transform: scale(1.05);
+#agent-send-btn:disabled {
+  background: var(--bg-glass);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* Attachment preview inside the same container */
@@ -1193,6 +1154,11 @@ select option {
   display: flex;
 }
 
+.chat-input-row.has-attachments {
+  flex-wrap: wrap;
+  padding: 12px;
+}
+
 .attachment-preview {
   display: flex;
   align-items: center;
@@ -1204,6 +1170,7 @@ select option {
   padding: 8px;
   position: relative;
   animation: fadeSlideIn 150ms ease-in-out;
+  width: 100%;
 }
 
 .attachment-preview img {
@@ -1259,17 +1226,6 @@ select option {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-}
-
-.chat-input-row.has-attachments .input-row-bottom {
-  display: flex;
-  align-items: flex-end;
-}
-
-.input-row-bottom {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
 }
 
 @keyframes fadeSlideIn {
