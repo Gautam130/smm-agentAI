@@ -1048,184 +1048,169 @@ select option {
   color: var(--text-primary);
 }
 
-/* Meta AI Style Pill Input - Demo */
-/* OUTER CONTAINER - This is the only visible pill */
-.chat-input-row {
-  position: relative;
+/* Meta AI Exact Replica Input */
+.meta-input-container {
   width: 100%;
-  max-width: 700px;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--accent);
-  border-radius: 9999px;
-  padding: 8px;
-  box-shadow: 
-    0 0 12px var(--accent-glow),
-    inset 0 1px 0 rgba(255,255,255,0.05);
-  transition: all 150ms ease-in-out;
+  background: #2a2a2a;
+  border-radius: 28px;
+  padding: 12px 16px;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-/* TEXTAREA - Must be 100% transparent, no border */
-#agent-input {
-  flex: 1;
-  background: transparent !important;
-  border: none !important;
+.meta-input-container.has-attachments {
+  gap: 12px;
+}
+
+.meta-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
   outline: none;
   resize: none;
-  padding: 10px 12px;
-  margin: 0 4px;
   font-size: 16px;
   line-height: 1.4;
-  color: #fff;
+  color: #ffffff;
   font-family: var(--font);
   max-height: 200px;
   overflow-y: hidden;
-  border-radius: 0 !important;
+  min-height: 24px;
 }
 
-#agent-input::placeholder { 
-  color: rgba(255, 255, 255, 0.5); 
+.meta-textarea::placeholder {
+  color: #888888;
 }
 
-/* + BUTTON */
-#agent-plus-btn {
+.meta-input-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.meta-plus-btn {
   width: 36px;
   height: 36px;
-  border-radius: 9999px;
+  border-radius: 50%;
   background: transparent;
-  border: 1px solid var(--border-glass);
-  color: var(--accent);
+  border: 1px solid #555555;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 150ms ease-in-out;
+  transition: all 150ms ease;
 }
 
-#agent-plus-btn:hover {
-  background: var(--bg-glass);
-  border-color: var(--accent);
+.meta-plus-btn:hover {
+  border-color: #888888;
 }
 
-#agent-plus-btn:disabled {
+.meta-plus-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* SEND BUTTON */
-#agent-send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 9999px;
+.meta-right-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.meta-instant-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: #3a3a3a;
+  border: 1px solid #444444;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.meta-instant-btn:hover {
+  background: #444444;
+}
+
+.meta-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #0081ff;
   border: none;
-  background: linear-gradient(135deg, var(--accent), var(--accent-purple));
-  color: #000;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px var(--accent-glow);
+  transition: all 150ms ease;
 }
 
-#agent-send-btn:disabled {
-  background: var(--bg-glass);
-  color: rgba(255, 255, 255, 0.4);
+.meta-send-btn:hover:not(:disabled) {
+  background: #0070e0;
+}
+
+.meta-send-btn:disabled {
+  background: #444444;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* Attachment preview inside the same container */
-.attachment-preview-container {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.chat-input-row.has-attachments .attachment-preview-container {
+/* Attachment preview in meta input */
+.meta-attachments {
   display: flex;
-}
-
-.chat-input-row.has-attachments {
+  gap: 8px;
   flex-wrap: wrap;
-  padding: 12px;
 }
 
-.attachment-preview {
+.meta-attachment {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-glass);
-  backdrop-filter: blur(15px);
-  border: 1px solid var(--border-glass);
-  border-radius: 12px;
-  padding: 8px;
-  position: relative;
-  animation: fadeSlideIn 150ms ease-in-out;
-  width: 100%;
+  gap: 6px;
+  background: #3a3a3a;
+  border-radius: 8px;
+  padding: 6px 8px;
 }
 
-.attachment-preview img {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+.meta-attachment img {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
   object-fit: cover;
 }
 
-.attachment-preview .file-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+.meta-attachment .meta-file-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: #4a4a4a;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 10px;
+  color: #888;
+}
+
+.meta-attachment .meta-file-name {
   font-size: 12px;
-  font-weight: 600;
-  color: #000;
-}
-
-.attachment-preview .file-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.attachment-preview .file-name {
-  font-size: 14px;
-  color: var(--text-primary);
+  color: #ccc;
+  max-width: 80px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.attachment-preview .file-size {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.attachment-preview .remove-btn {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid var(--border-glass);
-  color: #fff;
+.meta-attachment .meta-remove-btn {
+  background: none;
+  border: none;
+  color: #666;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
+  padding: 2px;
 }
 
 @keyframes fadeSlideIn {

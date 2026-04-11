@@ -344,90 +344,101 @@ export default function AskMayaPage() {
           )}
         </div>
 
-        {/* Meta AI style pill input - Demo version */}
-        <div className={`chat-input-row ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
-          {/* Attachment previews inside the same container */}
+        {/* Meta AI style input - flat dark, exact replica */}
+        <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
+          {/* Attachment previews */}
           {attachedFiles.length > 0 && (
-            <div className="attachment-preview-container">
+            <div className="meta-attachments">
               {attachedFiles.map((file, idx) => (
-                <div key={idx} className="attachment-preview">
+                <div key={idx} className="meta-attachment">
                   {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
                     <img src={previewUrls.get(file.name)} alt={file.name} />
                   ) : (
-                    <div className="file-icon">{file.name.split('.').pop()?.toUpperCase()}</div>
+                    <div className="meta-file-icon">{file.name.split('.').pop()?.toUpperCase()}</div>
                   )}
-                  <div className="file-info">
-                    <div className="file-name">{file.name}</div>
-                    <div className="file-size">{file.size}</div>
-                  </div>
-                  <button className="remove-btn" onClick={() => removeFile(idx)}>×</button>
+                  <span className="meta-file-name">{file.name}</span>
+                  <button className="meta-remove-btn" onClick={() => removeFile(idx)}>×</button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* + Button */}
-          <button 
-            id="agent-plus-btn"
-            title="Add"
-            onClick={() => setShowAttachMenu(!showAttachMenu)}
-            disabled={attachedFiles.length >= 2}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-
-          {showAttachMenu && (
-            <div className="attach-dropdown">
-              <label className="attach-option">
-                <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                </svg>
-                Attachment
-              </label>
-              <label className="attach-option">
-                <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Upload Image
-              </label>
-              {ocrProgress && (
-                <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  {ocrProgress}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Textarea */}
+          {/* Top row - Textarea */}
           <textarea
             ref={textareaRef}
-            id="agent-input"
+            className="meta-textarea"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onInput={adjustTextareaHeight}
-            placeholder={attachedFiles.length > 0 ? "Add a message..." : "Message..."}
+            placeholder="Ask Maya..."
             rows={1}
           />
 
-          {/* Send Button */}
-          <button 
-            id="agent-send-btn"
-            onClick={handleSend}
-            disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
+          {/* Bottom row - Buttons */}
+          <div className="meta-input-bottom">
+            {/* + Button - left */}
+            <button 
+              className="meta-plus-btn"
+              title="Add"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              disabled={attachedFiles.length >= 2}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+
+            {showAttachMenu && (
+              <div className="attach-dropdown">
+                <label className="attach-option">
+                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                  Attachment
+                </label>
+                <label className="attach-option">
+                  <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Upload Image
+                </label>
+                {ocrProgress && (
+                  <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                    {ocrProgress}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Right side buttons */}
+            <div className="meta-right-buttons">
+              {/* Instant button */}
+              <button 
+                className="meta-instant-btn"
+                onClick={() => {}}
+              >
+                Instant
+              </button>
+
+              {/* Send button - blue circle */}
+              <button 
+                className="meta-send-btn"
+                onClick={handleSend}
+                disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Input hint */}
