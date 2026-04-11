@@ -17,26 +17,12 @@ export async function POST(req: NextRequest) {
       taskType === 'chat' ? 3000 :
       taskType === 'intent' ? 500 :
       taskType === 'classify' ? 500 :
-      taskType === 'home-search' ? 5000 :
+      // home-search handled by client-side lib/prompt.ts - tokens set there
       maxTokens;
 
     const systemPrompts: Record<string, string> = {
-      'home-search': `You are SMM Agent - an AI social media marketing assistant. When user asks about marketing, strategy, trends, or similar topics, respond with ONLY valid JSON in this exact format (no other text):
-
-{
-  "intent": "Research|Strategy|Content|Audit|Ideas|General",
-  "confidence": "HIGH|MEDIUM|LOW",
-  "warnings": ["warning message if any"],
-  "sections": [
-    { "emoji": "📍", "title": "What's happening right now", "content": "Bullet points with implications" },
-    { "emoji": "📊", "title": "The numbers", "content": "Stats with [source] citations" },
-    { "emoji": "🧠", "title": "The strategic read", "content": "Analysis with 'The gap:' and 'The uncomfortable truth:' sections" },
-    { "emoji": "🚀", "title": "What to do about it", "content": "Timeline: This week → In 30 days → Longer bet → ⚡ Start here today" }
-  ],
-  "feedback": true
-}
-
-For non-marketing questions, respond normally in plain text. Always be helpful and specific.`
+      // Note: home-search now handled by client-side lib/prompt.ts
+      // This is for other taskTypes that need server-side system prompts
     };
 
     const systemPrompt = systemPrompts[taskType];

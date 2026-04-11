@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
+import { detectIntent, getTemperature, type IntentResult } from '@/lib/intent';
+import { classifyQuery, getQueryTier, getTierParams, type ClassificationResult, type QueryTier } from '@/lib/classify';
+import { buildPrompt, CORE_IDENTITY, getBrandContext } from '@/lib/prompt';
 
 interface Section {
   emoji: string;
@@ -15,6 +18,13 @@ interface StructuredResponse {
   warnings: string[];
   sections: Section[];
   feedback: boolean;
+}
+
+interface SearchResult {
+  title: string;
+  url: string;
+  domain: string;
+  snippet?: string;
 }
 
 const quickPrompts = [
@@ -32,10 +42,12 @@ export default function HomePage() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [processingSteps, setProcessingSteps] = useState<string>('');
   const [rawResponse, setRawResponse] = useState('');
   const [structuredData, setStructuredData] = useState<StructuredResponse | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [userName, setUserName] = useState('');
+  const [intentResult, setIntentResult] = useState<IntentResult | null>(null);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -64,26 +76,99 @@ export default function HomePage() {
     return null;
   };
 
+  const performLiveSearch = async (searchQuery: string): Promise<string> => {
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery, maxResults: 8 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          return data.results
+            .slice(0, 5)
+            .map((r: SearchResult) => `- ${r.title}: ${r.snippet || ''} (source: ${r.domain})`)
+            .join('\n');
+        }
+      }
+    } catch (e) {
+      console.warn('Live search failed:', e);
+    }
+    return '';
+  };
+
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
     setRawResponse('');
     setStructuredData(null);
+    setIntentResult(null);
     setShowResults(true);
+    setProcessingSteps('Detecting intent...');
+
     try {
+      // Step 1: Detect intent (LLM + fallback)
+      const intent = await detectIntent(query);
+      setIntentResult(intent);
+      setProcessingSteps('Classifying query...');
+
+      // Step 2: Classify query
+      const classification = classifyQuery(query);
+      const tier = getQueryTier(query);
+      const tierParams = getTierParams(tier);
+
+      setProcessingSteps(`Processing (Tier ${tier})...`);
+
+      // Step 3: Live search if needed (Tier > 1 and useLiveSearch)
+      let liveContext = '';
+      if (classification.useLiveSearch && tier > 1) {
+        liveContext = await performLiveSearch(query);
+      }
+
+      // Step 4: Build prompt
+      setProcessingSteps('Building prompt...');
+      const brandCtx = getBrandContext();
+      const finalPrompt = buildPrompt({
+        query,
+        intent,
+        liveContext,
+        knowledgeContext: '',
+        brandCtx
+      });
+
+      // Step 5: Determine taskType based on intent
+      let taskType = 'general';
+      if (intent.isContent) taskType = 'content';
+      else if (intent.isStrategy) taskType = 'strategy';
+      else if (intent.isResearch) taskType = 'research';
+      else if (intent.isTrend) taskType = 'research';
+
+      const temperature = getTemperature(intent);
+
+      // Step 6: Call API with assembled prompt
+      setProcessingSteps('Getting response...');
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          messages: [{ role: 'user', content: query }],
-          taskType: 'home-search'
+          messages: [
+            { role: 'system', content: CORE_IDENTITY },
+            { role: 'user', content: finalPrompt }
+          ],
+          taskType,
+          temperature,
+          maxTokens: tierParams.maxTokens
         })
       });
+      
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (!res.body) throw new Error('No response');
+      
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let text = '';
+      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -102,6 +187,7 @@ export default function HomePage() {
           }
         }
       }
+      
       setRawResponse(text);
       const structured = parseStructuredResponse(text);
       setStructuredData(structured);
@@ -109,6 +195,7 @@ export default function HomePage() {
       setRawResponse(`Error: ${e.message}`);
     }
     setLoading(false);
+    setProcessingSteps('');
   };
 
   const handleQuickPrompt = (prompt: string) => {
@@ -119,7 +206,9 @@ export default function HomePage() {
     setQuery('');
     setRawResponse('');
     setStructuredData(null);
+    setIntentResult(null);
     setShowResults(false);
+    setProcessingSteps('');
   };
 
   const handleCopy = () => {
@@ -198,11 +287,11 @@ e.g. Find yoga influencers in Delhi for my brand"
         <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line · <b>Ctrl+Enter</b> works too</div>
       </div>
       
-      {/* Thinking State */}
-      {loading && (
+      {/* Processing Steps */}
+      {loading && processingSteps && (
         <div className="thinking-state">
           <div className="thinking-spinner"></div>
-          <span>Thinking...</span>
+          <span>{processingSteps}</span>
         </div>
       )}
       
@@ -222,7 +311,20 @@ e.g. Find yoga influencers in Delhi for my brand"
             </div>
           </div>
           
-          {/* Meta Info */}
+          {/* Intent Result Display */}
+          {intentResult && (
+            <div className="response-meta">
+              <span className="meta-intent">
+                Intent: {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
+              </span>
+              <span className={`meta-confidence ${intentResult.confidence.toLowerCase()}`}>
+                Confidence: {intentResult.confidence}
+              </span>
+              <span className="meta-warning">Source: {intentResult.source}</span>
+            </div>
+          )}
+          
+          {/* Meta Info from structured response */}
           {structuredData && (
             <div className="response-meta">
               <span className="meta-intent">Intent: {structuredData.intent}</span>
