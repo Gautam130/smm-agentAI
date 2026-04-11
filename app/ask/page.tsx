@@ -283,14 +283,12 @@ export default function AskMayaPage() {
   const pagePadding = 16;
 
   return (
-    <>
-      <div className="panel-header">
-        <div style={{ fontWeight: 600, fontSize: '14px' }}>Ask Maya</div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', padding: '0 16px' }}>
+      <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
       
-      <div className="notice n-green">Ask your agent anything — it remembers the conversation within this session.</div>
+      <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
       
-      <div className="chat-suggestions">
+      <div className="chat-suggestions" style={{ marginBottom: '12px', padding: '8px 0' }}>
         {suggestions.map((s, i) => (
           <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
             {s}
@@ -298,14 +296,14 @@ export default function AskMayaPage() {
         ))}
       </div>
 
-      {/* Chat container */}
+      {/* Chat container - fills remaining space below suggestions */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
       }}>
-        {/* Messages area - flexible, fills available space, scrolls */}
+        {/* Messages area - scrolls, takes available space */}
         <div ref={chatRef} style={{ 
           flex: 1, 
           minHeight: 0,
@@ -453,6 +451,6 @@ export default function AskMayaPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
