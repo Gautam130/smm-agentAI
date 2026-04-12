@@ -363,7 +363,7 @@ export default function AskMayaPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-black">
+    <div className="h-full flex flex-col overflow-hidden bg-black">
       {/* Header - shrinks away if needed */}
       <div className="flex-shrink-0 px-4">
         <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
