@@ -1,6 +1,8 @@
 'use client';
 
 import { useSidebar } from "./SidebarContext";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
 
 export default function AppShell({
   children,
