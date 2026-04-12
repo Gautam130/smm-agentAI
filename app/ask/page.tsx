@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, useMemo } from 'react';
 import { useMaya } from '@/lib/maya';
 
 const suggestions = [
@@ -85,6 +85,16 @@ export default function AskMayaPage() {
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const plusBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Stable messages ref to prevent re-renders during streaming
+  const stableMessagesRef = useRef<Message[]>([]);
+  const prevMessagesLengthRef = useRef(0);
+
+  // Only update stable ref when a new message is added
+  if (messages.length > prevMessagesLengthRef.current) {
+    stableMessagesRef.current = messages as Message[];
+    prevMessagesLengthRef.current = messages.length;
+  }
 
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
@@ -370,28 +380,31 @@ export default function AskMayaPage() {
   const pagePadding = 16;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, height: '100%', padding: '0 16px', background: '#000000' }}>
-      <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
-      
-      <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
-      
-      <div className="chat-suggestions" style={{ marginBottom: '12px', padding: '8px 0' }}>
-        {suggestions.map((s, i) => (
-          <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
-            {s}
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', padding: '0 16px', background: '#000000' }}>
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
+        
+        <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
+        
+        <div className="chat-suggestions" style={{ marginBottom: '12px', padding: '8px 0' }}>
+          {suggestions.map((s, i) => (
+            <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Chat container - fills remaining space below suggestions */}
+      {/* Chat container - fills remaining space */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
+        overflow: 'hidden',
         background: '#000000',
       }}>
-        <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+        <MessagesList messages={stableMessagesRef.current} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
 
          {/* Meta AI style input - flat dark, exact replica */}
          <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`} style={{ flexShrink: 0 }}>
