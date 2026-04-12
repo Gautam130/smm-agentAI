@@ -468,6 +468,29 @@ export function useMaya() {
 
     abortRef.current = new AbortController();
     let fullText = '';
+    let lastUpdateTime = Date.now();
+    let pendingUpdate = false;
+
+    const updateStreamingMessage = () => {
+      pendingUpdate = false;
+      lastUpdateTime = Date.now();
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: 'assistant',
+          text: fullText,
+          streaming: true
+        };
+        return updated;
+      });
+    };
+
+    const scheduleUpdate = () => {
+      if (!pendingUpdate) {
+        pendingUpdate = true;
+        setTimeout(updateStreamingMessage, 16); // ~60fps max
+      }
+    };
 
     try {
       const res = await fetch('/api/chat', {
@@ -506,15 +529,13 @@ export function useMaya() {
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
                 fullText += content;
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: 'assistant',
-                    text: fullText,
-                    streaming: true
-                  };
-                  return updated;
-                });
+                // Throttle updates to ~60fps to prevent excessive re-renders
+                const now = Date.now();
+                if (now - lastUpdateTime >= 16 || fullText.length < 100) {
+                  updateStreamingMessage();
+                } else {
+                  scheduleUpdate();
+                }
               }
               if (parsed.error) {
                 throw new Error(parsed.error);
@@ -523,9 +544,12 @@ export function useMaya() {
           }
         }
       }
+      // Final update to ensure all content is shown
+      updateStreamingMessage();
     } catch(e: any) {
       if (e.name !== 'AbortError') {
         fullText = e.message || 'Something went wrong. Try again.';
+        updateStreamingMessage();
       }
     }
 

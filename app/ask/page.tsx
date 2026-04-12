@@ -380,8 +380,9 @@ export default function AskMayaPage() {
   const pagePadding = 16;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', padding: '0 16px', background: '#000000' }}>
-      <div style={{ flexShrink: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#000000' }}>
+      {/* Header section - stays at top */}
+      <div style={{ flexShrink: 0, padding: '0 16px' }}>
         <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
         
         <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
@@ -395,13 +396,14 @@ export default function AskMayaPage() {
         </div>
       </div>
 
-      {/* Chat container - fills remaining space */}
+      {/* Chat container - fills remaining space with messages pushing up */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
         overflow: 'hidden',
+        padding: '0 16px',
         background: '#000000',
       }}>
         <MessagesList messages={stableMessagesRef.current} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
