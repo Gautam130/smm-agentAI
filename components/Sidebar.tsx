@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useClients } from './ClientContext';
+import { useSidebar } from './SidebarContext';
 
 interface NavItem {
   label: string;
@@ -125,6 +126,7 @@ function Badge({ type }: { type?: string }) {
 export default function Sidebar() {
   const pathname = usePathname();
   const { clients, activeClient, setActiveClient, addClient } = useClients();
+  const { sidebarOpen } = useSidebar();
   const [showAdd, setShowAdd] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   
@@ -155,16 +157,17 @@ export default function Sidebar() {
 
   return (
     <aside style={{
-      width: '280px',
-      minWidth: '280px',
+      width: sidebarOpen ? '280px' : '0',
+      minWidth: sidebarOpen ? '280px' : '0',
       background: '#0a0a0a',
-      borderRight: '0.5px solid rgba(255,255,255,0.08)',
+      borderRight: sidebarOpen ? '0.5px solid rgba(255,255,255,0.08)' : 'none',
       display: 'flex',
       flexDirection: 'column',
       flexShrink: 0,
       overflowY: 'auto',
       overflowX: 'hidden',
       backdropFilter: 'blur(20px)',
+      transition: 'all 0.3s ease',
     }}>
       {/* Brand */}
       <div style={{
