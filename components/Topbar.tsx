@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,8 @@ export default function Topbar({ onToggleSidebar, sidebarOpen }: TopbarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const title = titles[pathname] || 'SMM Agent';
   const sub = pathname === '/' ? 'Your AI social media manager' : '';
@@ -53,6 +56,32 @@ export default function Topbar({ onToggleSidebar, sidebarOpen }: TopbarProps) {
     await signOut();
     router.push('/login');
   };
+
+  const handleProfile = () => {
+    setShowUserMenu(false);
+    router.push('/profile');
+  };
+
+  const handleSettings = () => {
+    setShowUserMenu(false);
+    router.push('/settings');
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   return (
     <header style={{
@@ -129,36 +158,102 @@ export default function Topbar({ onToggleSidebar, sidebarOpen }: TopbarProps) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {user && (
-          <>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              background: 'rgba(168, 85, 247, 0.1)',
-              border: '0.5px solid rgba(168, 85, 247, 0.3)',
-              borderRadius: '20px',
-              fontSize: '12px',
-              color: '#a855f7',
-              fontWeight: 500,
-            }}>
-              {user.email?.split('@')[0]}
-            </div>
+          <div ref={menuRef} style={{ position: 'relative' }}>
             <button
-              onClick={handleSignOut}
+              onClick={() => setShowUserMenu(!showUserMenu)}
               style={{
-                background: 'transparent',
-                border: '1px solid #333',
-                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
                 padding: '6px 12px',
-                color: '#888',
+                background: 'rgba(168, 85, 247, 0.1)',
+                border: '0.5px solid rgba(168, 85, 247, 0.3)',
+                borderRadius: '20px',
                 fontSize: '12px',
+                color: '#a855f7',
+                fontWeight: 500,
                 cursor: 'pointer',
               }}
             >
-              Sign Out
+              {user.email?.split('@')[0]}
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style={{ transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
             </button>
-          </>
+
+            {showUserMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '6px',
+                background: '#111',
+                border: '1px solid #222',
+                borderRadius: '8px',
+                padding: '4px',
+                minWidth: '140px',
+                zIndex: 50,
+              }}>
+                <button
+                  onClick={handleProfile}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#aaa',
+                    fontSize: '12px',
+                    textAlign: 'left',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1a1a'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={handleSettings}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#aaa',
+                    fontSize: '12px',
+                    textAlign: 'left',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1a1a'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                >
+                  Settings
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#ff4444',
+                    fontSize: '12px',
+                    textAlign: 'left',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1a1a1a'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         )}
         <div style={{
           display: 'flex',
