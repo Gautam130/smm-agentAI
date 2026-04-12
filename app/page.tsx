@@ -316,11 +316,11 @@ export default function HomePage() {
           marginLeft: 'auto',
           marginRight: 'auto',
         }}>
-          {/* Header: Agent response + New query + Copy + Save */}
+          {/* Header: AGENT RESPONSE + New query + Copy + Save */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ffcc' }}></span>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>Agent response</span>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#444' }}></span>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: '#fff', letterSpacing: '0.5px' }}>AGENT RESPONSE</span>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
