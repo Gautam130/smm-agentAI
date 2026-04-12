@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, memo, useMemo } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { useMaya } from '@/lib/maya';
 
 const suggestions = [
@@ -85,16 +85,6 @@ export default function AskMayaPage() {
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const plusBtnRef = useRef<HTMLButtonElement>(null);
-
-  // Stable messages ref to prevent re-renders during streaming
-  const stableMessagesRef = useRef<Message[]>([]);
-  const prevMessagesLengthRef = useRef(0);
-
-  // Only update stable ref when a new message is added
-  if (messages.length > prevMessagesLengthRef.current) {
-    stableMessagesRef.current = messages as Message[];
-    prevMessagesLengthRef.current = messages.length;
-  }
 
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
@@ -381,7 +371,7 @@ export default function AskMayaPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#000000' }}>
-      {/* Header section - stays at top */}
+      {/* Header - fixed height */}
       <div style={{ flexShrink: 0, padding: '0 16px' }}>
         <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
         
@@ -396,17 +386,16 @@ export default function AskMayaPage() {
         </div>
       </div>
 
-      {/* Chat container - fills remaining space with messages pushing up */}
+      {/* Chat container - takes all remaining space */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
         flex: 1,
         minHeight: 0,
-        overflow: 'hidden',
-        padding: '0 16px',
+        padding: '0 16px 8px 16px',
         background: '#000000',
       }}>
-        <MessagesList messages={stableMessagesRef.current} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+        <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
 
          {/* Meta AI style input - flat dark, exact replica */}
          <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`} style={{ flexShrink: 0 }}>
