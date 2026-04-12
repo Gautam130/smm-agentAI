@@ -3102,35 +3102,39 @@ select option {
   font-size: 14px;
   line-height: 1.8;
   color: #ddd;
+  padding: 16px 20px;
+  text-align: left;
 }
 
 .meta-response-text h1,
 .meta-response-text h2,
 .meta-response-text h3 {
+  font-size: 14px;
+  font-weight: 600;
   color: #fff;
-  font-weight: 700;
-  margin-top: 20px;
-  margin-bottom: 12px;
+  margin: 16px 0 8px;
 }
 
-.meta-response-text h1 { font-size: 20px; }
-.meta-response-text h2 { font-size: 18px; }
-.meta-response-text h3 { font-size: 16px; }
+.meta-response-text h1:first-child,
+.meta-response-text h2:first-child,
+.meta-response-text h3:first-child {
+  margin-top: 0;
+}
 
 .meta-response-text p {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: #ddd;
 }
 
 .meta-response-text ul,
 .meta-response-text ol {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding-left: 24px;
   color: #ddd;
 }
 
 .meta-response-text li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   line-height: 1.8;
 }
 
@@ -3152,7 +3156,7 @@ select option {
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
-  margin-bottom: 12px;
+  margin: 16px 0;
 }
 
 .meta-response-text pre code {
@@ -3163,7 +3167,7 @@ select option {
 .meta-response-text table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 12px;
+  margin: 16px 0;
 }
 
 .meta-response-text th,
@@ -3171,6 +3175,7 @@ select option {
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 12px;
   text-align: left;
+  font-size: 14px;
 }
 
 .meta-response-text th {
@@ -3191,9 +3196,24 @@ select option {
 .meta-response-text blockquote {
   border-left: 3px solid var(--accent);
   padding-left: 16px;
-  margin: 12px 0;
+  margin: 16px 0;
   color: #888;
   font-style: italic;
+}
+
+/* Section dividers ━━━━ Title ━━━━ */
+.meta-response-text p:has(::-moz-placeholder),
+.meta-response-text hr {
+  border: none;
+  margin: 16px 0;
+  text-align: center;
+  color: #555;
+}
+
+.meta-response-text hr::before {
+  content: '━━━━━━━━━━━━━━━━━━━━━━━━';
+  display: block;
+  color: #444;
 }
 
 .markdown-content h1,
