@@ -304,95 +304,29 @@ export default function HomePage() {
           <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Press Enter to send · Shift+Enter for new line</div>
         )}
         
-        {/* RESPONSE SECTION - Expands below */}
+        {/* RESPONSE SECTION - Meta AI Style */}
         {hasResults && (
           <div style={{ 
-            borderTop: '1px solid #1a3a2a',
             marginTop: '16px',
-            paddingTop: '16px',
-            maxHeight: '600px',
-            overflow: 'hidden',
-            transition: 'max-height 0.5s ease'
+            padding: '0 24px',
+            maxWidth: '680px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
           }}>
-            {/* Header: Agent response + New query button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 12px' }}>
+            {/* Header: Agent response + New query + Copy + Save */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00ffcc' }}></span>
                 <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>Agent response</span>
               </div>
-              <button 
-                onClick={handleNewQuery}
-                style={{
-                  padding: '8px 16px',
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  borderRadius: '16px',
-                  color: '#888',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                + New query
-              </button>
-            </div>
-            
-            {/* Meta badges */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', padding: '0 12px', flexWrap: 'wrap' }}>
-              {intentResult && (
-                <>
-                  <span style={{ padding: '4px 10px', background: 'rgba(0,255,204,0.1)', border: '0.5px solid rgba(0,255,204,0.3)', borderRadius: '12px', fontSize: '11px', color: '#00ffcc' }}>
-                    {intentResult.isContent ? 'Content' : intentResult.isResearch ? 'Research' : intentResult.isStrategy ? 'Strategy' : intentResult.isTrend ? 'Trend' : 'General'}
-                  </span>
-                  <span style={{ padding: '4px 10px', background: intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.1)' : 'rgba(255,200,0,0.1)', border: `0.5px solid ${intentResult.confidence === 'HIGH' ? 'rgba(0,255,204,0.3)' : 'rgba(255,200,0,0.3)'}`, borderRadius: '12px', fontSize: '11px', color: intentResult.confidence === 'HIGH' ? '#00ffcc' : '#ffc800' }}>
-                    {intentResult.confidence}
-                  </span>
-                </>
-              )}
-              <span style={{ padding: '4px 10px', background: liveSearchEnabled ? 'rgba(0,255,204,0.1)' : 'rgba(255,255,255,0.05)', border: `0.5px solid ${liveSearchEnabled ? 'rgba(0,255,204,0.3)' : '#333'}`, borderRadius: '12px', fontSize: '11px', color: liveSearchEnabled ? '#00ffcc' : '#666' }}>
-                🌐 {liveSearchEnabled ? 'Live Search' : 'OFF'}
-              </span>
-              {deepResearch && (
-                <span style={{ padding: '4px 10px', background: 'rgba(168,85,247,0.1)', border: '0.5px solid rgba(168,85,247,0.3)', borderRadius: '12px', fontSize: '11px', color: '#a855f7' }}>
-                  🔬 Deep
-                </span>
-              )}
-            </div>
-            
-            {/* Response content - scrollable */}
-            <div 
-              ref={outputScrollRef}
-              style={{ 
-                maxHeight: '200px', 
-                overflowY: 'auto',
-                padding: '0 12px',
-                scrollBehavior: 'smooth'
-              }}
-            >
-              {loading && !streamingText && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '14px', padding: '12px' }}>
-                  <div style={{ width: '16px', height: '16px', border: '2px solid #333', borderTopColor: '#00ffcc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                  <span>Thinking</span>
-                  <span style={{ animation: 'blink 1s infinite' }}>▊</span>
-                </div>
-              )}
-              {streamingText && (
-                <div className="markdown-content" style={{ color: '#ccc', fontSize: '14px', lineHeight: '1.7' }}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {cleanText(streamingText)}
-                  </ReactMarkdown>
-                  {loading && <span style={{ animation: 'blink 1s infinite', color: '#00ffcc' }}>▊</span>}
-                </div>
-              )}
-              
-              {/* Copy/Save buttons */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button 
                   onClick={handleCopy} 
                   disabled={!streamingText.trim()}
                   style={{ 
                     padding: '6px 12px', 
-                    background: '#111', 
-                    border: '1px solid #222', 
+                    background: 'transparent', 
+                    border: '1px solid #333', 
                     borderRadius: '8px', 
                     color: streamingText.trim() ? '#888' : '#444', 
                     fontSize: '12px', 
@@ -404,15 +338,73 @@ export default function HomePage() {
                   disabled={!streamingText.trim()}
                   style={{ 
                     padding: '6px 12px', 
-                    background: '#111', 
-                    border: '1px solid #222', 
+                    background: 'transparent', 
+                    border: '1px solid #333', 
                     borderRadius: '8px', 
                     color: streamingText.trim() ? '#888' : '#444', 
                     fontSize: '12px', 
                     cursor: streamingText.trim() ? 'pointer' : 'not-allowed' 
                   }}
                 >Save</button>
+                <button 
+                  onClick={handleNewQuery}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'transparent',
+                    border: '1px solid #333',
+                    borderRadius: '8px',
+                    color: '#888',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  New query
+                </button>
               </div>
+            </div>
+            
+            {/* Response content - plain text on background */}
+            <div 
+              ref={outputScrollRef}
+              style={{ 
+                maxHeight: '400px', 
+                overflowY: 'auto',
+                scrollBehavior: 'smooth'
+              }}
+            >
+              {loading && !streamingText && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#666', fontSize: '14px', padding: '12px 0' }}>
+                  <div style={{ width: '16px', height: '16px', border: '2px solid #333', borderTopColor: '#00ffcc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                  <span>Thinking</span>
+                  <span style={{ animation: 'blink 1s infinite' }}>▊</span>
+                </div>
+              )}
+              {streamingText && (
+                <div className="meta-response-text">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {cleanText(streamingText)}
+                  </ReactMarkdown>
+                  {loading && <span style={{ animation: 'blink 1s infinite', color: '#00ffcc' }}>▊</span>}
+                </div>
+              )}
+              
+              {/* Meta AI style reaction buttons */}
+              {streamingText && !loading && (
+                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', paddingBottom: '16px' }}>
+                  <button style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #222', borderRadius: '20px', color: '#666', fontSize: '13px', cursor: 'pointer' }}>👍</button>
+                  <button style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #222', borderRadius: '20px', color: '#666', fontSize: '13px', cursor: 'pointer' }}>👎</button>
+                  <button 
+                    onClick={handleCopy}
+                    style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #222', borderRadius: '20px', color: '#666', fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
