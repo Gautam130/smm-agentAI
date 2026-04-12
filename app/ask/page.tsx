@@ -31,51 +31,37 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
   return (
     <div 
       ref={chatRef} 
-      style={{ 
-        flex: 1, 
-        minHeight: 0,
-        overflowY: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+      className="rounded-t-lg border border-[var(--border-glass)] border-b-0 bg-black"
+      style={{ padding: '16px 12px' }}
     >
-      <div style={{ 
-        flex: 1,
-        padding: '16px 12px',
-        background: '#000000',
-        borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
-        border: '1px solid var(--border-glass)',
-        borderBottom: 'none',
-      }}>
-        {messages.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px' }}>
-            Ask Maya anything about your social media strategy
-          </div>
-        ) : (
-          messages.map((msg, i) => (
-            <div key={i} className={`chat-msg ${msg.role}`} ref={i === messages.length - 1 ? messagesEndRef : undefined}>
-              <div className={`chat-avatar ${msg.role === 'user' ? 'avatar-user' : 'avatar-ai'}`}>
-                {msg.role === 'user' ? 'You' : 'M'}
-              </div>
-              <div className={`chat-bubble ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'} ${msg.streaming && !msg.text ? 'typing' : ''}`}>
-                {msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && (
-                  <div style={{ marginBottom: '8px' }}>
-                    {msg.attachments.map((att: any, idx: number) => (
-                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        {att.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
-                {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
-                <div className="chat-time">{getTime()}</div>
-              </div>
+      {messages.length === 0 ? (
+        <div className="text-center" style={{ color: 'var(--text-muted)', padding: '40px' }}>
+          Ask Maya anything about your social media strategy
+        </div>
+      ) : (
+        messages.map((msg, i) => (
+          <div key={i} className={`chat-msg ${msg.role}`} ref={i === messages.length - 1 ? messagesEndRef : undefined}>
+            <div className={`chat-avatar ${msg.role === 'user' ? 'avatar-user' : 'avatar-ai'}`}>
+              {msg.role === 'user' ? 'You' : 'M'}
             </div>
-          ))
-        )}
-      </div>
+            <div className={`chat-bubble ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'} ${msg.streaming && !msg.text ? 'typing' : ''}`}>
+              {msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && (
+                <div style={{ marginBottom: '8px' }}>
+                  {msg.attachments.map((att: any, idx: number) => (
+                    <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      {att.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
+              {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
+              <div className="chat-time">{getTime()}</div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 });
@@ -376,17 +362,15 @@ export default function AskMayaPage() {
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
-  const pagePadding = 16;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#000000' }}>
-      {/* Header - fixed height */}
-      <div style={{ flexShrink: 0, padding: '0 16px' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-black">
+      {/* Header - shrinks away if needed */}
+      <div className="flex-shrink-0 px-4">
         <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
         
-        <div className="notice n-green" style={{ marginBottom: '12px', padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
+        <div className="notice n-green mb-3" style={{ padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
         
-        <div className="chat-suggestions" style={{ marginBottom: '12px', padding: '8px 0' }}>
+        <div className="chat-suggestions mb-3" style={{ padding: '8px 0' }}>
           {suggestions.map((s, i) => (
             <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
               {s}
@@ -395,20 +379,15 @@ export default function AskMayaPage() {
         </div>
       </div>
 
-      {/* Chat container - takes all remaining space */}
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        flex: 1,
-        minHeight: 0,
-        overflow: 'hidden',
-        padding: '0 16px',
-        background: '#000000',
-      }}>
+      {/* Messages area - scrolls, takes all remaining space */}
+      <div className="flex-1 overflow-y-auto px-4">
         <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+      </div>
 
-         {/* Meta AI style input - flat dark, exact replica */}
-         <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`} style={{ flexShrink: 0 }}>
+      {/* Input area - stays at bottom, never moves */}
+      <div className="flex-shrink-0 px-4 pb-4">
+        {/* Meta AI style input - flat dark */}
+        <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
           {/* Attachment previews */}
           {attachedFiles.length > 0 && (
             <div className="meta-attachments">
