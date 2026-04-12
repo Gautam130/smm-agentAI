@@ -239,8 +239,20 @@ export default function HomePage() {
         
         <p className="hero-p">Your AI social media agent — just describe what you need</p>
         
-        {/* Input Box */}
-        <div style={{ position: 'relative', marginBottom: '12px', maxWidth: '720px', margin: '0 auto 12px' }}>
+        {/* Input Box - Maya Style */}
+        <div style={{ 
+          position: 'relative', 
+          marginBottom: '12px', 
+          maxWidth: '720px', 
+          marginLeft: 'auto', 
+          marginRight: 'auto',
+          background: '#2a2a2a',
+          borderRadius: '28px',
+          padding: '14px 18px',
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '8px'
+        }}>
           <textarea 
             ref={inputRef}
             id="agent-input"
@@ -249,11 +261,6 @@ export default function HomePage() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }} 
             placeholder={hasResults ? "Ask another question..." : "e.g. I run a cafe in Jaipur — what should I post this week?"}
             rows={hasResults ? 1 : 3}
-            style={{ 
-              width: '100%', 
-              paddingRight: '50px',
-              fontSize: '14px'
-            }}
           />
           <button 
             id="agent-send-btn"

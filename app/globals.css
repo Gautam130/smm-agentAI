@@ -812,15 +812,17 @@ select option {
 
 #agent-input {
   flex: 1;
-  background: #1a1a1a;
+  background: transparent;
   border: none;
-  border-radius: 16px;
-  padding: 14px 16px;
-  color: #ccc;
+  border-radius: 0;
+  padding: 0;
+  color: #ffffff;
   font-family: var(--font);
-  font-size: 13px;
+  font-size: 16px;
   resize: none;
   outline: none;
+  line-height: 1.4;
+  min-height: 24px;
 }
 
 #agent-input:focus {
@@ -828,7 +830,7 @@ select option {
 }
 
 #agent-input::placeholder {
-  color: #666;
+  color: #888888;
 }
 
 .cursor-blink {
@@ -2079,17 +2081,17 @@ select option {
 /* ── AGENT INPUT ── */
 #agent-input {
   width: 100%;
-  background: #1a1a1a;
+  background: transparent;
   border: none;
-  border-radius: 16px;
-  padding: 14px 60px 14px 16px;
-  font-size: 13px;
+  border-radius: 0;
+  padding: 0;
+  font-size: 16px;
   font-family: var(--font);
-  color: #ccc;
+  color: #ffffff;
   resize: none;
   outline: none;
-  line-height: 1.6;
-  transition: all var(--duration-fast) var(--ease-premium);
+  line-height: 1.4;
+  min-height: 24px;
 }
 
 #agent-input:focus {
@@ -2097,25 +2099,25 @@ select option {
 }
 
 #agent-send-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   background: linear-gradient(135deg, #00FFCC, #A855F7);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--ease-premium);
-  box-shadow: 0 4px 15px var(--accent-glow);
+  flex-shrink: 0;
 }
 
 #agent-send-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 6px 25px var(--accent-glow);
+  transform: scale(1.05);
+}
+
+#agent-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── QUICK PROMPTS ── */
