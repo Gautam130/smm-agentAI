@@ -393,7 +393,9 @@ export default function AskMayaPage() {
 
       {/* Messages area - scrolls, takes all remaining space */}
       <div className="flex-1 overflow-y-auto px-4">
-        <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+          <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+        </div>
       </div>
 
       {/* Input area - stays at bottom, never moves */}
