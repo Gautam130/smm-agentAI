@@ -32,7 +32,7 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
     <div 
       ref={chatRef} 
       className="rounded-t-lg border border-[var(--border-glass)] border-b-0 bg-black"
-      style={{ padding: '16px 12px' }}
+      style={{ padding: '20px 24px' }}
     >
       {messages.length === 0 ? (
         <div className="text-center" style={{ color: 'var(--text-muted)', padding: '40px' }}>
@@ -40,25 +40,37 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
         </div>
       ) : (
         messages.map((msg, i) => (
-          <div key={i} className={`chat-msg ${msg.role}`} ref={i === messages.length - 1 ? messagesEndRef : undefined}>
-            <div className={`chat-avatar ${msg.role === 'user' ? 'avatar-user' : 'avatar-ai'}`}>
-              {msg.role === 'user' ? 'You' : 'M'}
-            </div>
-            <div className={`chat-bubble ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'} ${msg.streaming && !msg.text ? 'typing' : ''}`}>
-              {msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && (
-                <div style={{ marginBottom: '8px' }}>
-                  {msg.attachments.map((att: any, idx: number) => (
-                    <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      {att.name}
+          <div 
+            key={i} 
+            ref={i === messages.length - 1 ? messagesEndRef : undefined}
+            style={{ marginBottom: '24px' }}
+          >
+            {msg.role === 'user' ? (
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div className="bubble-user">
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div style={{ marginBottom: '8px' }}>
+                      {msg.attachments.map((att: any, idx: number) => (
+                        <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          {att.name}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {msg.text}
+                  <div className="chat-time">{getTime()}</div>
                 </div>
-              )}
-              {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
-              {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
-              <div className="chat-time">{getTime()}</div>
-            </div>
+              </div>
+            ) : (
+              <div className="maya-message">
+                <div className="maya-avatar">M</div>
+                <div className="maya-text">
+                  {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
+                  {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
+                </div>
+              </div>
+            )}
           </div>
         ))
       )}
