@@ -1051,6 +1051,8 @@ select option {
 /* Meta AI Exact Replica Input */
 .meta-input-container {
   width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
   background: #2a2a2a;
   border-radius: 28px;
   padding: 12px 16px;
