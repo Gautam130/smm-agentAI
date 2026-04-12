@@ -378,9 +378,9 @@ export default function AskMayaPage() {
     <div className="h-full flex flex-col overflow-hidden bg-black">
       {/* Header - shrinks away if needed */}
       <div className="flex-shrink-0 px-4">
-        <div style={{ fontWeight: 600, fontSize: '14px', padding: '12px 0' }}>Ask Maya</div>
-        
-        <div className="notice n-green mb-3" style={{ padding: '10px 14px' }}>Ask your agent anything — it remembers the conversation within this session.</div>
+        <div style={{ color: '#444', fontSize: '11px', textAlign: 'center', padding: '8px 0' }}>
+          Maya remembers this conversation within this session
+        </div>
         
         <div className="chat-suggestions mb-3" style={{ padding: '8px 0' }}>
           {suggestions.map((s, i) => (
@@ -392,16 +392,17 @@ export default function AskMayaPage() {
       </div>
 
       {/* Messages area - scrolls, takes all remaining space */}
-      <div className="flex-1 overflow-y-auto px-4">
-        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+      <div className="flex-1 overflow-y-auto">
+        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
           <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
         </div>
       </div>
 
       {/* Input area - stays at bottom, never moves */}
-      <div className="flex-shrink-0 px-4 pb-4">
-        {/* Meta AI style input - flat dark */}
-        <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
+      <div className="flex-shrink-0 pb-4" style={{ padding: '0 16px' }}>
+        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+          {/* Meta AI style input - flat dark */}
+          <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
           {/* Attachment previews */}
           {attachedFiles.length > 0 && (
             <div className="meta-attachments">
@@ -506,9 +507,10 @@ export default function AskMayaPage() {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Input hint */}
-        <div className="input-hint">
+        <div className="input-hint" style={{ maxWidth: '680px', margin: '8px auto 0', width: '100%' }}>
           <span>Enter to send • Shift+Enter for new line</span>
           {messages.length > 0 && (
             <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
