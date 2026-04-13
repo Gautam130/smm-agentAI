@@ -694,6 +694,7 @@ export function useMaya() {
 
   const setMessagesState = useCallback((newMessages: ChatMessage[]) => {
     activeConvIdRef.current = undefined;
+    abortRef.current?.abort();
     setMessages(newMessages);
   }, []);
 
