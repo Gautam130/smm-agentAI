@@ -507,6 +507,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   attachments?: { name: string; content?: string }[];
+  conversationId?: string | null;
 }
 
 export interface Attachment {
@@ -525,8 +526,9 @@ export function useMaya() {
   const [streamingText, setStreamingText] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
+  const activeConvIdRef = useRef<string | null | undefined>(null);
 
-  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = []) => {
+  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = [], convId?: string | null) => {
     if (!userMsg.trim() && attachments.length === 0) return;
     if (loadingRef.current) return;
 
@@ -539,8 +541,9 @@ export function useMaya() {
       displayMsg = `${userMsg}\n\n[Attached files: ${fileNames}]`;
     }
     
-    const userMsgObj: ChatMessage = { id: crypto.randomUUID(), role: 'user', text: displayMsg, attachments };
+    const userMsgObj: ChatMessage = { id: crypto.randomUUID(), role: 'user', text: displayMsg, attachments, conversationId: convId ?? null };
     setMessages(prev => [...prev, userMsgObj]);
+    activeConvIdRef.current = convId ?? null;
     setIsLoading(true);
 
     // Fetch knowledge context from Supabase
@@ -667,21 +670,30 @@ export function useMaya() {
       }
     }
 
-    // Finalize message - add to messages and clear streaming state
-    setStreamingText('');
-    const assistantMsg: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', text: fullText || 'No response received.' };
-    setMessages(prev => [...prev, assistantMsg]);
+    // Finalize message - only add if conversation hasn't changed
+    const convIdForResponse = activeConvIdRef.current;
 
+    setStreamingText('');
     setIsLoading(false);
     loadingRef.current = false;
+
+    if (convIdForResponse === undefined) return;
+
+    setMessages(prev => {
+      const lastMsg = prev[prev.length - 1];
+      if (lastMsg?.conversationId !== convIdForResponse) return prev;
+      return [...prev, { id: crypto.randomUUID(), role: 'assistant', text: fullText || 'No response received.', conversationId: convIdForResponse }];
+    });
   }, []);
 
   const clearChat = useCallback(() => {
     setMessages([]);
     setStreamingText('');
+    activeConvIdRef.current = undefined;
   }, []);
 
   const setMessagesState = useCallback((newMessages: ChatMessage[]) => {
+    activeConvIdRef.current = undefined;
     setMessages(newMessages);
   }, []);
 
@@ -689,6 +701,7 @@ export function useMaya() {
     abortRef.current?.abort();
     setIsLoading(false);
     setStreamingText('');
+    activeConvIdRef.current = undefined;
   }, []);
 
   return { messages, isLoading, streamingText, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState };

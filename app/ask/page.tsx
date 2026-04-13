@@ -377,7 +377,7 @@ export default function AskMayaPage() {
     }
     
     // Get the response from Maya (knowledge injection is handled inside sendMessage)
-    sendMessage(messageToSend, attachedFiles);
+    sendMessage(messageToSend, attachedFiles, convId);
     setInput('');
     setAttachedFiles([]);
     
@@ -394,18 +394,19 @@ export default function AskMayaPage() {
 
   // Save assistant response to Supabase (after streaming completes)
   useEffect(() => {
-    if (!currentConversationId || messages.length < 2) return;
+    if (messages.length < 2) return;
     
     const lastMessage = messages[messages.length - 1];
     const secondLastMessage = messages[messages.length - 2];
     
     // If last message is assistant and second last was user
     if (lastMessage.role === 'assistant' && secondLastMessage?.role === 'user') {
+      const convId = lastMessage.conversationId ?? currentConversationId;
+      if (!convId) return;
       // Check if this message was already saved (avoid duplicates)
-      // We can check by comparing with localStorage or adding a flag
-      const saveKey = `maya_saved_${currentConversationId}_${secondLastMessage.text.slice(0, 30)}`;
+      const saveKey = `maya_saved_${convId}_${secondLastMessage.text.slice(0, 30)}`;
       if (!localStorage.getItem(saveKey)) {
-        saveMessage(currentConversationId, 'assistant', lastMessage.text);
+        saveMessage(convId, 'assistant', lastMessage.text);
         localStorage.setItem(saveKey, 'true');
       }
     }
