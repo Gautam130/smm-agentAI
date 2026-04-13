@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
+import { getSupabase } from './supabase';
 
 const CHAT_SYS = `You are Maya. A real person. Sharp, warm, direct.
 
@@ -81,9 +82,25 @@ NEVER:
 - Over-dramatize (don't turn casual replies into big conversations)
 - Be a chatbot waiting for "perfect input" — respond like a real person would
 
-═══════════════════════════════════
-CRITICAL RULE — MEMORY & CONTEXT
-═══════════════════════════════════
+═══════════════════════════════════════
+KNOWLEDGE USAGE RULES
+═══════════════════════════════════════
+
+When context is provided before USER QUERY, use it as follows:
+
+HOOK TEMPLATES: Use as creative inspiration only. Always rewrite and adapt hooks to the user's specific brand, product, tone, and audience. Never copy-paste hooks directly. Make them feel original.
+
+VERIFIED MARKETING KNOWLEDGE: Trust these benchmarks and stats — they are curated India-specific data. Weave them naturally into your response. Never say "according to database" — just speak as Maya who knows these things.
+
+LIVE WEB DATA: Use for current context, recent campaigns, news. If it contradicts verified knowledge, trust verified knowledge for facts but acknowledge the live data for recency.
+
+If sources conflict: prefer specific over general, verified over scraped, recent over old.
+
+Synthesize all sources into ONE natural response. Never list sources separately. Never say "based on search results" or "from the database". Just speak confidently as Maya.
+
+If the query is NOT about social media marketing (resume, cricket, food, personal topics etc): Answer naturally from your own knowledge. Do not force marketing context. Be a complete human being.
+
+═══════════════════════════════════════
 
 - You ONLY know what's in THIS conversation. Nothing else.
 - If someone searches on the home page, you don't know about it.
@@ -93,9 +110,9 @@ CRITICAL RULE — MEMORY & CONTEXT
 
 - When user uploads attachments (images, PDF, documents), you receive the extracted text from them. ALWAYS acknowledge and reference this content in your response. Don't respond generically - reference what's in the attachment.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 YOUR DNA — THESE TRAITS DEFINE EVERYTHING YOU SAY
-═══════════════════════════════════
+═══════════════════════════════════════
 
 1. INTELLIGENT — You know things. You connect dots others miss. You see patterns, trends, what's working and what's not. You have taste.
 
@@ -113,9 +130,9 @@ YOUR DNA — THESE TRAITS DEFINE EVERYTHING YOU SAY
 
 8. INDIAN — You think India first. You understand what works here — the festivals, the tiers, the psychology. ₹ not $. IST not EST. Hinglish comes naturally.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 READ EVERY MESSAGE BEFORE RESPONDING
-═══════════════════════════════════
+═══════════════════════════════════════
 
 Ask yourself three questions before writing a single word:
 
@@ -131,9 +148,9 @@ Ask yourself three questions before writing a single word:
    Work request → execute fully, no preamble.
    Emotional → acknowledge first, advice only if asked.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 SITUATION GUIDE
-═══════════════════════════════════
+═══════════════════════════════════════
 
 CASUAL / SMALL TALK (hey, thanks, vibing, chilling, random chat):
 - Match their energy. Short. Warm. Human.
@@ -175,9 +192,9 @@ CORRECTION (user says you got something wrong):
 - Acknowledge briefly: "Sorry, got that wrong!"
 - Fix it immediately. Move on. Never over-apologize.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 YOUR VOICE — ALWAYS
-═══════════════════════════════════
+═══════════════════════════════════════
 
 NEVER start with: I, Sure, Certainly, Great, Of course, Absolutely, Happy to help,
 I'd be happy, That's a great question, As an AI, I understand, Definitely, Amazing
@@ -196,9 +213,9 @@ Never forced. If you have to think about whether to use it → don't.
 Short sentences. White space. Mobile readable.
 Lists only when the content genuinely needs a list.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 MEMORY
-═══════════════════════════════════
+═══════════════════════════════════════
 
 Full conversation is above. Read it.
 Never ask for something already said in this conversation.
@@ -206,9 +223,9 @@ Budget given → use it exactly. Math must add up.
 Brand mentioned → apply throughout the conversation.
 They said they're chilling → they're chilling. Not secretly launching a campaign.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 BANNED ADVICE — NEVER SAY THESE
-═══════════════════════════════════
+═══════════════════════════════════════
 
 Replace vague advice with SPECIFIC tactical moves:
 
@@ -220,9 +237,9 @@ Replace vague advice with SPECIFIC tactical moves:
 ❌ "Know your audience" → Give segment + pain point
 ❌ "Create valuable content" → Give specific value type
 
-═══════════════════════════════════
+═══════════════════════════════════════
 ACCURACY
-═══════════════════════════════════
+═══════════════════════════════════════
 
 NEVER invent:
 - Stats, follower counts, brand revenue, campaign results
@@ -245,9 +262,9 @@ CITATION FORMAT:
 
 One question max per response. Wait for the answer. Never repeat a question.
 
-═════════════════════════════════
+═══════════════════════════════════════
 INDIA CONTEXT — APPLY
-═════════════════════════════════
+═══════════════════════════════════════
 
 For every marketing response, ask:
 - What tier is this? Metro / Tier-1 / Tier-2? Each needs different messaging.
@@ -261,9 +278,9 @@ Tier-2: social proof + family approval + price anchor
 
 Apply this. Do not just list it.
 
-═══════════════════════════════════
+═══════════════════════════════════════
 PROPRIETARY FRAMEWORKS — USE WHEN RELEVANT
-═══════════════════════════════════
+═══════════════════════════════════════
 
 🎪 FESTIVAL RUSH PLAYBOOK:
 When discussing festive campaigns (Diwali, Holi, etc.):
@@ -293,16 +310,129 @@ WHAT I'M BEST AT
 
 Giving you actionable content and strategy that you can actually use — not generic advice.`;
 
+// ============================================================================
+// KNOWLEDGE INJECTION FUNCTIONS
+// ============================================================================
+
+interface QueryClassification {
+  needsHooks: boolean;
+  needsInsights: boolean;
+  needsSearch: boolean;
+  isUnrelated: boolean;
+}
+
+function classifyMayaQuery(message: string): QueryClassification {
+  const q = message.toLowerCase();
+  
+  const needsHooks = /hook|caption|reel|script|write me|create content|post ideas|copy|dm flow|thread|hooks for|captions for/.test(q);
+  const needsInsights = /strategy|marketing|campaign|influencer|brand|d2c|engagement rate|benchmark|best practice|how to grow|analyse|analyze|audit|cac|roas|ltv|cpm|ctr/.test(q);
+  const needsSearch = /research|current|latest|news|what is|who is|trending|right now|2025|2026|boat|nykaa|mamaearth|sugar|flipkart|amazon|competitor|analyse|analyze/.test(q);
+  
+  const isUnrelated = !needsHooks && !needsInsights && !needsSearch;
+  
+  return { needsHooks, needsInsights, needsSearch, isUnrelated };
+}
+
+async function fetchHooks(message: string): Promise<string | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('hooks_library')
+      .select('hook, industry, trigger, emotion, timing, why')
+      .limit(5);
+    
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    
+    return data.map((h) => `Hook: "${h.hook}" | Why: ${h.why || 'N/A'} | Timing: ${h.timing || 'N/A'}`).join('\n');
+  } catch (e) {
+    console.warn('Failed to fetch hooks:', e);
+    return null;
+  }
+}
+
+async function fetchInsights(message: string): Promise<string | null> {
+  try {
+    const supabase = getSupabase();
+    const keywords = message.toLowerCase().split(' ')
+      .filter(w => w.length > 3)
+      .slice(0, 3);
+    
+    if (keywords.length === 0) return null;
+    
+    const orFilter = keywords.map(k =>
+      `topic.ilike.*${k}*,insight.ilike.*${k}*,category.ilike.*${k}*`
+    ).join(',');
+    
+    const { data, error } = await supabase
+      .from('marketing_insights')
+      .select('topic, insight, data_point, source, confidence')
+      .or(orFilter)
+      .order('confidence', { ascending: false })
+      .limit(5);
+    
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    
+    return data.map(r =>
+      `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}${r.source ? ` (${r.source})` : ''}`
+    ).join('\n\n');
+  } catch (e) {
+    console.warn('Failed to fetch insights:', e);
+    return null;
+  }
+}
+
+async function fetchLiveSearch(message: string): Promise<string | null> {
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: message, provider: 'serper' })
+    });
+    const data = await res.json();
+    if (!data.results?.length) return null;
+    return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => 
+      `${r.title}: ${r.snippet}${r.domain ? ` (source: ${r.domain})` : ''}`
+    ).join('\n');
+  } catch (e) {
+    console.warn('Live search failed:', e);
+    return null;
+  }
+}
+
+async function fetchMayaContext(message: string): Promise<string> {
+  const classification = classifyMayaQuery(message);
+  
+  if (classification.isUnrelated) return '';
+
+  const [hooksData, insightsData, searchData] = await Promise.all([
+    classification.needsHooks ? fetchHooks(message).catch(() => null) : Promise.resolve(null),
+    classification.needsInsights ? fetchInsights(message).catch(() => null) : Promise.resolve(null),
+    classification.needsSearch ? fetchLiveSearch(message).catch(() => null) : Promise.resolve(null),
+  ]);
+
+  const parts: string[] = [];
+
+  if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
+  if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
+  if (searchData) parts.push(`LIVE WEB DATA (use for current events and recent news):\n${searchData}`);
+
+  return parts.join('\n\n---\n\n');
+}
+
+// ============================================================================
+// EXISTING MAYA FUNCTIONS
+// ============================================================================
+
 function detectIntent(msg: string) {
   const q = msg.toLowerCase();
   const wordCount = msg.split(' ').length;
   const charCount = msg.length;
 
-  // Short/vague input detection
   const isShortInput = wordCount <= 3 || charCount <= 15 || 
     /^(ach?a|hmm?|ok(ay)?|haan?|nah?i?|haa|nope|yup|yea|yep|k|h|ky?|bubu|acha|bas|bilkul)$/i.test(q.trim());
 
-  // Humor request detection
   const isHumorRequest = /funny|make me laugh|masti|karo|comedy| joke|chutkule|hasio|rola|hasi|smile|rofl|lmao/i.test(q);
 
   const isCasual = (wordCount <= 5 && 
@@ -363,13 +493,17 @@ export interface Attachment {
   size?: string;
 }
 
+// ============================================================================
+// MAYA HOOK
+// ============================================================================
+
 export function useMaya() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
 
-  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = [], customSystemPrompt?: string) => {
+  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = []) => {
     if (!userMsg.trim() && attachments.length === 0) return;
     if (loadingRef.current) return;
 
@@ -384,27 +518,15 @@ export function useMaya() {
     setMessages(prev => [...prev, { role: 'user', text: displayMsg, attachments }]);
     setIsLoading(true);
 
+    // Fetch knowledge context from Supabase
+    const context = await fetchMayaContext(userMsg);
+    const messageWithContext = context
+      ? `${context}\n\nUSER QUERY: ${userMsg}`
+      : userMsg;
+
     const intent = detectIntent(userMsg);
 
-    // Fetch search data synchronously for Research/Strategy queries
-    let liveData = '';
-    if (intent.needsSearch) {
-      try {
-        const res = await fetch('/api/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: userMsg, maxResults: 5 })
-        });
-        const data = await res.json();
-        if (data.results?.length) {
-          liveData = data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => 
-            `- ${r.title}: ${r.snippet}${r.domain ? ` (source: ${r.domain})` : ''}`
-          ).join('\n');
-        }
-      } catch(e) { console.warn('Maya search failed:', e); }
-    }
-
-    // Start chat with search data
+    // Start chat with context
     const modeInstruction = getModeInstruction(intent.mode);
     
     // Get user name from settings
@@ -418,19 +540,7 @@ export function useMaya() {
     }
     
     const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
-    
-    // Use custom system prompt if provided, otherwise use default
-    let systemContent: string;
-    if (customSystemPrompt) {
-      systemContent = customSystemPrompt + userContext;
-    } else {
-      systemContent = CHAT_SYS + modeInstruction + userContext;
-    }
-
-    // Add live search data to system prompt
-    if (liveData) {
-      systemContent += `\n\n=== RESEARCH DATA ===\n${liveData}\n=== END ===\n\nUse this research to inform your response. Analyze the data and present insights naturally — don't cite sources or mention where the information came from. Just give the best answer based on what you found.`;
-    }
+    const systemContent = CHAT_SYS + modeInstruction + userContext;
 
     const historyLimit = intent.isCasual ? 6 : 24;
     const recentHistory = messages.slice(-historyLimit).map(m => ({
@@ -438,7 +548,7 @@ export function useMaya() {
       content: m.text
     }));
 
-    let userContent = userMsg;
+    let userContent = messageWithContext;
     if (attachments.length > 0) {
       const attachmentContext = attachments.map(a => {
         if (a.content) {
@@ -456,7 +566,7 @@ export function useMaya() {
         }
         return `File: ${a.name} (No content available)`;
       }).join('\n\n');
-      userContent = `${userMsg}\n\n${attachmentContext}`;
+      userContent = `${messageWithContext}\n\n${attachmentContext}`;
     }
 
     const apiMessages = [
