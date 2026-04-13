@@ -16,7 +16,7 @@ export default function HomeLayout({
       <body style={{ 
         height: '100vh', 
         overflowY: 'auto',
-        background: '#0A0A0B',
+        background: '#000000',
         color: '#ffffff',
         fontFamily: "'Inter', sans-serif",
       }}>

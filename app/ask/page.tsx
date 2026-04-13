@@ -375,7 +375,24 @@ export default function AskMayaPage() {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-black">
+    <div className="h-full flex flex-col overflow-hidden" style={{ background: '#000000' }}>
+      {/* Simple Top Bar - replaces sidebar */}
+      <div style={{
+        padding: '16px 24px',
+        borderBottom: '1px solid #1E1E20',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        background: '#000000',
+      }}>
+        <a href="/" style={{ color: '#666', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <span style={{ fontSize: '15px', fontWeight: 600, color: '#fff' }}>Ask Maya</span>
+      </div>
+
       {/* Header - shrinks away if needed */}
       <div className="flex-shrink-0 px-4">
         <div style={{ color: '#444', fontSize: '11px', textAlign: 'center', padding: '8px 0' }}>

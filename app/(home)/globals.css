@@ -4,9 +4,13 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: 'Fraunces', Georgia, serif;
   --accent: #14B8A6;
-  --bg-dark: #0A0A0B;
+  --bg-dark: #000000;
   --bg-card: #111113;
   --border-subtle: #1E1E20;
+}
+
+body {
+  background: #000000;
 }
 
 /* Navigation */
@@ -16,20 +20,20 @@
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 16px 24px;
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(10, 10, 11, 0.8);
-  backdrop-filter: blur(20px);
+  background: #000000;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .home-nav-brand {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #fff;
+  letter-spacing: -0.3px;
 }
 
 .home-nav-links {
@@ -40,55 +44,53 @@
 .home-nav-links a {
   font-family: var(--font-sans);
   font-size: 13px;
-  color: #888;
+  color: #666;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .home-nav-links a:hover,
 .home-nav-links a.active {
-  color: var(--accent);
+  color: #fff;
 }
 
 .home-nav-cta {
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
-  color: var(--accent);
+  color: #fff;
   text-decoration: none;
-  padding: 8px 16px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
   transition: all 0.2s;
 }
 
 .home-nav-cta:hover {
-  background: var(--accent);
-  color: #0A0A0B;
+  color: var(--accent);
 }
 
 /* Main Container */
 .home-main {
-  padding-top: 80px;
+  padding-top: 60px;
   min-height: 100vh;
+  background: #000000;
 }
 
 /* Hero Section */
 .home-hero {
-  max-width: 1120px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 80px 24px 60px;
+  padding: 100px 24px 60px;
   text-align: center;
+  background: #000000;
 }
 
 .home-hero-title {
   font-family: var(--font-serif);
-  font-size: 72px;
+  font-size: 64px;
   font-weight: 340;
   line-height: 1.1;
-  letter-spacing: -2px;
+  letter-spacing: -1px;
   color: #fff;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .home-hero-title span {
