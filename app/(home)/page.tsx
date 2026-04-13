@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 import { detectIntent, getTemperature, type IntentResult } from '@/lib/intent';
 import { classifyQuery, getQueryTier, getTierParams } from '@/lib/classify';
 import { buildPrompt, CORE_IDENTITY, getBrandContext } from '@/lib/prompt';
@@ -45,8 +46,61 @@ const recentWork = [
   { title: 'Competitor Analysis Report', date: '1 week ago' },
 ];
 
+const megaMenuColumns = [
+  {
+    title: 'Create',
+    items: [
+      { label: 'Content', href: '/content' },
+      { label: 'Calendar', href: '/calendar' },
+      { label: 'Festive Campaigns', href: '/festive' },
+      { label: 'Meme & Viral', href: '/meme' },
+      { label: 'Visual Direction', href: '/visual' },
+      { label: 'Repurpose', href: '/repurpose' },
+    ]
+  },
+  {
+    title: 'Manage',
+    items: [
+      { label: 'Schedule', href: '/schedule' },
+      { label: 'Queue', href: '/queue' },
+      { label: 'Post History', href: '/history' },
+      { label: 'Idea Bank', href: '/ideas' },
+      { label: 'Bulk Generate', href: '/bulk' },
+      { label: 'Influencer Tracker', href: '/influencer' },
+    ]
+  },
+  {
+    title: 'Strategy',
+    items: [
+      { label: 'Strategy', href: '/strategy' },
+      { label: 'Research Intel', href: '/research' },
+      { label: 'Social Listening', href: '/listen' },
+      { label: 'Engagement', href: '/engage' },
+      { label: 'Ads & Collab', href: '/ads' },
+    ]
+  },
+  {
+    title: 'Analytics',
+    items: [
+      { label: 'Reporting', href: '/report' },
+      { label: 'Post Diagnosis', href: '/diagnose' },
+      { label: 'Profile Optimizer', href: '/profile' },
+      { label: 'Dashboard', href: '/dashboard' },
+      { label: 'A/B Testing', href: '/ab-testing' },
+    ]
+  },
+  {
+    title: 'Brand',
+    items: [
+      { label: 'Brand Kit', href: '/brand' },
+      { label: 'Saved Outputs', href: '/saved' },
+    ]
+  },
+];
+
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
@@ -54,8 +108,43 @@ export default function HomePage() {
   const [intentResult, setIntentResult] = useState<IntentResult | null>(null);
   const [deepResearch, setDeepResearch] = useState(false);
   const [liveSearchEnabled, setLiveSearchEnabled] = useState(true);
+  const [showWorkDropdown, setShowWorkDropdown] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const workDropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const outputScrollRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (workDropdownRef.current && !workDropdownRef.current.contains(e.target as Node)) {
+        setShowWorkDropdown(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowWorkDropdown(false);
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   const cleanText = (text: string) => {
     return text.replace(/(━+[^━]+━+)/g, '\n\n$1\n\n');
@@ -212,11 +301,79 @@ export default function HomePage() {
         <div className="home-nav-brand">SMM Agent</div>
         <div className="home-nav-links">
           <a href="/" className="active">Home</a>
-          <a href="/content">Work</a>
+          <div ref={workDropdownRef} style={{ position: 'relative' }}>
+            <a 
+              href="#" 
+              className="dropdown-trigger"
+              onClick={(e) => { e.preventDefault(); setShowWorkDropdown(!showWorkDropdown); }}
+            >
+              Work
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" style={{ marginLeft: '4px', transition: 'transform 0.2s', transform: showWorkDropdown ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </a>
+            {showWorkDropdown && (
+              <div className="mega-dropdown">
+                <div className="mega-dropdown-inner">
+                  {megaMenuColumns.map((col, colIdx) => (
+                    <div key={colIdx} className="mega-column">
+                      <div className="mega-column-title">{col.title}</div>
+                      {col.items.map((item, itemIdx) => (
+                        <a key={itemIdx} href={item.href} className="mega-item" onClick={() => setShowWorkDropdown(false)}>
+                          {item.label}
+                        </a>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <a href="/client">Clients</a>
           <a href="/ask">Maya</a>
         </div>
-        <a href="/ask" className="home-nav-cta">Try Maya →</a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <a href="/settings" className="home-nav-settings" title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </a>
+          <div ref={userDropdownRef} style={{ position: 'relative' }}>
+            <button 
+              className="home-nav-avatar"
+              onClick={() => setShowUserDropdown(!showUserDropdown)}
+            >
+              <div className="avatar-circle">{user?.email?.[0]?.toUpperCase() || 'U'}</div>
+            </button>
+            {showUserDropdown && (
+              <div className="user-dropdown">
+                <a href="/profile" className="user-dropdown-item" onClick={() => setShowUserDropdown(false)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Profile
+                </a>
+                <a href="/settings" className="user-dropdown-item" onClick={() => setShowUserDropdown(false)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                  </svg>
+                  Settings
+                </a>
+                <button className="user-dropdown-item danger" onClick={handleSignOut}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -350,6 +507,128 @@ export default function HomePage() {
         </div>
         <div className="home-footer-copy">© 2026 SMM Agent</div>
       </footer>
+
+      <style jsx>{`
+        .dropdown-trigger {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+        
+        .mega-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-top: 8px;
+          background: #111113;
+          border: 1px solid #1E1E20;
+          border-radius: 16px;
+          padding: 24px;
+          z-index: 1000;
+          min-width: 600px;
+        }
+        
+        .mega-dropdown-inner {
+          display: flex;
+          gap: 40px;
+        }
+        
+        .mega-column {
+          min-width: 100px;
+        }
+        
+        .mega-column-title {
+          color: #fff;
+          font-weight: 600;
+          font-size: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .mega-item {
+          display: block;
+          color: #717068;
+          font-size: 13px;
+          padding: 4px 0;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        
+        .mega-item:hover {
+          color: #F2F1ED;
+        }
+        
+        .home-nav-settings {
+          color: #666;
+          display: flex;
+          align-items: center;
+          transition: color 0.2s;
+        }
+        
+        .home-nav-settings:hover {
+          color: #fff;
+        }
+        
+        .home-nav-avatar {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+        }
+        
+        .avatar-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #14B8A6;
+          color: #0A0A0B;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          font-size: 14px;
+        }
+        
+        .user-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 8px;
+          background: #111113;
+          border: 1px solid #1E1E20;
+          border-radius: 10px;
+          padding: 6px;
+          min-width: 140px;
+          z-index: 1000;
+        }
+        
+        .user-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 8px 12px;
+          background: none;
+          border: none;
+          color: #717068;
+          font-size: 13px;
+          text-decoration: none;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s;
+          text-align: left;
+        }
+        
+        .user-dropdown-item:hover {
+          background: #1a1a1a;
+          color: #fff;
+        }
+        
+        .user-dropdown-item.danger:hover {
+          background: rgba(255, 68, 68, 0.1);
+          color: #ff4444;
+        }
+      `}</style>
     </div>
   );
 }
