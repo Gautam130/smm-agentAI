@@ -64,7 +64,7 @@ export async function fetchHooks(industry?: string, emotion?: string, limit = 5)
     if (error) throw error;
     
     if (data && data.length > 0) {
-      return data.map((h: HookRow) => h.hook);
+      return data.map((h) => h.hook);
     }
     
     // If no specific results, get random hooks
@@ -73,7 +73,7 @@ export async function fetchHooks(industry?: string, emotion?: string, limit = 5)
       .select('hook')
       .limit(limit);
     
-    return randomData?.map((h: HookRow) => h.hook) || [];
+    return randomData?.map((h) => h.hook) || [];
   } catch (e) {
     console.warn('Failed to fetch hooks:', e);
     return [];
@@ -97,7 +97,7 @@ export async function fetchInsights(category?: string, limit = 3): Promise<strin
     if (error) throw error;
     
     if (data && data.length > 0) {
-      return data.map((i: InsightRow) => `${i.topic}: ${i.insight}`);
+      return data.map((i) => `${i.topic}: ${i.insight}`);
     }
     
     return [];
