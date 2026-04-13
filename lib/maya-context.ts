@@ -1,18 +1,23 @@
 import { getSupabase } from './supabase';
 
-export interface Hook {
+export interface HookRow {
   id: string;
-  hook_text: string;
+  hook: string;
   industry?: string;
+  trigger?: string;
   emotion?: string;
-  platform?: string;
+  timing?: string;
+  why?: string;
 }
 
-export interface Insight {
+export interface InsightRow {
   id: string;
   category: string;
-  title: string;
-  content: string;
+  topic: string;
+  insight: string;
+  data_point?: string;
+  source?: string;
+  confidence?: string;
 }
 
 const INDUSTRIES = [
@@ -43,8 +48,8 @@ export async function fetchHooks(industry?: string, emotion?: string, limit = 5)
   try {
     const supabase = getSupabase();
     let query = supabase
-      .from('hooks')
-      .select('hook_text')
+      .from('hooks_library')
+      .select('hook')
       .limit(limit);
 
     if (industry && industry !== 'general') {
@@ -59,16 +64,16 @@ export async function fetchHooks(industry?: string, emotion?: string, limit = 5)
     if (error) throw error;
     
     if (data && data.length > 0) {
-      return data.map((h: Hook) => h.hook_text);
+      return data.map((h: HookRow) => h.hook);
     }
     
     // If no specific results, get random hooks
     const { data: randomData } = await supabase
-      .from('hooks')
-      .select('hook_text')
+      .from('hooks_library')
+      .select('hook')
       .limit(limit);
     
-    return randomData?.map((h: Hook) => h.hook_text) || [];
+    return randomData?.map((h: HookRow) => h.hook) || [];
   } catch (e) {
     console.warn('Failed to fetch hooks:', e);
     return [];
@@ -79,8 +84,8 @@ export async function fetchInsights(category?: string, limit = 3): Promise<strin
   try {
     const supabase = getSupabase();
     let query = supabase
-      .from('insights')
-      .select('title, content')
+      .from('marketing_insights')
+      .select('topic, insight')
       .limit(limit);
 
     if (category) {
@@ -92,7 +97,7 @@ export async function fetchInsights(category?: string, limit = 3): Promise<strin
     if (error) throw error;
     
     if (data && data.length > 0) {
-      return data.map((i: Insight) => `${i.title}: ${i.content}`);
+      return data.map((i: InsightRow) => `${i.topic}: ${i.insight}`);
     }
     
     return [];
