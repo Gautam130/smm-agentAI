@@ -27,18 +27,63 @@ const suggestions = [
   'Diwali campaign 50k budget',
 ];
 
+const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
+  return (
+    <div className="maya-message">
+      <div className="maya-avatar">M</div>
+      <div className="maya-text">
+        <span>{text}</span>
+        <span className="cursor-blink">▋</span>
+      </div>
+    </div>
+  );
+});
+
+const CompletedMessage = memo(function CompletedMessage({ message }: { message: ChatMessage }) {
+  const getTime = () => {
+    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  if (message.role === 'user') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="bubble-user">
+          {message.attachments && message.attachments.length > 0 && (
+            <div style={{ marginBottom: '8px' }}>
+              {message.attachments.map((att: any, idx: number) => (
+                <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  {att.name}
+                </div>
+              ))}
+            </div>
+          )}
+          {message.text}
+          <div className="chat-time">{getTime()}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="maya-message">
+      <div className="maya-avatar">M</div>
+      <div className="maya-text">
+        <ReactMarkdown>{message.text}</ReactMarkdown>
+      </div>
+    </div>
+  );
+}, (prev, next) => prev.message.id === next.message.id);
+
 interface MessagesListProps {
   messages: ChatMessage[];
   chatRef: React.RefObject<HTMLDivElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   isSwitching?: boolean;
+  streamingText?: string;
 }
 
-const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching }: MessagesListProps) {
-  const getTime = () => {
-    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-  };
-
+const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching, streamingText }: MessagesListProps) {
   return (
     <div 
       ref={chatRef} 
@@ -48,49 +93,24 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
         <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
           <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#14B8A6', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
         </div>
-      ) : messages.length === 0 ? (
+      ) : messages.length === 0 && !streamingText ? (
         <div className="text-center" style={{ color: '#666', padding: '40px', fontSize: '14px' }}>
           Ask Maya anything about your social media strategy
         </div>
       ) : (
-        messages.map((msg, i) => (
-          <div 
-            key={i} 
-            ref={i === messages.length - 1 ? messagesEndRef : undefined}
-            style={{ marginBottom: '24px' }}
-          >
-            {msg.role === 'user' ? (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <div className="bubble-user">
-                  {msg.attachments && msg.attachments.length > 0 && (
-                    <div style={{ marginBottom: '8px' }}>
-                      {msg.attachments.map((att: any, idx: number) => (
-                        <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          {att.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {msg.text}
-                  <div className="chat-time">{getTime()}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="maya-message">
-                <div className="maya-avatar">M</div>
-                <div className="maya-text">
-                  {msg.streaming && !msg.text ? (
-                    '🤔 Thinking...'
-                  ) : (
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  )}
-                  {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
-                </div>
-              </div>
-            )}
-          </div>
-        ))
+        <>
+          {messages.map((msg) => (
+            <div key={msg.id} style={{ marginBottom: '24px' }}>
+              <CompletedMessage message={msg} />
+            </div>
+          ))}
+          {streamingText !== undefined && streamingText !== '' && (
+            <div style={{ marginBottom: '24px' }}>
+              <StreamingMessage text={streamingText} />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </>
       )}
     </div>
   );
@@ -115,7 +135,7 @@ function getRelativeTime(dateStr: string): string {
 export default function AskMayaPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { messages, isLoading, sendMessage, clearChat, setMessages } = useMaya();
+  const { messages, isLoading, streamingText, sendMessage, clearChat, setMessages } = useMaya();
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -200,9 +220,9 @@ export default function AskMayaPage() {
 
       if (!error && data && data.length > 0) {
         const loadedMessages: ChatMessage[] = data.map((m: StoredMessage) => ({
+          id: crypto.randomUUID(),
           role: m.role,
           text: m.content,
-          streaming: false,
         }));
         
         // We need to update the useMaya state, but since useMaya manages its own state,
@@ -379,8 +399,8 @@ export default function AskMayaPage() {
     const lastMessage = messages[messages.length - 1];
     const secondLastMessage = messages[messages.length - 2];
     
-    // If last message is assistant and second last was user (and they match what we sent)
-    if (lastMessage.role === 'assistant' && !lastMessage.streaming && secondLastMessage?.role === 'user') {
+    // If last message is assistant and second last was user
+    if (lastMessage.role === 'assistant' && secondLastMessage?.role === 'user') {
       // Check if this message was already saved (avoid duplicates)
       // We can check by comparing with localStorage or adding a flag
       const saveKey = `maya_saved_${currentConversationId}_${secondLastMessage.text.slice(0, 30)}`;
@@ -878,7 +898,7 @@ export default function AskMayaPage() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
-            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} isSwitching={isSwitching} />
+            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} isSwitching={isSwitching} streamingText={streamingText} />
           </div>
         </div>
 

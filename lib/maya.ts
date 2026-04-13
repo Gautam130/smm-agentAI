@@ -503,9 +503,9 @@ function getModeInstruction(mode: string): string {
 }
 
 export interface ChatMessage {
+  id: string;
   role: 'user' | 'assistant';
   text: string;
-  streaming?: boolean;
   attachments?: { name: string; content?: string }[];
 }
 
@@ -522,6 +522,7 @@ export interface Attachment {
 export function useMaya() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
 
@@ -530,6 +531,7 @@ export function useMaya() {
     if (loadingRef.current) return;
 
     loadingRef.current = true;
+    setStreamingText('');
     
     let displayMsg = userMsg;
     if (attachments.length > 0) {
@@ -537,7 +539,8 @@ export function useMaya() {
       displayMsg = `${userMsg}\n\n[Attached files: ${fileNames}]`;
     }
     
-    setMessages(prev => [...prev, { role: 'user', text: displayMsg, attachments }]);
+    const userMsgObj: ChatMessage = { id: crypto.randomUUID(), role: 'user', text: displayMsg, attachments };
+    setMessages(prev => [...prev, userMsgObj]);
     setIsLoading(true);
 
     // Fetch knowledge context from Supabase
@@ -609,8 +612,6 @@ export function useMaya() {
       ? (intent.isContent ? 6000 : intent.isStrategy ? 6000 : intent.needsSearch ? 8000 : 5000)
       : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
 
-    setMessages(prev => [...prev, { role: 'assistant', text: '', streaming: true }]);
-
     abortRef.current = new AbortController();
     let fullText = '';
 
@@ -651,15 +652,7 @@ export function useMaya() {
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
                 fullText += content;
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: 'assistant',
-                    text: fullText,
-                    streaming: true
-                  };
-                  return updated;
-                });
+                setStreamingText(fullText);
               }
               if (parsed.error) {
                 throw new Error(parsed.error);
@@ -674,19 +667,10 @@ export function useMaya() {
       }
     }
 
-    // Finalize message - clear streaming flag
-    setMessages(prev => {
-      const newMsgs = [...prev];
-      const lastIdx = newMsgs.length - 1;
-      if (lastIdx >= 0) {
-        newMsgs[lastIdx] = {
-          role: 'assistant',
-          text: fullText || 'No response received.',
-          streaming: false
-        };
-      }
-      return newMsgs;
-    });
+    // Finalize message - add to messages and clear streaming state
+    setStreamingText('');
+    const assistantMsg: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', text: fullText || 'No response received.' };
+    setMessages(prev => [...prev, assistantMsg]);
 
     setIsLoading(false);
     loadingRef.current = false;
@@ -694,6 +678,7 @@ export function useMaya() {
 
   const clearChat = useCallback(() => {
     setMessages([]);
+    setStreamingText('');
   }, []);
 
   const setMessagesState = useCallback((newMessages: ChatMessage[]) => {
@@ -703,7 +688,8 @@ export function useMaya() {
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     setIsLoading(false);
+    setStreamingText('');
   }, []);
 
-  return { messages, isLoading, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState };
+  return { messages, isLoading, streamingText, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState };
 }
