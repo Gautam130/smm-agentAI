@@ -152,7 +152,26 @@ export function detectCategory(message: string): string {
   return 'india_market';
 }
 
+const MARKETING_KEYWORDS = [
+  'hooks', 'content', 'caption', 'strategy', 'post', 'reel', 'campaign', 
+  'brand', 'marketing', 'instagram', 'youtube', 'linkedin', 'facebook', 'twitter',
+  'audience', 'engagement', 'followers', 'likes', 'shares', 'viral', 'trending',
+  'hashtag', 'trending', 'content', 'organic', 'reach', 'impressions', 'cpm',
+  'ctr', 'roas', 'conversion', 'funnel', 'cta', 'dm', 'story', 'carousel',
+  'thumbnail', 'seo', 'analytics', 'insights', 'boost', 'advertisement', 'ads',
+  'budget', 'spend', 'creative', 'copy', 'headline', 'Hook', 'hook'
+];
+
+export function isMarketingQuery(message: string): boolean {
+  const msg = message.toLowerCase();
+  return MARKETING_KEYWORDS.some(keyword => msg.includes(keyword));
+}
+
 export async function buildMayaPrompt(message: string): Promise<string> {
+  if (!isMarketingQuery(message)) {
+    return 'You are Maya, a friendly Indian SMM expert. Answer conversationally. Be warm, direct, and helpful. You know everything about Indian social media marketing but keep it natural unless they ask about marketing.';
+  }
+  
   const industry = detectIndustry(message);
   const category = detectCategory(message);
   
