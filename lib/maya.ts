@@ -562,7 +562,13 @@ export function useMaya() {
     }
     
     const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
-    const systemContent = CHAT_SYS + modeInstruction + userContext;
+
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const formattedDate = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
+
+    const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext;
 
     const historyLimit = intent.isCasual ? 6 : 24;
     const recentHistory = messages.slice(-historyLimit).map(m => ({
