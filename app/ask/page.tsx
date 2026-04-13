@@ -401,7 +401,7 @@ export default function AskMayaPage() {
     
     // If last message is assistant and second last was user
     if (lastMessage.role === 'assistant' && secondLastMessage?.role === 'user') {
-      const convId = lastMessage.conversationId ?? currentConversationId;
+      const convId = lastMessage.conversationId;
       if (!convId) return;
       // Check if this message was already saved (avoid duplicates)
       const saveKey = `maya_saved_${convId}_${secondLastMessage.text.slice(0, 30)}`;
@@ -410,7 +410,7 @@ export default function AskMayaPage() {
         localStorage.setItem(saveKey, 'true');
       }
     }
-  }, [messages, currentConversationId, saveMessage]);
+  }, [messages, saveMessage]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
