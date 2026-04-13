@@ -322,15 +322,36 @@ interface QueryClassification {
 }
 
 function classifyMayaQuery(message: string): QueryClassification {
-  const q = message.toLowerCase();
-  
+  const q = message.toLowerCase().trim();
+
+  const isCasual =
+    q.length < 4 ||
+    /^(hi|hey|hello|thanks?|ok(ay)?|cool|nice|bye)$/.test(q) ||
+    (q.split(' ').length <= 2 && /(hi|hey|thanks|ok|cool|bye)/.test(q));
+
+  if (isCasual) {
+    return { needsHooks: false, needsInsights: false, needsSearch: false, isUnrelated: true };
+  }
+
+  const isPersonalIntent =
+    /dont want to|do not want to|stop using|quit|addiction|wasting too much time|spend too much time|study more|need to focus/.test(q);
+
+  const hasPlatform = /instagram|facebook|ads|reels|stories|social media/.test(q);
+  const hasMetrics = /cac|roas|ctr|cpm|cpc|conversion|ltv|engagement/.test(q);
+  const hasGrowth = /grow|scale|improve|increase|reduce|optimize|strategy/.test(q);
+
+  const marketingScore =
+    (hasPlatform ? 1 : 0) +
+    (hasMetrics ? 1 : 0) +
+    (hasGrowth ? 1 : 0);
+
+  const isMarketingQuery = marketingScore >= 1 && !isPersonalIntent;
+
   const needsHooks = /hook|caption|reel|script|write me|create content|post ideas|copy|dm flow|thread|hooks for|captions for/.test(q);
-  const needsInsights = /strategy|marketing|campaign|influencer|brand|d2c|engagement rate|benchmark|best practice|how to grow|analyse|analyze|audit|cac|roas|ltv|cpm|ctr/.test(q);
-  const needsSearch = /research|current|latest|news|what is|who is|trending|right now|2025|2026|boat|nykaa|mamaearth|sugar|flipkart|amazon|competitor|analyse|analyze/.test(q);
-  
-  const isUnrelated = !needsHooks && !needsInsights && !needsSearch;
-  
-  return { needsHooks, needsInsights, needsSearch, isUnrelated };
+  const needsInsights = !isCasual && isMarketingQuery;
+  const needsSearch = /research|current|latest|news|trending|right now|2025|2026|boat|nykaa|mamaearth|sugar|flipkart|amazon|competitor/.test(q);
+
+  return { needsHooks, needsInsights, needsSearch, isUnrelated: false };
 }
 
 async function fetchHooks(message: string): Promise<string | null> {
