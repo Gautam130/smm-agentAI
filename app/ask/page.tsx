@@ -1,7 +1,23 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
-import { useMaya } from '@/lib/maya';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { useMaya, type ChatMessage } from '@/lib/maya';
+import { getSupabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+
+interface Conversation {
+  id: string;
+  title: string;
+  updated_at: string;
+  created_at: string;
+}
+
+interface StoredMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
 
 const suggestions = [
   'Best Instagram strategy for D2C India',
@@ -10,15 +26,8 @@ const suggestions = [
   'Diwali campaign 50k budget',
 ];
 
-interface Message {
-  role: 'user' | 'assistant';
-  text: string;
-  streaming?: boolean;
-  attachments?: Array<{ name: string; size: string; content?: string }>;
-}
-
 interface MessagesListProps {
-  messages: Message[];
+  messages: ChatMessage[];
   chatRef: React.RefObject<HTMLDivElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -31,11 +40,10 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
   return (
     <div 
       ref={chatRef} 
-      className="rounded-t-lg border border-[var(--border-glass)] border-b-0 bg-black"
       style={{ padding: '20px 24px' }}
     >
       {messages.length === 0 ? (
-        <div className="text-center" style={{ color: 'var(--text-muted)', padding: '40px' }}>
+        <div className="text-center" style={{ color: '#666', padding: '40px', fontSize: '14px' }}>
           Ask Maya anything about your social media strategy
         </div>
       ) : (
@@ -78,7 +86,25 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
   );
 });
 
+function getRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function AskMayaPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const { messages, isLoading, sendMessage, clearChat } = useMaya();
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
@@ -92,6 +118,12 @@ export default function AskMayaPage() {
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const plusBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [loadingConversations, setLoadingConversations] = useState(false);
 
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
@@ -111,8 +143,199 @@ export default function AskMayaPage() {
     });
   };
 
+  // Load conversations from Supabase
+  const loadConversations = useCallback(async () => {
+    if (!user) return;
+    setLoadingConversations(true);
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('id, title, updated_at, created_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (!error && data) {
+        setConversations(data);
+      }
+    } catch (e) {
+      console.error('Failed to load conversations:', e);
+    }
+    setLoadingConversations(false);
+  }, [user]);
+
+  // Load conversations on mount and user change
   useEffect(() => {
-    // Initialize voice recognition on mount
+    if (user) {
+      loadConversations();
+    }
+  }, [user, loadConversations]);
+
+  // Load messages for a conversation
+  const loadMessages = useCallback(async (conversationId: string) => {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('messages')
+        .select('role, content, created_at')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        const loadedMessages: ChatMessage[] = data.map((m: StoredMessage) => ({
+          role: m.role,
+          text: m.content,
+          streaming: false,
+        }));
+        
+        // We need to update the useMaya state, but since useMaya manages its own state,
+        // we'll need to handle this differently. For now, let's store them in state
+        // and have the MessagesList use them
+        return loadedMessages;
+      }
+    } catch (e) {
+      console.error('Failed to load messages:', e);
+    }
+    return null;
+  }, []);
+
+  // Create new conversation
+  const createConversation = useCallback(async (firstMessage: string) => {
+    if (!user) return null;
+    try {
+      const supabase = getSupabase();
+      const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
+      
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({ 
+          user_id: user.id, 
+          title 
+        })
+        .select('id, title, updated_at, created_at')
+        .single();
+
+      if (!error && data) {
+        setConversations(prev => [data, ...prev]);
+        setCurrentConversationId(data.id);
+        return data.id;
+      }
+    } catch (e) {
+      console.error('Failed to create conversation:', e);
+    }
+    return null;
+  }, [user]);
+
+  // Save message to Supabase
+  const saveMessage = useCallback(async (conversationId: string, role: 'user' | 'assistant', content: string) => {
+    try {
+      const supabase = getSupabase();
+      await supabase
+        .from('messages')
+        .insert({ 
+          conversation_id: conversationId, 
+          role, 
+          content 
+        });
+      
+      // Update conversation updated_at
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', conversationId);
+    } catch (e) {
+      console.error('Failed to save message:', e);
+    }
+  }, []);
+
+  // Handle new conversation
+  const handleNewChat = () => {
+    clearChat();
+    setCurrentConversationId(null);
+    setInput('');
+  };
+
+  // Handle conversation selection
+  const handleSelectConversation = async (conversationId: string) => {
+    if (conversationId === currentConversationId) return;
+    
+    setCurrentConversationId(conversationId);
+    clearChat();
+    
+    const loadedMessages = await loadMessages(conversationId);
+    if (loadedMessages && loadedMessages.length > 0) {
+      // We need to somehow pass these to the MessagesList
+      // Since useMaya manages its own messages, we'll need to modify the approach
+      // For now, reload the page state
+      window.location.reload();
+    }
+  };
+
+  // Handle send with Supabase persistence
+  const handleSend = async () => {
+    if (!input.trim() && attachedFiles.length === 0) return;
+    if (isLoading) return;
+    
+    const messageToSend = input.trim() || 'Please analyze these files';
+    
+    // If no current conversation, create one
+    let convId = currentConversationId;
+    if (!convId) {
+      convId = await createConversation(messageToSend);
+    }
+    
+    // Save user message to Supabase
+    if (convId) {
+      await saveMessage(convId, 'user', messageToSend);
+      // Update conversation title if it's the first message
+      const conversation = conversations.find(c => c.id === convId);
+      if (conversation && conversation.title.length === 0) {
+        const supabase = getSupabase();
+        await supabase
+          .from('conversations')
+          .update({ title: messageToSend.slice(0, 40) + (messageToSend.length > 40 ? '...' : '') })
+          .eq('id', convId);
+      }
+    }
+    
+    // Get the response text from Maya
+    const currentMessagesLength = messages.length;
+    sendMessage(messageToSend, attachedFiles);
+    setInput('');
+    setAttachedFiles([]);
+    
+    // Clean up preview URLs
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    setPreviewUrls(new Map());
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+  };
+
+  // Save assistant response to Supabase (after streaming completes)
+  useEffect(() => {
+    if (!currentConversationId || messages.length < 2) return;
+    
+    const lastMessage = messages[messages.length - 1];
+    const secondLastMessage = messages[messages.length - 2];
+    
+    // If last message is assistant and second last was user (and they match what we sent)
+    if (lastMessage.role === 'assistant' && !lastMessage.streaming && secondLastMessage?.role === 'user') {
+      // Check if this message was already saved (avoid duplicates)
+      // We can check by comparing with localStorage or adding a flag
+      const saveKey = `maya_saved_${currentConversationId}_${secondLastMessage.text.slice(0, 30)}`;
+      if (!localStorage.getItem(saveKey)) {
+        saveMessage(currentConversationId, 'assistant', lastMessage.text);
+        localStorage.setItem(saveKey, 'true');
+      }
+    }
+  }, [messages, currentConversationId, saveMessage]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -147,14 +370,12 @@ export default function AskMayaPage() {
     }
   }, [messages]);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!showAttachMenu) return;
 
@@ -171,25 +392,6 @@ export default function AskMayaPage() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showAttachMenu]);
 
-  const handleSend = () => {
-    if (!input.trim() && attachedFiles.length === 0) return;
-    if (isLoading) return;
-    
-    const messageToSend = input.trim() || 'Please analyze these files';
-    sendMessage(messageToSend, attachedFiles);
-    setInput('');
-    setAttachedFiles([]);
-    // Clean up preview URLs
-    previewUrls.forEach(url => URL.revokeObjectURL(url));
-    setPreviewUrls(new Map());
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    if (imageInputRef.current) {
-      imageInputRef.current.value = '';
-    }
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -197,7 +399,6 @@ export default function AskMayaPage() {
     }
   };
 
-  // Auto-grow textarea
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -214,14 +415,12 @@ export default function AskMayaPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check for duplicates
     const fileSize = (file.size / 1024).toFixed(1) + ' KB';
     if (attachedFiles.some(f => f.name === file.name && f.size === fileSize)) {
       alert('File already attached');
       return;
     }
     
-    // Check max files (2)
     if (attachedFiles.length >= 2) {
       alert('Maximum 2 files allowed');
       return;
@@ -233,11 +432,8 @@ export default function AskMayaPage() {
     const isImage = file.type.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(file.name);
     
     if (isImage) {
-      // OCR for images using Tesseract.js
       try {
         fileContent = `[Analyzing image: ${file.name}...`;
-        
-        // Dynamic import Tesseract
         const Tesseract = await import('tesseract.js');
         
         const result = await Tesseract.recognize(file, 'eng+hin', {
@@ -265,7 +461,6 @@ export default function AskMayaPage() {
         const pdfjs = await import('pdfjs-dist');
         const arrayBuffer = await file.arrayBuffer();
         
-        // Set worker from CDN
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
           pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
         }
@@ -364,176 +559,328 @@ export default function AskMayaPage() {
     }
   };
 
-  const clearAllFiles = () => {
-    attachedFiles.forEach(f => removeFilePreview(f.name));
-    setAttachedFiles([]);
-    setPreviewUrls(new Map());
-  };
-
   const getTime = () => {
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ background: '#000000' }}>
-      {/* Simple Top Bar - replaces sidebar */}
-      <div style={{
-        padding: '16px 24px',
-        borderBottom: '1px solid #1E1E20',
+    <div className="ask-layout" style={{ background: '#000000', height: '100vh', display: 'flex', overflow: 'hidden' }}>
+      {/* Sidebar */}
+      <div className={`ask-sidebar ${sidebarOpen ? 'open' : 'closed'}`} style={{
+        width: sidebarOpen ? '280px' : '0px',
+        minWidth: sidebarOpen ? '280px' : '0px',
+        height: '100vh',
+        background: '#0a0a0a',
+        borderRight: sidebarOpen ? '1px solid #1E1E20' : 'none',
         display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        background: '#000000',
+        flexDirection: 'column',
+        transition: 'width 0.2s ease, min-width 0.2s ease',
+        overflow: 'hidden',
       }}>
-        <a href="/" style={{ color: '#666', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-        </a>
-        <span style={{ fontSize: '15px', fontWeight: 600, color: '#fff' }}>Ask Maya</span>
-      </div>
-
-      {/* Header - shrinks away if needed */}
-      <div className="flex-shrink-0 px-4">
-        <div style={{ color: '#444', fontSize: '11px', textAlign: 'center', padding: '8px 0' }}>
-          Maya remembers this conversation within this session
-        </div>
-        
-        <div className="chat-suggestions mb-3" style={{ padding: '8px 0' }}>
-          {suggestions.map((s, i) => (
-            <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Messages area - scrolls, takes all remaining space */}
-      <div className="flex-1 overflow-y-auto">
-        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
-          <MessagesList messages={messages as Message[]} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
-        </div>
-      </div>
-
-      {/* Input area - stays at bottom, never moves */}
-      <div className="flex-shrink-0 pb-4" style={{ padding: '0 16px' }}>
-        <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
-          {/* Meta AI style input - flat dark */}
-          <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
-          {/* Attachment previews */}
-          {attachedFiles.length > 0 && (
-            <div className="meta-attachments">
-              {attachedFiles.map((file, idx) => (
-                <div key={idx} className="meta-attachment">
-                  {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
-                    <img src={previewUrls.get(file.name)} alt={file.name} />
-                  ) : (
-                    <div className="meta-file-icon">{file.name.split('.').pop()?.toUpperCase()}</div>
-                  )}
-                  <span className="meta-file-name">{file.name}</span>
-                  <button className="meta-remove-btn" onClick={() => removeFile(idx)}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Top row - Textarea */}
-          <textarea
-            ref={textareaRef}
-            className="meta-textarea"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onInput={adjustTextareaHeight}
-            placeholder="Ask Maya..."
-            rows={1}
-          />
-
-          {/* Bottom row - Buttons */}
-          <div className="meta-input-bottom" style={{ position: 'relative' }}>
-            {/* + Button - left */}
-            <button 
-              ref={plusBtnRef}
-              className="meta-plus-btn"
-              title="Add"
-              onClick={() => setShowAttachMenu(!showAttachMenu)}
-              disabled={attachedFiles.length >= 2}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            </button>
-
-            {showAttachMenu && (
-              <div className="attach-dropdown" style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: '8px' }}>
-                <label className="attach-option">
-                  <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-                  </svg>
-                  Attachment
-                </label>
-                <label className="attach-option">
-                  <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                  Upload Image
-                </label>
-                {ocrProgress && (
-                  <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    {ocrProgress}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Right side buttons */}
-            <div className="meta-right-buttons">
-              {/* Voice button */}
+        {sidebarOpen && (
+          <>
+            {/* Sidebar Header */}
+            <div style={{ padding: '16px', borderBottom: '1px solid #1E1E20' }}>
               <button 
-                className={`meta-voice-btn ${isListening ? 'listening' : ''}`}
-                title={isListening ? 'Stop recording' : 'Voice input'}
-                onClick={toggleVoice}
+                onClick={handleNewChat}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: '#14B8A6',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
               >
-                {isListening ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="6" width="12" height="12" rx="2"/>
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
-                  </svg>
-                )}
-              </button>
-
-              {/* Send button - blue circle */}
-              <button 
-                className="meta-send-btn"
-                onClick={handleSend}
-                disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="19" x2="12" y2="5"></line>
-                  <polyline points="5 12 12 5 19 12"></polyline>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
+                New chat
               </button>
             </div>
+
+            {/* Conversations List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+              {loadingConversations ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
+                  Loading...
+                </div>
+              ) : conversations.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '13px' }}>
+                  No conversations yet
+                </div>
+              ) : (
+                conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    className={`conv-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: currentConversationId === conv.id ? '#1a1a1a' : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      marginBottom: '4px',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <div style={{ 
+                      color: '#fff', 
+                      fontSize: '13px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      marginBottom: '4px',
+                    }}>
+                      {conv.title}
+                    </div>
+                    <div style={{ 
+                      color: '#666', 
+                      fontSize: '11px' 
+                    }}>
+                      {getRelativeTime(conv.updated_at)}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* User info */}
+            <div style={{ 
+              padding: '12px 16px', 
+              borderTop: '1px solid #1E1E20',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#14B8A6',
+                color: '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 600,
+                fontSize: '14px',
+              }}>
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ 
+                  color: '#fff', 
+                  fontSize: '13px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {user?.email || 'User'}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Top Bar */}
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #1E1E20',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: '#000000',
+        }}>
+          {/* Sidebar Toggle */}
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#666',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '4px',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
+          <a href="/" style={{ color: '#666', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </a>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: '#fff' }}>Ask Maya</span>
+        </div>
+
+        {/* Suggestions - only show when no messages */}
+        <div className="flex-shrink-0 px-4" style={{ display: messages.length === 0 ? 'block' : 'none' }}>
+          <div style={{ color: '#444', fontSize: '11px', textAlign: 'center', padding: '8px 0' }}>
+            Maya remembers this conversation within this session
+          </div>
+          
+          <div className="chat-suggestions mb-3" style={{ padding: '8px 0' }}>
+            {suggestions.map((s, i) => (
+              <button key={i} onClick={() => setInput(s)} className="suggestion-btn">
+                {s}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto">
+          <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
+            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+          </div>
         </div>
 
-        {/* Input hint */}
-        <div className="input-hint" style={{ maxWidth: '680px', margin: '8px auto 0', width: '100%' }}>
-          <span>Enter to send • Shift+Enter for new line</span>
-          {messages.length > 0 && (
-            <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
-          )}
+        {/* Input area */}
+        <div className="flex-shrink-0 pb-4" style={{ padding: '0 16px' }}>
+          <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+            <div className={`meta-input-container ${attachedFiles.length > 0 ? 'has-attachments' : ''}`}>
+              {attachedFiles.length > 0 && (
+                <div className="meta-attachments">
+                  {attachedFiles.map((file, idx) => (
+                    <div key={idx} className="meta-attachment">
+                      {file.name.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i) && previewUrls.get(file.name) ? (
+                        <img src={previewUrls.get(file.name)} alt={file.name} />
+                      ) : (
+                        <div className="meta-file-icon">{file.name.split('.').pop()?.toUpperCase()}</div>
+                      )}
+                      <span className="meta-file-name">{file.name}</span>
+                      <button className="meta-remove-btn" onClick={() => removeFile(idx)}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <textarea
+                ref={textareaRef}
+                className="meta-textarea"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onInput={adjustTextareaHeight}
+                placeholder="Ask Maya..."
+                rows={1}
+              />
+
+              <div className="meta-input-bottom" style={{ position: 'relative' }}>
+                <button 
+                  ref={plusBtnRef}
+                  className="meta-plus-btn"
+                  title="Add"
+                  onClick={() => setShowAttachMenu(!showAttachMenu)}
+                  disabled={attachedFiles.length >= 2}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
+
+                {showAttachMenu && (
+                  <div className="attach-dropdown" style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: '8px' }}>
+                    <label className="attach-option">
+                      <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                      </svg>
+                      Attachment
+                    </label>
+                    <label className="attach-option">
+                      <input type="file" ref={imageInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp" />
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      Upload Image
+                    </label>
+                    {ocrProgress && (
+                      <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        {ocrProgress}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="meta-right-buttons">
+                  <button 
+                    className={`meta-voice-btn ${isListening ? 'listening' : ''}`}
+                    title={isListening ? 'Stop recording' : 'Voice input'}
+                    onClick={toggleVoice}
+                  >
+                    {isListening ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                      </svg>
+                    )}
+                  </button>
+
+                  <button 
+                    className="meta-send-btn"
+                    onClick={handleSend}
+                    disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="12" y1="19" x2="12" y2="5"></line>
+                      <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="input-hint" style={{ maxWidth: '680px', margin: '8px auto 0', width: '100%' }}>
+            <span>Enter to send • Shift+Enter for new line</span>
+            {messages.length > 0 && (
+              <button onClick={handleNewChat} className="clear-chat-btn">New chat</button>
+            )}
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .conv-item:hover {
+          background: #1a1a1a !important;
+        }
+        
+        .conv-item.active {
+          background: #1a1a1a !important;
+        }
+      `}</style>
     </div>
   );
 }
