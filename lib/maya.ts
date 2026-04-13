@@ -354,9 +354,10 @@ async function fetchHooks(message: string): Promise<string | null> {
 async function fetchInsights(message: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
-    const keywords = message.toLowerCase().split(' ')
-      .filter(w => w.length > 3)
-      .slice(0, 3);
+    const stopwords = ['what','how','best','tips','for','the','and','with','your','that','this','from','have','are','will'];
+    const keywords = message.toLowerCase()
+      .split(' ')
+      .filter(w => w.length > 2 && !stopwords.includes(w));
     
     if (keywords.length === 0) return null;
     

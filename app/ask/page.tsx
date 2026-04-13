@@ -271,10 +271,11 @@ export default function AskMayaPage() {
     if (conversationId === currentConversationId) return;
     
     setCurrentConversationId(conversationId);
-    setMessages([]);  // Clear old messages first
+    setIsLoading(true);
     
     const loadedMessages = await loadMessages(conversationId);
     setMessages(loadedMessages || []);
+    setIsLoading(false);
     
     // Scroll to bottom after messages load
     setTimeout(() => {
