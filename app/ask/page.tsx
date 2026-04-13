@@ -111,7 +111,7 @@ function getRelativeTime(dateStr: string): string {
 export default function AskMayaPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { messages, isLoading, sendMessage, clearChat } = useMaya();
+  const { messages, isLoading, sendMessage, clearChat, setMessages } = useMaya();
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -276,7 +276,13 @@ export default function AskMayaPage() {
     
     const loadedMessages = await loadMessages(conversationId);
     if (loadedMessages && loadedMessages.length > 0) {
-      window.location.reload();
+      setMessages(loadedMessages);
+      // Scroll to bottom after messages load
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 

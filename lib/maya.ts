@@ -558,10 +558,14 @@ export function useMaya() {
     setMessages([]);
   }, []);
 
+  const setMessagesState = useCallback((newMessages: ChatMessage[]) => {
+    setMessages(newMessages);
+  }, []);
+
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     setIsLoading(false);
   }, []);
 
-  return { messages, isLoading, sendMessage, clearChat, stopStreaming };
+  return { messages, isLoading, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState };
 }
