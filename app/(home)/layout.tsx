@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const metadata: Metadata = {
   title: "SMM Agent - AI Social Media Manager",
@@ -11,5 +12,9 @@ export default function HomeLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <>{children}</>;
+  return (
+    <ProtectedRoute>
+      {children}
+    </ProtectedRoute>
+  );
 }
