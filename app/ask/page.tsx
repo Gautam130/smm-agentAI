@@ -267,18 +267,15 @@ export default function AskMayaPage() {
     setInput('');
   };
 
-  // Handle conversation selection - keep old messages visible until new ones load
+  // Handle conversation selection
   const handleSelectConversation = async (conversationId: string) => {
     if (conversationId === currentConversationId) return;
     
     setCurrentConversationId(conversationId);
+    setMessages([]);  // Clear old messages first
     
     const loadedMessages = await loadMessages(conversationId);
-    if (loadedMessages && loadedMessages.length > 0) {
-      setMessages(loadedMessages);
-    } else {
-      setMessages([]);
-    }
+    setMessages(loadedMessages || []);
     
     // Scroll to bottom after messages load
     setTimeout(() => {
