@@ -126,6 +126,10 @@ export default function AskMayaPage() {
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [hoveredConversationId, setHoveredConversationId] = useState<string | null>(null);
 
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+
   // Store preview URLs for each file
   const [previewUrls, setPreviewUrls] = useState<Map<string, string>>(new Map());
   
@@ -270,28 +274,42 @@ export default function AskMayaPage() {
     }
   };
 
-  // Handle delete conversation
-  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
+  // Handle delete conversation - show modal
+  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    
-    if (!confirm('Delete this conversation?')) return;
+    setConversationToDelete(conversationId);
+    setShowDeleteModal(true);
+  };
+
+  // Confirm delete conversation
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
     
     try {
       const supabase = getSupabase();
       await supabase
         .from('conversations')
         .delete()
-        .eq('id', conversationId);
+        .eq('id', conversationToDelete);
       
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
+      setConversations(prev => prev.filter(c => c.id !== conversationToDelete));
       
-      if (currentConversationId === conversationId) {
+      if (currentConversationId === conversationToDelete) {
         setCurrentConversationId(null);
         clearChat();
       }
     } catch (err) {
       console.error('Failed to delete conversation:', err);
     }
+    
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
+  };
+
+  // Cancel delete
+  const cancelDeleteConversation = () => {
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
   };
 
   // Handle send with Supabase persistence
@@ -413,6 +431,32 @@ export default function AskMayaPage() {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showAttachMenu]);
+
+  // Delete modal escape key and outside click handler
+  useEffect(() => {
+    if (!showDeleteModal) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        cancelDeleteConversation();
+      }
+    };
+
+    const handleOutsideClick = (e: MouseEvent) => {
+      const modal = document.querySelector('.delete-modal');
+      if (modal && !modal.contains(e.target as Node)) {
+        cancelDeleteConversation();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('mousedown', handleOutsideClick);
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showDeleteModal]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -933,6 +977,79 @@ export default function AskMayaPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div className="delete-modal" style={{
+            background: '#111113',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '360px',
+            width: '90%',
+          }}>
+            <div style={{
+              color: '#fff',
+              fontSize: '16px',
+              fontWeight: 500,
+              marginBottom: '8px',
+            }}>
+              Delete conversation?
+            </div>
+            <div style={{
+              color: 'rgba(255,255,255,0.4)',
+              fontSize: '13px',
+              marginBottom: '24px',
+            }}>
+              This cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={cancelDeleteConversation}
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.7)',
+                  borderRadius: '8px',
+                  padding: '8px 20px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteConversation}
+                style={{
+                  flex: 1,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.8)',
+                  borderRadius: '8px',
+                  padding: '8px 20px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .conv-item:hover {
