@@ -5,6 +5,7 @@ import { useMaya, type ChatMessage } from '@/lib/maya';
 import { getSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { buildMayaPrompt } from '@/lib/maya-context';
 
 interface Conversation {
   id: string;
@@ -339,9 +340,11 @@ export default function AskMayaPage() {
       }
     }
     
-    // Get the response text from Maya
-    const currentMessagesLength = messages.length;
-    sendMessage(messageToSend, attachedFiles);
+    // Build custom system prompt with relevant context
+    const customSystemPrompt = await buildMayaPrompt(messageToSend);
+    
+    // Get the response text from Maya with custom prompt
+    sendMessage(messageToSend, attachedFiles, customSystemPrompt);
     setInput('');
     setAttachedFiles([]);
     

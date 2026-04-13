@@ -369,7 +369,7 @@ export function useMaya() {
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
 
-  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = []) => {
+  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = [], customSystemPrompt?: string) => {
     if (!userMsg.trim() && attachments.length === 0) return;
     if (loadingRef.current) return;
 
@@ -418,7 +418,14 @@ export function useMaya() {
     }
     
     const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
-    let systemContent = CHAT_SYS + modeInstruction + userContext;
+    
+    // Use custom system prompt if provided, otherwise use default
+    let systemContent: string;
+    if (customSystemPrompt) {
+      systemContent = customSystemPrompt + userContext;
+    } else {
+      systemContent = CHAT_SYS + modeInstruction + userContext;
+    }
 
     // Add live search data to system prompt
     if (liveData) {
