@@ -986,7 +986,7 @@ export default function AskMayaPage() {
           <div className="input-hint" style={{ maxWidth: '680px', margin: '8px auto 0', width: '100%' }}>
             <span>Enter to send • Shift+Enter for new line</span>
             {messages.length > 0 && (
-              <button onClick={handleNewChat} className="clear-chat-btn">New chat</button>
+              <button onClick={clearChat} className="clear-chat-btn">Clear chat</button>
             )}
           </div>
         </div>
