@@ -1,26 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientProvider } from "@/components/ClientContext";
 import { AuthProvider } from "@/lib/auth";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
-import { SidebarProvider } from "@/components/SidebarContext";
-import AppShell from "@/components/AppShell";
 
 const inter = Inter({
   variable: "--font",
-  subsets: ["latin"],
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--head",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--mono",
   subsets: ["latin"],
 });
 
@@ -35,22 +20,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}>
-      <body style={{ 
-        height: '100vh', 
-        overflow: 'hidden',
-        display: 'flex', 
-        background: '#080808',
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <body style={{
+        height: '100vh',
+        overflowY: 'auto',
+        background: '#000000',
         color: '#ffffff',
-        fontFamily: 'var(--font)',
+        fontFamily: "'Inter', sans-serif",
+        margin: 0,
+        padding: 0,
       }}>
         <AuthProvider>
           <ClientProvider>
-            <ProtectedRoute>
-              <SidebarProvider>
-                <AppShell>{children}</AppShell>
-              </SidebarProvider>
-            </ProtectedRoute>
+            {children}
           </ClientProvider>
         </AuthProvider>
       </body>

@@ -11,17 +11,5 @@ export default function HomeLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en" className="h-full antialiased">
-      <body style={{ 
-        height: '100vh', 
-        overflowY: 'auto',
-        background: '#000000',
-        color: '#ffffff',
-        fontFamily: "'Inter', sans-serif",
-      }}>
-        {children}
-      </body>
-    </html>
-  );
+  return <>{children}</>;
 }
