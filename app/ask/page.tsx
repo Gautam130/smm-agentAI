@@ -267,23 +267,25 @@ export default function AskMayaPage() {
     setInput('');
   };
 
-  // Handle conversation selection
+  // Handle conversation selection - keep old messages visible until new ones load
   const handleSelectConversation = async (conversationId: string) => {
     if (conversationId === currentConversationId) return;
     
     setCurrentConversationId(conversationId);
-    clearChat();
     
     const loadedMessages = await loadMessages(conversationId);
     if (loadedMessages && loadedMessages.length > 0) {
       setMessages(loadedMessages);
-      // Scroll to bottom after messages load
-      setTimeout(() => {
-        if (messagesEndRef.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
+    } else {
+      setMessages([]);
     }
+    
+    // Scroll to bottom after messages load
+    setTimeout(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   // Handle delete conversation - show modal
