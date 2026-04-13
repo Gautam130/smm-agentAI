@@ -31,9 +31,10 @@ interface MessagesListProps {
   messages: ChatMessage[];
   chatRef: React.RefObject<HTMLDivElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  isSwitching?: boolean;
 }
 
-const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef }: MessagesListProps) {
+const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching }: MessagesListProps) {
   const getTime = () => {
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
@@ -43,7 +44,11 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
       ref={chatRef} 
       style={{ padding: '20px 24px' }}
     >
-      {messages.length === 0 ? (
+      {isSwitching ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+          <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#14B8A6', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+        </div>
+      ) : messages.length === 0 ? (
         <div className="text-center" style={{ color: '#666', padding: '40px', fontSize: '14px' }}>
           Ask Maya anything about your social media strategy
         </div>
@@ -116,6 +121,7 @@ export default function AskMayaPage() {
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
+  const [isSwitching, setIsSwitching] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -271,11 +277,11 @@ export default function AskMayaPage() {
     if (conversationId === currentConversationId) return;
     
     setCurrentConversationId(conversationId);
-    setIsLoading(true);
+    setIsSwitching(true);
     
     const loadedMessages = await loadMessages(conversationId);
     setMessages(loadedMessages || []);
-    setIsLoading(false);
+    setIsSwitching(false);
     
     // Scroll to bottom after messages load
     setTimeout(() => {
@@ -872,7 +878,7 @@ export default function AskMayaPage() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
-            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} />
+            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} isSwitching={isSwitching} />
           </div>
         </div>
 
