@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { buildMayaPrompt } from '@/lib/maya-context';
+import ReactMarkdown from 'react-markdown';
 
 interface Conversation {
   id: string;
@@ -75,7 +76,11 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
               <div className="maya-message">
                 <div className="maya-avatar">M</div>
                 <div className="maya-text">
-                  {msg.streaming && !msg.text ? '🤔 Thinking...' : msg.text}
+                  {msg.streaming && !msg.text ? (
+                    '🤔 Thinking...'
+                  ) : (
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  )}
                   {msg.streaming && msg.text && <span className="cursor-blink">▋</span>}
                 </div>
               </div>

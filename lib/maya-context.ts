@@ -160,7 +160,7 @@ export async function buildMayaPrompt(message: string): Promise<string> {
   const insights = await fetchInsights(category, 3);
   
   const hooksSection = hooks.length > 0 
-    ? `\n\nRelevant hooks for this query:\n${hooks.map(h => `• ${h}`).join('\n')}`
+    ? `\n\nIMPORTANT: You MUST use ONLY these exact hooks from the database in your response, do not create new hooks:\n${hooks.map(h => `• ${h}`).join('\n')}\n\nPresent each hook exactly as written, then add one line explanation below it.`
     : '';
   
   const insightsSection = insights.length > 0
