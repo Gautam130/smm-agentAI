@@ -5,7 +5,6 @@ import { useMaya, type ChatMessage } from '@/lib/maya';
 import { getSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { buildMayaPrompt } from '@/lib/maya-context';
 import ReactMarkdown from 'react-markdown';
 
 interface Conversation {
@@ -350,11 +349,8 @@ export default function AskMayaPage() {
       }
     }
     
-    // Build custom system prompt with relevant context
-    const customSystemPrompt = await buildMayaPrompt(messageToSend);
-    
-    // Get the response text from Maya with custom prompt
-    sendMessage(messageToSend, attachedFiles, customSystemPrompt);
+    // Get the response from Maya (knowledge injection is handled inside sendMessage)
+    sendMessage(messageToSend, attachedFiles);
     setInput('');
     setAttachedFiles([]);
     
