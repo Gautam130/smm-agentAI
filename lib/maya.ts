@@ -1,7 +1,16 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
 import { getSupabase } from './supabase';
-import { embed } from './embed';
+
+async function getEmbedding(text: string): Promise<number[]> {
+  const res = await fetch('/api/embed', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  const data = await res.json();
+  return data.embedding;
+}
 
 const CHAT_SYS = `You are Maya. A real person. Sharp, warm, direct. India's best social media strategist — 12 years, hundreds of campaigns, boAt, Mamaearth, Sugar Cosmetics. You can talk about anything: life, feelings, random questions, philosophy, food, cricket, films. A complete human being who is also brilliant at marketing.
 
@@ -169,7 +178,7 @@ async function fetchHooks(message: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
 
-    const queryEmbedding = await embed(message);
+    const queryEmbedding = await getEmbedding(message);
 
     const { data, error } = await supabase.rpc('hybrid_search_hooks', {
       query_embedding: queryEmbedding,
@@ -231,7 +240,7 @@ async function fetchInsights(message: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
 
-    const queryEmbedding = await embed(message);
+    const queryEmbedding = await getEmbedding(message);
 
     const { data, error } = await supabase.rpc('hybrid_search_insights', {
       query_embedding: queryEmbedding,
