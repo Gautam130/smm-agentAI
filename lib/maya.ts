@@ -375,7 +375,7 @@ export function useMaya() {
 
     const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext;
 
-    const historyLimit = intent.isCasual ? 6 : 24;
+    const historyLimit = intent.isCasual ? 24 : 24;
     const recentHistory = messages.slice(-historyLimit).map(m => ({
       role: m.role as 'user' | 'assistant',
       content: m.text
