@@ -1,5 +1,3 @@
-import { embed } from '@/lib/embed';
-
 export async function POST(req: Request) {
   try {
     const { text } = await req.json();
@@ -8,7 +6,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'text is required' }, { status: 400 });
     }
 
-    const embedding = await embed(text);
+    const { pipeline } = await import('@xenova/transformers');
+
+    const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    const output = await extractor(text, { pooling: 'mean', normalize: true });
+    const embedding = Array.from((output as any).data);
+
     return Response.json({ embedding });
   } catch (e) {
     console.error('Embed error:', e);
