@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
 import { getSupabase } from './supabase';
+import { embed } from './embed';
 
 const CHAT_SYS = `You are Maya. A real person. Sharp, warm, direct. India's best social media strategist — 12 years, hundreds of campaigns, boAt, Mamaearth, Sugar Cosmetics. You can talk about anything: life, feelings, random questions, philosophy, food, cricket, films. A complete human being who is also brilliant at marketing.
 
@@ -167,46 +168,82 @@ FRAMEWORKS
 async function fetchHooks(message: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from('hooks_library')
-      .select('hook, industry, trigger, emotion, timing, why')
-      .limit(5);
-    
+
+    const queryEmbedding = await embed(message);
+
+    const { data, error } = await supabase.rpc('hybrid_search_hooks', {
+      query_embedding: queryEmbedding,
+      query_text: message,
+      match_threshold: 0.3,
+      match_count: 10
+    });
+
     if (error) throw error;
     if (!data || data.length === 0) return null;
-    
-    return data.map((h) => `Hook: "${h.hook}" | Why: ${h.why || 'N/A'} | Timing: ${h.timing || 'N/A'}`).join('\n');
+
+    const diverse = rerankForDiversity(data, 5);
+
+    return diverse.map((h: any) => `Hook: "${h.hook}" | Why: ${h.why || 'N/A'} | Timing: ${h.timing || 'N/A'}`).join('\n');
   } catch (e) {
     console.warn('Failed to fetch hooks:', e);
     return null;
   }
 }
 
+function rerankForDiversity(results: any[], count: number): any[] {
+  if (results.length <= count) return results;
+
+  const selected: any[] = [];
+  const remaining = [...results];
+
+  selected.push(remaining.shift());
+
+  while (selected.length < count && remaining.length > 0) {
+    let bestIdx = 0;
+    let bestScore = -Infinity;
+
+    for (let i = 0; i < remaining.length; i++) {
+      const item = remaining[i];
+      const minSim = Math.min(...selected.map(s => jaccardSimilarity(item.hook, s.hook)));
+      const score = (item.similarity || 0) + (1 - minSim) * 0.3;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIdx = i;
+      }
+    }
+
+    selected.push(remaining.splice(bestIdx, 1)[0]);
+  }
+
+  return selected;
+}
+
+function jaccardSimilarity(a: string, b: string): number {
+  const setA = new Set(a.toLowerCase().split(/\s+/));
+  const setB = new Set(b.toLowerCase().split(/\s+/));
+  const intersection = new Set([...setA].filter(x => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+  return intersection.size / union.size;
+}
+
 async function fetchInsights(message: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
-    const stopwords = ['what','how','best','tips','for','the','and','with','your','that','this','from','have','are','will'];
-    const keywords = message.toLowerCase()
-      .split(' ')
-      .filter(w => w.length > 2 && !stopwords.includes(w));
-    
-    if (keywords.length === 0) return null;
-    
-    const orFilter = keywords.map(k =>
-      `topic.ilike.%${k}%,insight.ilike.%${k}%,category.ilike.%${k}%`
-    ).join(',');
-    
-    const { data, error } = await supabase
-      .from('marketing_insights')
-      .select('topic, insight, data_point, source, confidence')
-      .or(orFilter)
-      .order('confidence', { ascending: false })
-      .limit(5);
-    
+
+    const queryEmbedding = await embed(message);
+
+    const { data, error } = await supabase.rpc('hybrid_search_insights', {
+      query_embedding: queryEmbedding,
+      query_text: message,
+      match_threshold: 0.3,
+      match_count: 5
+    });
+
     if (error) throw error;
     if (!data || data.length === 0) return null;
-    
-    return data.map(r =>
+
+    return data.map((r: any) =>
       `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}${r.source ? ` (${r.source})` : ''}`
     ).join('\n\n');
   } catch (e) {
