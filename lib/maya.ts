@@ -191,7 +191,7 @@ async function fetchInsights(message: string): Promise<string | null> {
     if (keywords.length === 0) return null;
     
     const orFilter = keywords.map(k =>
-      `topic.ilike.*${k}*,insight.ilike.*${k}*,category.ilike.*${k}*`
+      `topic.ilike.%${k}%,insight.ilike.%${k}%,category.ilike.%${k}%`
     ).join(',');
     
     const { data, error } = await supabase
