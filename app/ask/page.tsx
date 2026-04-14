@@ -263,6 +263,38 @@ export default function AskMayaPage() {
     return null;
   }, [user]);
 
+  // Prune messages: keep only last 50 per conversation
+  const pruneMessages = useCallback(async (conversationId: string) => {
+    try {
+      const supabase = getSupabase();
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conversationId);
+
+      if (!count || count <= 50) return;
+
+      const toDelete = count - 50;
+
+      const { data: oldMessages } = await supabase
+        .from('messages')
+        .select('id, created_at')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(toDelete);
+
+      if (oldMessages && oldMessages.length > 0) {
+        const idsToDelete = oldMessages.map((m: any) => m.id);
+        await supabase
+          .from('messages')
+          .delete()
+          .in('id', idsToDelete);
+      }
+    } catch (e) {
+      console.warn('Message pruning failed:', e);
+    }
+  }, []);
+
   // Save message to Supabase
   const saveMessage = useCallback(async (conversationId: string, role: 'user' | 'assistant', content: string) => {
     try {
@@ -280,10 +312,13 @@ export default function AskMayaPage() {
         .from('conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', conversationId);
+
+      // Prune old messages (keep last 50)
+      pruneMessages(conversationId);
     } catch (e) {
       console.error('Failed to save message:', e);
     }
-  }, []);
+  }, [pruneMessages]);
 
   // Handle new conversation
   const handleNewChat = () => {
