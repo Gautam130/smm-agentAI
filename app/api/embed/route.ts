@@ -6,11 +6,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'text is required' }, { status: 400 });
     }
 
-    const { pipeline } = await import('@xenova/transformers');
+    // @ts-ignore - @xenova/transformers has no types but works at runtime
+    const { pipeline }: any = await import('@xenova/transformers');
 
     const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
     const output = await extractor(text, { pooling: 'mean', normalize: true });
-    const embedding = Array.from((output as any).data);
+    const embedding = Array.from(output.data);
 
     return Response.json({ embedding });
   } catch (e) {
