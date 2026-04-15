@@ -311,7 +311,9 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const results = data.results
       .map((r: {snippet: string, domain?: string}) => {
         const { source, credible } = cleanSource(r.domain || '');
-        const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+        let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+        // Remove trailing periods before source
+        content = content.replace(/\.+$/, '').trim();
         if (!content || content.length < 10 || !source) return null;
         return { content, source, credible };
       })
@@ -319,13 +321,13 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     
     if (results.length === 0) return null;
     
-    // Format: credible sources get citation, others get generic
+    // Format: source inline at end, no line breaks
     return results.map((r: {content: string, source: string, credible: boolean}) => {
       if (r.credible) {
         return `${r.content} (${r.source})`;
       }
       return `${r.content}`;
-    }).join('\n');
+    }).join(' ');
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
@@ -347,7 +349,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT CITATION RULES:\n1. Sources are provided in clean format: "(LinkedIn)", "(YouTube)", "(Inc42)"\n2. When you reference this data, keep the source in parentheses at END of your sentence\n3. NEVER paste raw URLs or domain names\n4. NEVER use curly braces {} or hashtags #\n\nCORRECT: "Revenue grew 30% last quarter (LinkedIn)."\nWRONG: "Revenue grew 30% (https://linkedin.com...)"\nWRONG: "{cite:LinkedIn} Revenue grew 30%"\n\nKeep sources short and credible. Do not output raw URLs.`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT CITATION RULES:\n1. Sources are provided inline at end: "(Inc42)", "(LinkedIn)"\n2. When you reference this data, keep source INLINE at END of your sentence\n3. NEVER put source on separate line\n\nCORRECT: "Revenue grew last quarter (LinkedIn)."\nWRONG:\n"Revenue grew last quarter\n(LinkedIn)."`);
 
   return parts.join('\n\n---\n\n');
 }
