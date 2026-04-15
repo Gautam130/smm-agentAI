@@ -4,17 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
-const quickPrompts = [
-  { label: 'Reel caption', prompt: 'Write a catchy Instagram Reel caption for my product' },
-  { label: '7-day content plan', prompt: 'Create a 7-day content plan for my business' },
-  { label: '10 viral hooks', prompt: 'Generate 10 viral hooks for my content' },
-  { label: 'Competitor analysis', prompt: 'Analyze my competitors on social media' },
-  { label: 'DM flow', prompt: 'Create a DM outreach sequence' },
-  { label: 'Festive campaign', prompt: 'Plan a festive campaign for upcoming festival' },
-  { label: 'Research market', prompt: 'Research my market and audience' },
-  { label: 'Competitor audit', prompt: 'Do a competitor audit' },
-];
-
 const templateCards = [
   { icon: '✍️', title: 'Content', desc: 'Captions, hooks, threads' },
   { icon: '📅', title: 'Calendar', desc: 'Full month content plan' },
@@ -88,12 +77,10 @@ const megaMenuColumns = [
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const [query, setQuery] = useState('');
   const [showWorkDropdown, setShowWorkDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const workDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -124,15 +111,6 @@ export default function HomePage() {
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
-  };
-
-  const handleSearch = () => {
-    if (!query.trim()) return;
-    router.push(`/ask?prompt=${encodeURIComponent(query)}`);
-  };
-
-  const handleQuickPrompt = (prompt: string) => {
-    router.push(`/ask?prompt=${encodeURIComponent(prompt)}`);
   };
 
   return (
@@ -225,37 +203,6 @@ export default function HomePage() {
         <p className="home-hero-subtitle">
           Create, schedule, and analyze — all in one place
         </p>
-
-        {/* Search Box */}
-        <div className="home-search-container">
-          <div className="home-search-box">
-            <textarea
-              ref={inputRef}
-              className="home-search-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }}
-              placeholder="What do you need? (e.g. a week of Instagram posts for my cafe)"
-              rows={1}
-            />
-            <button className="home-search-btn" onClick={handleSearch}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-            </button>
-          </div>
-          <div className="home-search-hint">Press Enter to send · Shift+Enter for new line</div>
-        </div>
-
-        {/* Quick Prompts */}
-        <div className="home-prompts">
-          {quickPrompts.map((qp, i) => (
-            <button key={i} className="home-prompt-btn" onClick={() => handleQuickPrompt(qp.prompt)}>
-              {qp.label}
-            </button>
-          ))}
-        </div>
       </section>
 
       {/* Template Cards */}
