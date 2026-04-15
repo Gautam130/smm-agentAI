@@ -181,22 +181,41 @@ export default function AskMayaPage() {
     });
   };
 
-  // Load conversations from Supabase
+  // Load conversations from Supabase (only those with messages)
   const loadConversations = useCallback(async () => {
     if (!user) return;
     setLoadingConversations(true);
     try {
       const supabase = getSupabase();
-      const { data, error } = await supabase
+      
+      // Get all user's conversations
+      const { data: convs, error } = await supabase
         .from('conversations')
         .select('id, title, updated_at, created_at')
         .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-        .limit(50);
+        .order('updated_at', { ascending: false });
 
-      if (!error && data) {
-        setConversations(data);
+      if (error || !convs) {
+        setLoadingConversations(false);
+        return;
       }
+
+      // Filter to only show conversations that have at least 1 message
+      const convsWithMessages = await Promise.all(
+        convs.map(async (conv) => {
+          const { count } = await supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id);
+          return { ...conv, messageCount: count || 0 };
+        })
+      );
+
+      const validConvs = convsWithMessages
+        .filter(c => c.messageCount > 0)
+        .map(({ messageCount, ...conv }) => conv);
+
+      setConversations(validConvs);
     } catch (e) {
       console.error('Failed to load conversations:', e);
     }
