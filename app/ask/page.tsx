@@ -28,7 +28,7 @@ const suggestions = [
 ];
 
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
-  const hasCitation = text.includes('{cite:');
+  const hasCitation = text.includes('(') && text.includes(')');
   
   return (
     <div className="maya-message">
@@ -69,33 +69,32 @@ function CitationBadge({ source }: { source: string }) {
 
 function CitationBlock({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
-  const regex = /\{cite:\s*([^}]+)\}/g;
-  let lastIndex = 0;
-  let match;
+  const regex = /\s*\(([A-Za-z0-9_\-\.]+)\)\s*$/g;
   let key = 0;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(
-        <ReactMarkdown key={key++}>{text.slice(lastIndex, match.index)}</ReactMarkdown>
-      );
-    }
-    const source = match[1].trim();
-    const afterCite = text.slice(match.index + match[0].length).match(/^\s*([^{]+)/);
-    const content = afterCite ? afterCite[1].trim() : '';
-    parts.push(
-      <div key={key++} style={{ marginBottom: '12px' }}>
-        <CitationBadge source={source} />
-        <ReactMarkdown>{content}</ReactMarkdown>
-      </div>
-    );
-    lastIndex = match.index + match[0].length + content.length;
-  }
+  const lines = text.split('\n');
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) continue;
 
-  if (lastIndex < text.length) {
-    parts.push(
-      <ReactMarkdown key={key++}>{text.slice(lastIndex)}</ReactMarkdown>
-    );
+    const match = trimmedLine.match(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*$/);
+    if (match) {
+      const source = match[1];
+      const sentence = trimmedLine.slice(0, -match[0].length).trim();
+      if (sentence && source.length < 30) {
+        parts.push(
+          <div key={key++} style={{ marginBottom: '8px' }}>
+            <span style={{ marginRight: '8px' }}>{sentence}</span>
+            <CitationBadge source={source} />
+          </div>
+        );
+      } else {
+        parts.push(<ReactMarkdown key={key++}>{trimmedLine}</ReactMarkdown>);
+      }
+    } else {
+      parts.push(<ReactMarkdown key={key++}>{trimmedLine}</ReactMarkdown>);
+    }
   }
 
   return <>{parts}</>;
@@ -131,7 +130,7 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        {message.text.includes('{cite:') ? (
+        {message.text.includes('(') && message.text.includes(')') ? (
           <CitationBlock text={message.text} />
         ) : (
           <ReactMarkdown>{message.text}</ReactMarkdown>

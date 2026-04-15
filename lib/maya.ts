@@ -230,8 +230,8 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
       const source = (r.domain || 'web').replace(/\.+$/, '').trim();
       const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
       if (!content || content.length < 10) return null;
-      return `{cite:${source}} ${content}`;
-    }).filter(Boolean).join('\n\n');
+      return `${content} (${source})`;
+    }).filter(Boolean).join('\n');
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
@@ -253,7 +253,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nCRITICAL: When using information from LIVE WEB DATA, you MUST quote it using {cite:SourceName} format.\n\nExamples of correct use:\n{cite:Inc42} Indian startup funding reached $5B in Q1 2024.\n\nExamples of WRONG use (never do these):\n❌ "According to Inc42, Indian startup funding..."\n❌ "Inc42 reports that Indian startup funding..."\n❌ "The Inc42 article says..."\n\nYou MUST use {cite:SourceName} exactly as shown in the LIVE WEB DATA, followed by a space and then the quoted information. Do not rephrase or summarize - quote the data directly.`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT: LIVE WEB DATA contains search results with sources. When you use information from these results, attach the source inline at the END of your sentence.\n\nExample:\n"According to Inc42, Indian startup funding reached $5B in Q1 2024."\n\nNever write domain names as separate lines or headings. Always attach source at the end of the sentence containing that information.`);
 
   return parts.join('\n\n---\n\n');
 }
