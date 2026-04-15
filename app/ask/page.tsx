@@ -188,7 +188,6 @@ export default function AskMayaPage() {
     try {
       const supabase = getSupabase();
       
-      // Get all user's conversations
       const { data: convs, error } = await supabase
         .from('conversations')
         .select('id, title, updated_at, created_at')
@@ -200,19 +199,19 @@ export default function AskMayaPage() {
         return;
       }
 
-      // Filter to only show conversations that have at least 1 message
       const convsWithMessages = await Promise.all(
         convs.map(async (conv) => {
           const { count } = await supabase
             .from('messages')
             .select('id', { count: 'exact', head: true })
             .eq('conversation_id', conv.id);
-          return { ...conv, messageCount: count || 0 };
+          return { ...conv, messageCount: count ?? 0 };
         })
       );
 
       const validConvs = convsWithMessages
         .filter(c => c.messageCount > 0)
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
         .map(({ messageCount, ...conv }) => conv);
 
       setConversations(validConvs);
@@ -230,7 +229,7 @@ export default function AskMayaPage() {
   }, [user, loadConversations]);
 
   // Load messages for a conversation
-  const loadMessages = useCallback(async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string): Promise<ChatMessage[]> => {
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
@@ -239,22 +238,24 @@ export default function AskMayaPage() {
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        const loadedMessages: ChatMessage[] = data.map((m: StoredMessage) => ({
-          id: crypto.randomUUID(),
-          role: m.role,
-          text: m.content,
-        }));
-        
-        // We need to update the useMaya state, but since useMaya manages its own state,
-        // we'll need to handle this differently. For now, let's store them in state
-        // and have the MessagesList use them
-        return loadedMessages;
+      if (error) {
+        console.error('Failed to load messages:', error.message);
+        return [];
       }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      return data.map((m: StoredMessage) => ({
+        id: crypto.randomUUID(),
+        role: m.role as 'user' | 'assistant',
+        text: m.content,
+      }));
     } catch (e) {
       console.error('Failed to load messages:', e);
+      return [];
     }
-    return null;
   }, []);
 
   // Create new conversation
