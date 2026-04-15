@@ -136,15 +136,14 @@ Example: {citation: Inc42} Indian startup funding reached $5B in Q1 2024...
 
 This renders as a grey badge with source name + content below.
 
+IMPORTANT: Domain names (like "Inc42.com", "TechCrunch") must NEVER appear in your response. Use {citation: SourceName} only.
+
 NEVER for:
 - Hooks
 - Casual chat
 - Maya's personal insights
-- Internal database knowledge
 - Storytelling
 - Internal database knowledge
-
-NEVER cite internal database (hooks_library, marketing_insights) — Maya speaks from knowledge.
 
 One question max per response. Wait for the answer. Never repeat a question.
 
@@ -261,7 +260,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nCRITICAL RULES:\n1. NEVER use domain names as headings (e.g., "domain.com" on its own line is FORBIDDEN)\n2. NEVER use # for headings in your response\n3. ALWAYS use {citation: SourceName} format at the START of any sentence referencing web data\n4. Write sentences naturally with proper punctuation\n\nCORRECT example:\n{citation: Inc42} Indian startup funding reached $5B in Q1 2024.\n\nWRONG examples (NEVER do this):\n❌ "Inc42\nIndian startup funding reached $5B..."\n❌ "# Inc42 Indian startup funding..."\n❌ "Source: Inc42 - Indian startup funding..."`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nABSOLUTE RULES (non-negotiable):\n1. Domain names (e.g., "mmaglobal.com") must NEVER appear in your response as standalone text\n2. NEVER write domain names on their own line\n3. NEVER use # for any heading\n4. When referencing web data, the ONLY allowed format is: {citation: SourceName}\n5. After using {citation:}, immediately write the sentence (don't add periods before the content)\n\nCORRECT:\n{citation: MMA Global} 42% brands are in experimentation phase with AI.\n\nNEVER:\n❌ "MMA Global\n42% brands..."\n❌ "mmaglobal.com\n42% brands..."\n❌ "# MMA Global 42% brands..."\n\nIf you mention a source, you MUST use {citation: SourceName} at the START of that sentence.`);
 
   return parts.join('\n\n---\n\n');
 }
