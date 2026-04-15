@@ -133,9 +133,19 @@ TONE: Researcher's voice
 - No marketing hype
 - Accurate > Engaging
 
+CITATION RULES (MUST FOLLOW):
+- Source inline at END of sentence: "Muse Spark processes text and images (Meta Blog)."
+- NEVER put source on separate line
+- NEVER cite without inline format
+
+SEPARATION RULES:
+- NEVER conflate different products: "Muse Spark" ≠ "TRIBE"
+- Discuss each product/feature SEPARATELY
+- Each claim must cite correct source
+
 Example:
-❌ "boAt's referral loop is a game-changer!"
-✅ "boAt's referral loop uses [mechanism] to drive [outcome]"
+❌ "Muse Spark uses brain signals (TRIBE paper)." ← WRONG product mix
+✅ "Muse Spark processes text and images (Meta Blog). TRIBE decodes brain activity (Meta Research)." ← separate
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TYPE 2: MARKETING QUERIES
