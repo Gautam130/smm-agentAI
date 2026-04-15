@@ -87,14 +87,24 @@ const getDomainScore = (url: string): number => {
   }
 };
 
+const getConfidence = (tierScore: number): 'high' | 'medium' | 'low' => {
+  if (tierScore >= 8) return 'high';
+  if (tierScore >= 5) return 'medium';
+  return 'low';
+};
+
 const scoreAndSortResults = (results: { title: string; snippet?: string; url: string; domain?: string }[]) => {
   return results
-    .map(r => ({
-      ...r,
-      score: getDomainScore(r.url || r.domain || ''),
-      domain: r.domain || r.url?.replace(/^https?:\/\//, '').split('/')[0] || 'unknown'
-    }))
-    .sort((a, b) => b.score - a.score);
+    .map(r => {
+      const tierScore = getDomainScore(r.url || r.domain || '');
+      return {
+        ...r,
+        tierScore,
+        confidence: getConfidence(tierScore),
+        domain: r.domain || r.url?.replace(/^https?:\/\//, '').split('/')[0] || 'unknown'
+      };
+    })
+    .sort((a, b) => b.tierScore - a.tierScore);
 };
 
 export async function POST(request: Request) {
