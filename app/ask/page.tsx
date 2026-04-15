@@ -244,7 +244,10 @@ export default function AskMayaPage() {
     try {
       const supabase = getSupabase();
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
-      
+
+      // Prune oldest conversations if over 30
+      await pruneConversations(user.id);
+
       const { data, error } = await supabase
         .from('conversations')
         .insert({ 
@@ -264,6 +267,40 @@ export default function AskMayaPage() {
     }
     return null;
   }, [user]);
+
+  // Prune conversations: keep max 30 per user, delete oldest
+  const pruneConversations = useCallback(async (userId: string) => {
+    try {
+      const supabase = getSupabase();
+      const { data: allConvs } = await supabase
+        .from('conversations')
+        .select('id, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+      if (!allConvs || allConvs.length <= 30) return;
+
+      const toDelete = allConvs.slice(0, allConvs.length - 30);
+      const idsToDelete = toDelete.map(c => c.id);
+
+      // Delete messages for those conversations first
+      await supabase
+        .from('messages')
+        .delete()
+        .in('conversation_id', idsToDelete);
+
+      // Delete conversations
+      await supabase
+        .from('conversations')
+        .delete()
+        .in('id', idsToDelete);
+
+      // Update local state
+      setConversations(prev => prev.filter(c => !idsToDelete.includes(c.id)));
+    } catch (e) {
+      console.warn('Conversation pruning failed:', e);
+    }
+  }, []);
 
   // Prune messages: keep only last 50 per conversation
   const pruneMessages = useCallback(async (conversationId: string) => {
