@@ -2,6 +2,101 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+const DOMAIN_SCORES: Record<string, number> = {
+  // Premium Indian Sources (10)
+  'inc42.com': 10,
+  'economictimes.indiatimes.com': 10,
+  'forbesindia.com': 10,
+  'moneycontrol.com': 10,
+  'theprint.in': 10,
+  'businesstoday.in': 10,
+  'livemint.com': 10,
+  'cnbctv18.com': 10,
+  'ndtv.com': 10,
+  'hindustantimes.com': 10,
+  
+  // Global Premium (8)
+  'linkedin.com': 8,
+  'mckinsey.com': 8,
+  'bcg.com': 8,
+  'bain.com': 8,
+  'hbr.org': 8,
+  'bloomberg.com': 8,
+  'reuters.com': 8,
+  'wsj.com': 8,
+  'economist.com': 8,
+  'ft.com': 8,
+  
+  // Data/Reports (8)
+  'statista.com': 8,
+  'datareportal.com': 8,
+  'wearesocial.com': 8,
+  'emarketer.com': 8,
+  'idc.com': 8,
+  'gartner.com': 8,
+  
+  // Marketing/Business (6)
+  'socialmediaexaminer.com': 6,
+  'buffer.com': 6,
+  'hootsuite.com': 6,
+  'sproutsocial.com': 6,
+  'hubspot.com': 6,
+  'marketingweek.com': 6,
+  'campaignindia.in': 6,
+  'afaqs.com': 6,
+  'afaqs.co.in': 6,
+  
+  // Tech News (5)
+  'techcrunch.com': 5,
+  'techcrunch.in': 5,
+  'venturebeat.com': 5,
+  'wired.com': 5,
+  'thenextweb.com': 5,
+  'medianama.com': 5,
+  'ETlogo': 5,
+  'yourstory.com': 5,
+  'entrackr.com': 5,
+  
+  // Lower priority (3)
+  'medium.com': 3,
+  'substack.com': 3,
+  'quora.com': 3,
+  'reddit.com': 2,
+  'youtube.com': 2,
+  'twitter.com': 2,
+  'x.com': 2,
+};
+
+const getDomainScore = (url: string): number => {
+  try {
+    const domain = url?.replace(/^https?:\/\//, '').split('/')[0].toLowerCase() || '';
+    
+    // Check exact match first
+    if (DOMAIN_SCORES[domain]) return DOMAIN_SCORES[domain];
+    
+    // Check partial match (e.g., blog.medium.com -> medium.com)
+    const parts = domain.split('.');
+    if (parts.length >= 2) {
+      const baseDomain = parts.slice(-2).join('.');
+      if (DOMAIN_SCORES[baseDomain]) return DOMAIN_SCORES[baseDomain];
+    }
+    
+    return 5; // Default score for unknown domains
+  } catch {
+    return 5;
+  }
+};
+
+const scoreAndSortResults = (results: { title: string; snippet?: string; url: string; domain?: string }[]) => {
+  return results
+    .map(r => ({
+      ...r,
+      score: getDomainScore(r.url || r.domain || ''),
+      domain: r.domain || r.url?.replace(/^https?:\/\//, '').split('/')[0] || 'unknown'
+    }))
+    .sort((a, b) => b.score - a.score);
+};
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   
@@ -84,7 +179,7 @@ export async function POST(request: Request) {
           url: r.link,
           domain: r.link?.replace(/^https?:\/\//, '').split('/')[0]
         }));
-        return NextResponse.json({ results, provider: 'serper' });
+        return NextResponse.json({ results: scoreAndSortResults(results), provider: 'serper' });
       }
     } catch (e) { console.error('Serper error:', e); }
   }
@@ -104,7 +199,7 @@ export async function POST(request: Request) {
           url: r.url,
           domain: r.url?.replace(/^https?:\/\//, '').split('/')[0]
         }));
-        return NextResponse.json({ results, provider: 'exa' });
+        return NextResponse.json({ results: scoreAndSortResults(results), provider: 'exa' });
       }
     } catch (e) { console.error('Exa error:', e); }
   }
@@ -121,7 +216,7 @@ export async function POST(request: Request) {
           url: a.url,
           domain: a.source?.name || 'gnews.io'
         }));
-        return NextResponse.json({ results, provider: 'gnews' });
+        return NextResponse.json({ results: scoreAndSortResults(results), provider: 'gnews' });
       }
     } catch (e) { console.error('GNews error:', e); }
   }
@@ -149,7 +244,7 @@ export async function POST(request: Request) {
           });
           if (results.length >= maxResults) break;
         }
-        return NextResponse.json({ results, provider: 'duckduckgo' });
+        return NextResponse.json({ results: scoreAndSortResults(results), provider: 'duckduckgo' });
       }
     } catch(e) { console.error('DDG error:', e); }
   }
