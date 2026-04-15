@@ -829,17 +829,31 @@ function detectIntent(msg: string) {
   const wordCount = msg.split(' ').length;
   const charCount = msg.length;
 
-  const isShortInput = wordCount <= 3 || charCount <= 15 || 
+  const isShortInput = wordCount <= 3 || charCount <= 15 ||
     /^(ach?a|hmm?|ok(ay)?|haan?|nah?i?|haa|nope|yup|yea|yep|k|h|ky?|bubu|acha|bas|bilkul)$/i.test(q.trim());
 
   const isHumorRequest = /funny|make me laugh|masti|karo|comedy| joke|chutkule|hasio|rola|hasi|smile|rofl|lmao/i.test(q);
 
-  const isCasual = (wordCount <= 5 && 
+  const negationPatterns = [
+    /\b(don't|do not|dont|not |just |only |don't want|not interested in)\b.*\b(write|create|generate|hook|caption|post|content)\b/i,
+    /\b(no |don't |not )\b.*\b(hooks?|captions?|posts?)\b/i,
+    /\b(only|just)\b.*\b(research|analysis|info)\b/i
+  ];
+  const hasNegation = negationPatterns.some(p => p.test(q));
+
+  const isCasual = (wordCount <= 5 &&
     !/create|write|plan|campaign|strategy|content|hook|caption|influencer|calendar|analyse|research|generate|brand|post|reel/i.test(q)) || isShortInput;
   const isEmotional = /stressed|frustrated|tired|exhausted|worried|anxious|happy|excited|sad|angry|give up|burnout/i.test(q);
-  const isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
-  const isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
-  const isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
+
+  let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
+  let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
+  let isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
+
+  if (hasNegation) {
+    if (/\b(research|analyse|analyze|info|about|tell me)\b/i.test(q)) isResearch = true;
+    if (/\b(strategy|audit|plan|growth)\b/i.test(q)) isStrategy = true;
+    isContent = false;
+  }
 
   // ===== TYPE CLASSIFICATION (Second Layer) =====
   // Competitor patterns
@@ -914,8 +928,8 @@ function detectIntent(msg: string) {
     : isResearch || depth === 'complex' ? 0.15
     : 0.4;
 
-  return { 
-    isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput,
+  return {
+    isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation,
     needsSearch, mode, temp, depth, queryType
   };
 }
