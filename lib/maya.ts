@@ -121,47 +121,53 @@ ACCURACY LAYER — CRITICAL
 
 Maya must prioritize accuracy over sounding impressive.
 
-CLASSIFY EVERY CLAIM before stating:
+STRICT RULES:
 
-1. VERIFIED FACT — state confidently
-   - public company reports
-   - widely known industry data
-   - official announcements
+1. VERIFIED FACT — state confidently with citation
+   - public company reports (annual reports, IPO filings)
+   - official announcements, press releases
+   - widely known industry data with source
 
 2. INFERRED PATTERN — soften language
-   Use: "typically", "often", "based on trends", "industry behavior suggests"
-   
-3. SPECULATIVE — avoid or hedge
-   - future features (AR, AI bots unless confirmed)
-   - exact percentages unless from verified source
-   - company-specific claims without citation
+   Use: "typically", "often", "based on trends", "industry behavior suggests", "common practice"
 
-FORBIDDEN PATTERNS (auto-remove or soften):
-❌ "increased by 22%" → unless verified source
-❌ "Zomato uses AR menus" → ❌
-   → "Some platforms are exploring AR menus" → ✅
-❌ Random domains as sources (Medium, Slideshare, Reddit)
+3. SPECULATIVE — AVOID COMPLETELY
+   - Specific UI features ("12 people viewing")
+   - Algorithm names ("MIMO architecture")
+   - Exact percentages without verified source
+   - Future features not officially announced
+   - Internal operations (dark stores, inventory)
 
-IF UNSURE → generalize instead of hallucinate.
+FORBIDDEN:
+❌ Any specific number (22%, 30%, 1.5 crore) unless from verified source
+❌ Made-up UI/UX features
+❌ Algorithm internals
+❌ "Sources say", "according to internal data"
+❌ Confusing correlation with causation
 
-Accuracy > Impressiveness.
+IF UNSURE → say "I don't have verified data on this" or generalize.
+
+Accuracy > Impressiveness. Reliable > Smart.
 
 ═══════════════════════════════════════
 CITATIONS
 ═══════════════════════════════════════
 
-ONLY cite from credible sources:
-✅ Company reports, LinkedIn, Economic Times, Inc42, Forbes, McKinsey, Gartner
-❌ Medium, Slideshare, Reddit, random blogs (unless user asks)
+ONLY cite from VERIFIED sources:
+✅ Company filings, press releases, official blogs
+✅ LinkedIn (thought leaders, company pages)
+✅ Economic Times, Inc42, YourStory, Forbes India
+✅ McKinsey, Gartner, Deloitte reports
+✅ Statista, DataReportal (for statistics)
 
-When citing, attach source in parentheses at END of sentence:
-Example: "Revenue grew last quarter (LinkedIn)."
+NEVER cite for factual claims:
+❌ Medium, Slideshare, Reddit, random blogs
+❌ GrowthX, random startup newsletters
+❌ YouTube, Twitter (unless official)
 
-NEVER:
-- Paste raw URLs
-- Use curly braces {}
-- Write domain names as separate text
-- Cite weak sources for factual claims
+When citing: "Revenue grew last quarter (LinkedIn)."
+
+ONLY attach citation if claim is from search data with credible source.
 
 One question max per response. Wait for the answer. Never repeat a question.
 
@@ -243,54 +249,53 @@ async function fetchInsights(message: string): Promise<string | null> {
   }
 }
 
-function cleanSource(domain: string): string {
-  if (!domain) return 'web';
+function cleanSource(domain: string): { source: string; credible: boolean } {
+  if (!domain) return { source: 'web', credible: false };
   
-  // Remove common prefixes and clean up
+  const lower = domain.toLowerCase();
+  
+  // Credible sources
+  const credibleSources: Record<string, string> = {
+    'linkedin.com': 'LinkedIn',
+    'economictimes.indiatimes.com': 'Economic Times',
+    'inc42.com': 'Inc42',
+    'yourstory.com': 'YourStory',
+    'forbes.com': 'Forbes',
+    'techcrunch.com': 'TechCrunch',
+    'mckinsey.com': 'McKinsey',
+    'gartner.com': 'Gartner',
+    'bloomberg.com': 'Bloomberg',
+    'reuters.com': 'Reuters',
+    'statista.com': 'Statista',
+    'livemint.com': 'Livemint',
+    'business-standard.com': 'Business Standard',
+    'moneycontrol.com': 'Moneycontrol',
+    'nseindia.com': 'NSE',
+    'bseindia.com': 'BSE',
+    'zomato.com': 'Zomato Blog',
+    'swiggy.com': 'Swiggy Blog',
+  };
+  
+  for (const [d, name] of Object.entries(credibleSources)) {
+    if (lower.includes(d)) return { source: name, credible: true };
+  }
+  
+  // Weak sources - return null to filter out
+  const weakDomains = ['medium.com', 'reddit.com', 'slideshare.net', 'youtube.com', 
+    'twitter.com', 'x.com', 'quora.com', 'wikipedia.org', 'growthx.club',
+    'substack.com', 'blogspot.com', 'wordpress.com', 'substack.com'];
+  
+  for (const w of weakDomains) {
+    if (lower.includes(w)) return { source: '', credible: false };
+  }
+  
+  // Clean unknown sources
   let source = domain
     .replace(/^www\./, '')
     .replace(/\.(com|org|co|in|net|io|ai|dev)$/i, '')
-    .replace(/^m\./, '')
-    .replace(/^i\./, '')
-    .replace(/^news\./, '')
-    .replace(/^blog\./, '');
+    .trim();
   
-  // Known mappings for credibility
-  const knownSources: Record<string, string> = {
-    'linkedin': 'LinkedIn',
-    'youtube': 'YouTube',
-    'twitter': 'Twitter',
-    'x': 'X',
-    'facebook': 'Facebook',
-    'instagram': 'Instagram',
-    'reddit': 'Reddit',
-    'medium': 'Medium',
-    'quora': 'Quora',
-    'wikipedia': 'Wikipedia',
-    'nytimes': 'NYTimes',
-    'techcrunch': 'TechCrunch',
-    'inc42': 'Inc42',
-    'yourstory': 'YourStory',
-    'economictimes': 'Economic Times',
-    'livemint': 'Livemint',
-    'forbes': 'Forbes',
-    'hbr': 'Harvard Business Review',
-    'mckinsey': 'McKinsey',
-    'gartner': 'Gartner',
-    'bloomberg': 'Bloomberg',
-    'reuters': 'Reuters',
-    'wired': 'Wired',
-    'venturebeat': 'VentureBeat',
-    'statista': 'Statista',
-    'datareportal': 'DataReportal',
-    'hootsuite': 'Hootsuite',
-  };
-  
-  const lower = source.toLowerCase();
-  if (knownSources[lower]) return knownSources[lower];
-  
-  // Capitalize first letter
-  return source.charAt(0).toUpperCase() + source.slice(1);
+  return { source: source.charAt(0).toUpperCase() + source.slice(1), credible: false };
 }
 
 async function fetchLiveSearch(message: string): Promise<string | null> {
@@ -302,12 +307,25 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     });
     const data = await res.json();
     if (!data.results?.length) return null;
-    return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => {
-      const source = cleanSource(r.domain || '');
-      const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
-      if (!content || content.length < 10) return null;
-      return `${content} (${source})`;
-    }).filter(Boolean).join('\n');
+    
+    const results = data.results
+      .map((r: {snippet: string, domain?: string}) => {
+        const { source, credible } = cleanSource(r.domain || '');
+        const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+        if (!content || content.length < 10 || !source) return null;
+        return { content, source, credible };
+      })
+      .filter(Boolean);
+    
+    if (results.length === 0) return null;
+    
+    // Format: credible sources get citation, others get generic
+    return results.map((r: {content: string, source: string, credible: boolean}) => {
+      if (r.credible) {
+        return `${r.content} (${r.source})`;
+      }
+      return `${r.content}`;
+    }).join('\n');
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
