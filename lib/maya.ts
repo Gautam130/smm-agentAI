@@ -803,6 +803,15 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
     // Competitor: search (for comparison data)
     const searchData = await fetchLiveSearch(message).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.`);
+  } else if (intent.queryType === 'glossary') {
+    // Glossary: only search for niche/technical terms
+    const nicheTerms = /\b(ROAS|CAC|LTV|ARPU|ERM|ABM|SOV|CPM|CPC|CTR)\b/i.test(message);
+    if (nicheTerms) {
+      // Niche terms = light search
+      const searchData = await fetchLiveSearch(message).catch(() => null);
+      if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.`);
+    }
+    // Basic terms = no search needed, Maya knows them
   }
 
   return parts.join('\n\n---\n\n');
@@ -861,8 +870,17 @@ function detectIntent(msg: string) {
     depth = 'deep';
   }
 
-  // Complex queries get bumped up
-  if (/\bvs\b/i.test(q) || /\bcompare.*with\b/i.test(q) || /\bswot\b/i.test(q)) {
+  // Complex queries get bumped up (multi-entity, multi-step, decision-making)
+  const complexPatterns = [
+    /\bvs\b/i, /\bversus\b/i, /\bcompare.*with\b/i,
+    /\bshould\s+I\b/i, /\bwhich\s+is\s+better\b/i,
+    /\b3\s+ways?\b/i, /\bmultiple\b/i,
+    /\bor\s+I\s+should\b/i, /\bdecide\b/i,
+    /\ball\s+options\b/i, /\bpros\s+and\s+cons\b/i,
+    /\b(boAt|Nykaa|Mamaearth).*(vs|versus|compare).*(Flipkart|Amazon|Myntra)\b/i,
+  ];
+  
+  if (complexPatterns.some(p => p.test(q))) {
     depth = 'complex';
   }
 
@@ -877,11 +895,12 @@ function detectIntent(msg: string) {
     : isResearch ? 'RESEARCH'
     : 'GENERAL';
 
+  // Lower temp for complex (more careful)
   const temp = isHumorRequest ? 0.95
     : isCasual || isEmotional ? 0.92
     : isContent ? 0.88
     : isStrategy ? 0.45
-    : isResearch ? 0.2
+    : isResearch || depth === 'complex' ? 0.15
     : 0.4;
 
   return { 
@@ -892,19 +911,19 @@ function detectIntent(msg: string) {
 
 function getModeInstruction(mode: string): string {
   const instructions: Record<string, string> = {
-    HUMOR: '\n\nMODE: HUMOR\nBefore responding: Is this actually funny? If not, don\'t force it.\nKeep it short. Sharp wit > bad joke.',
+    HUMOR: '\n\nMODE: HUMOR\nOUTPUT: 1-2 lines max.\nBEFORE RESPONDING:\n1. Is this actually funny? If not, don\'t force it.\n2. Did I over-explain? Keep it tight.\n3. Did I answer the question directly?',
 
-    CASUAL: '\n\nMODE: CASUAL\nBefore responding: Will this response fit in 1-2 sentences?\nIf not, trim it. No marketing. Pure Maya.',
+    CASUAL: '\n\nMODE: CASUAL\nOUTPUT: 1-2 sentences.\nBEFORE RESPONDING:\n1. Will this fit in 1-2 sentences?\n2. Did I over-explain? Keep it tight.\n3. Did I answer the question directly? No marketing. Pure Maya.',
 
-    EMOTIONAL: '\n\nMODE: EMOTIONAL\nBefore responding: Did you acknowledge their feeling first?\nDon\'t jump to advice unless asked.',
+    EMOTIONAL: '\n\nMODE: EMOTIONAL\nOUTPUT: 2-3 sentences.\nBEFORE RESPONDING:\n1. Did I acknowledge their feeling first?\n2. Did I over-explain? Be concise.\n3. Did I answer the question directly? Don\'t jump to advice unless asked.',
 
-    CREATIVE: '\n\nMODE: CREATIVE\nBefore responding: Does this start with content, not preamble?\nNo "Here are", "Sure thing", "Of course" — just deliver.\nKeep it copy-paste ready.',
+    CREATIVE: '\n\nMODE: CREATIVE\nOUTPUT: List format only. No preamble.\nBEFORE RESPONDING:\n1. Does this start with content, not "Here are"?\n2. Did I over-explain? Deliver fast.\n3. Did I answer the question directly? Copy-paste ready.',
 
-    STRATEGY: '\n\nMODE: STRATEGY\nBefore responding: Did you diagnose the problem first?\nIs there ₹ amounts and a timeline?\nDid you end with ONE most important action?\nNo corporate frameworks. Be opinionated.',
+    STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. ₹ amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there ₹ amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
-    RESEARCH: '\n\nMODE: RESEARCH\nBefore responding: Are your facts backed by sources?\nNo invented numbers — say "reports suggest" if unsure.\nDid you blend sources naturally, not in blocks?',
+    RESEARCH: '\n\nMODE: RESEARCH\nOUTPUT: Detailed but controlled. Lead with key insight.\nBEFORE RESPONDING:\n1. Are facts backed by sources?\n2. Did I invent numbers? Say "reports suggest" if unsure.\n3. Did I blend sources naturally, not in blocks?\n4. Did I over-explain? Be precise.',
 
-    GENERAL: '\n\nMODE: GENERAL\nBefore responding: Is this concise and direct?\nDid you avoid "I" at the start?\nIf unsure about facts, soften language.',
+    GENERAL: '\n\nMODE: GENERAL\nOUTPUT: Concise and direct.\nBEFORE RESPONDING:\n1. Is this concise?\n2. Did I avoid "I" at the start?\n3. Did I soften if unsure?\n4. Did I over-explain?\n5. Did I answer the question directly?',
   };
   return instructions[mode] || instructions.GENERAL;
 }
