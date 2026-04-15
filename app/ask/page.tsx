@@ -315,7 +315,7 @@ export default function AskMayaPage() {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', conversationId);
 
-      // Prune old messages (keep last 50)
+      // Prune old messages (keep last 50) - don't await, runs in background
       pruneMessages(conversationId);
     } catch (e) {
       console.error('Failed to save message:', e);
@@ -335,6 +335,9 @@ export default function AskMayaPage() {
     
     setCurrentConversationId(conversationId);
     setIsSwitching(true);
+    
+    // Small delay to let Supabase settle after save/prune
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     const loadedMessages = await loadMessages(conversationId);
     setMessages(loadedMessages || []);
