@@ -48,7 +48,8 @@ const StreamingMessage = memo(function StreamingMessage({ text }: { text: string
 function CitationBadge({ source }: { source: string }) {
   return (
     <span style={{
-      display: 'inline-block',
+      display: 'inline-flex',
+      alignItems: 'center',
       padding: '2px 8px',
       backgroundColor: '#6B7280',
       borderRadius: '12px',
@@ -56,6 +57,7 @@ function CitationBadge({ source }: { source: string }) {
       color: '#fff',
       fontWeight: 500,
       verticalAlign: 'middle',
+      marginLeft: '4px',
     }}>
       {source}
     </span>
@@ -70,14 +72,14 @@ function CitationBlock({ text }: { text: string }) {
   // Normalize: join lines that have sources on next line
   let processed = text.replace(/([a-zA-Z0-9])\s*\n\s*([A-Za-z0-9])/g, '$1 $2');
   
-  // Replace {cite:Source} with SourceName + badge
+  // Replace {cite:Source} with badge only (no source name text)
   processed = processed.replace(/\{cite:\s*([^}]+)\}/gi, (_, source) => {
-    return `${source.trim()} [BADGE:${source.trim()}]`;
+    return ` [BADGE:${source.trim()}]`;
   });
   
-  // Replace (Source) with SourceName + badge
+  // Replace (Source) with badge only (no source name text)
   processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*/g, (_, source) => {
-    return ` ${source} [BADGE:${source}]`;
+    return ` [BADGE:${source}]`;
   });
 
   // Remove standalone domain names on their own line
