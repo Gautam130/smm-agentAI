@@ -80,11 +80,11 @@ function CitationBlock({ text }: { text: string }) {
     let source = null;
     let sentence = trimmedLine;
 
-    // Match (source) format at end of line
-    const parenMatch = trimmedLine.match(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*\.?\s*$/);
+    // Match (source) format anywhere in line (not just at end)
+    const parenMatch = trimmedLine.match(/\(([A-Za-z0-9_\-\.]+)\)/);
     if (parenMatch) {
       source = parenMatch[1];
-      sentence = trimmedLine.slice(0, parenMatch[0].length).trim();
+      sentence = trimmedLine.replace(/\([A-Za-z0-9_\-\.]+\)/, '').trim();
       if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
     }
     
@@ -96,7 +96,7 @@ function CitationBlock({ text }: { text: string }) {
       if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
     }
 
-    if (source && sentence && source.length < 30) {
+    if (source && sentence && source.length < 40) {
       parts.push(
         <div key={key++} style={{ marginBottom: '8px', lineHeight: '1.6' }}>
           <span style={{ marginRight: '10px' }}>{sentence}</span>
