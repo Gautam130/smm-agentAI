@@ -63,22 +63,29 @@ function CitationBadge({ source }: { source: string }) {
 }
 
 function CitationBlock({ text }: { text: string }) {
+  if (!text || text.trim() === '') {
+    return null;
+  }
+  
   let processed = text;
   
   // Replace {cite:Source} with badge
   processed = processed.replace(/\{cite:([^}]+)\}/gi, (_, source) => {
-    return ` [BADGE:${source}] `;
+    return ` [BADGE:${source.trim()}] `;
   });
   
   // Replace (Source) at end of sentences with badge
   processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*\./g, (_, source) => {
-    return ` [BADGE:${source}] `;
+    return ` [BADGE:${source}] .`;
   });
 
   // For any remaining (Source) pattern, replace with badge
   processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*/g, (_, source) => {
     return ` [BADGE:${source}] `;
   });
+
+  // Remove standalone domain names like "Bytes.swiggy" or "secure2.garneau.com"
+  processed = processed.replace(/\n([A-Za-z0-9_\-\.]+\.(com|org|co|in|net|io|ai|dev|info|biz))\s*\n/gi, '\n');
 
   // Render badges
   const badgeRegex = /\[BADGE:([^\]]+)\]/g;
@@ -89,16 +96,21 @@ function CitationBlock({ text }: { text: string }) {
 
   while ((match = badgeRegex.exec(processed)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(
-        <ReactMarkdown key={key++}>{processed.slice(lastIndex, match.index)}</ReactMarkdown>
-      );
+      const textPart = processed.slice(lastIndex, match.index).trim();
+      if (textPart) {
+        parts.push(<ReactMarkdown key={key++}>{textPart}</ReactMarkdown>);
+      }
     }
-    parts.push(<CitationBadge key={key++} source={match[1]} />);
+    const sourceName = match[1].trim();
+    if (sourceName && sourceName.length > 0) {
+      parts.push(<CitationBadge key={key++} source={sourceName} />);
+    }
     lastIndex = match.index + match[0].length;
   }
 
-  if (lastIndex < processed.length) {
-    parts.push(<ReactMarkdown key={key++}>{processed.slice(lastIndex)}</ReactMarkdown>);
+  const remainingText = processed.slice(lastIndex).trim();
+  if (remainingText) {
+    parts.push(<ReactMarkdown key={key++}>{remainingText}</ReactMarkdown>);
   }
 
   return <>{parts}</>;
@@ -134,11 +146,7 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        {message.text.includes('(') || message.text.includes('{cite:') ? (
-          <CitationBlock text={message.text} />
-        ) : (
-          <ReactMarkdown>{message.text}</ReactMarkdown>
-        )}
+        <CitationBlock text={message.text} />
       </div>
     </div>
   );
