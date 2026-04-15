@@ -69,6 +69,9 @@ function CitationBlock({ text }: { text: string }) {
   
   let processed = text;
   
+  // Normalize: join line breaks with sources (e.g., "...bold move hai\nInc42" -> "...bold move hai Inc42")
+  processed = processed.replace(/([a-zA-Z0-9])\s*\n\s*([A-Za-z0-9])/g, '$1 $2');
+  
   // Replace {cite:Source} with badge
   processed = processed.replace(/\{cite:([^}]+)\}/gi, (_, source) => {
     return ` [BADGE:${source.trim()}] `;
@@ -84,7 +87,7 @@ function CitationBlock({ text }: { text: string }) {
     return ` [BADGE:${source}] `;
   });
 
-  // Remove standalone domain names like "Bytes.swiggy" or "secure2.garneau.com"
+  // Remove standalone domain names on their own line
   processed = processed.replace(/\n([A-Za-z0-9_\-\.]+\.(com|org|co|in|net|io|ai|dev|info|biz))\s*\n/gi, '\n');
 
   // Render badges
