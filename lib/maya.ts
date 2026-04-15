@@ -235,10 +235,11 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const data = await res.json();
     if (!data.results?.length) return null;
     return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => {
-      const source = (r.domain || 'web').replace(/\.+$/, '');
-      const content = (r.snippet || '').replace(/^\.\s*/, '');
-      return `{citation: ${source}}\n${content}`;
-    }).join('\n\n');
+      let source = (r.domain || 'web').replace(/\.+$/, '').trim();
+      let content = (r.snippet || '').replace(/^\.+\s*/, '').replace(/\.+$/, '').trim();
+      if (!content || content.length < 5) return null;
+      return `{citation: ${source}} ${content}.`;
+    }).filter(Boolean).join('\n\n');
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
