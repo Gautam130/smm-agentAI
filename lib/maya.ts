@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { getSupabase } from './supabase';
 
 const CHAT_SYS = `You are Maya. A real person. Sharp, warm, direct. India's best social media strategist — 12 years, hundreds of campaigns, boAt, Mamaearth, Sugar Cosmetics. You can talk about anything: life, feelings, random questions, philosophy, food, cricket, films. A complete human being who is also brilliant at marketing.
@@ -388,6 +388,96 @@ async function fetchInsights(message: string): Promise<string | null> {
   }
 }
 
+// ============================================================================
+// USER CONTEXT - Lightweight memory for Maya
+// ============================================================================
+
+interface UserContext {
+  business_type?: string;
+  audience?: string;
+  goals?: string;
+  brand_name?: string;
+}
+
+async function fetchUserContext(userId: string): Promise<string | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('user_context')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error || !data) return null;
+    
+    const parts: string[] = [];
+    if (data.business_type) parts.push(`Business: ${data.business_type}`);
+    if (data.audience) parts.push(`Audience: ${data.audience}`);
+    if (data.goals) parts.push(`Goals: ${data.goals}`);
+    if (data.brand_name) parts.push(`Brand: ${data.brand_name}`);
+    
+    return parts.length > 0 ? parts.join(' | ') : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function saveUserContext(userId: string, context: Partial<UserContext>): Promise<void> {
+  try {
+    const supabase = getSupabase();
+    await supabase
+      .from('user_context')
+      .upsert({
+        user_id: userId,
+        ...context,
+        updated_at: new Date().toISOString()
+      });
+  } catch (e) {
+    console.warn('Failed to save user context:', e);
+  }
+}
+
+// ============================================================================
+// SEARCH CACHE - Short-term cache
+// ============================================================================
+
+const SEARCH_CACHE_TTL_MINUTES = 60; // 1 hour cache
+
+async function getCachedSearch(queryHash: string): Promise<any[] | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('search_cache')
+      .select('results')
+      .eq('query_hash', queryHash)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+    
+    if (error || !data) return null;
+    return data.results;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function cacheSearchResults(queryHash: string, queryText: string, results: any[]): Promise<void> {
+  try {
+    const supabase = getSupabase();
+    const expiresAt = new Date(Date.now() + SEARCH_CACHE_TTL_MINUTES * 60 * 1000).toISOString();
+    
+    await supabase
+      .from('search_cache')
+      .upsert({
+        query_hash: queryHash,
+        query_text: queryText,
+        results,
+        expires_at: expiresAt
+      });
+  } catch (e) {
+    console.warn('Failed to cache search results:', e);
+  }
+}
+
 function cleanSource(domain: string): { source: string; credible: boolean; tier: number } {
   if (!domain) return { source: 'Web', credible: false, tier: 5 };
   
@@ -489,33 +579,46 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
 
 async function fetchLiveSearch(message: string): Promise<string | null> {
   try {
-    const res = await fetch('/api/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: message, provider: 'serper' })
-    });
-    const data = await res.json();
-    if (!data.results?.length) return null;
+    // Check cache first
+    const queryHash = message.toLowerCase().trim().substring(0, 200);
+    const cachedResults = await getCachedSearch(queryHash);
     
-    // Use tierScore/confidence from API response
-    const results = data.results
-      .map((r: {snippet?: string; domain?: string; tierScore?: number; confidence?: string}) => {
-        let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
-        content = content.replace(/\.+$/, '').trim();
-        
-        // Use API's tierScore, fallback to cleanSource if not present
-        const tierScore = r.tierScore ?? cleanSource(r.domain || '').tier;
-        const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
-        const { source } = cleanSource(r.domain || '');
-        
-        if (!content || content.length < 10 || tierScore === 0) return null;
-        
-        return { content, source, tierScore, confidence };
-      })
-      .filter(Boolean)
-      .sort((a: any, b: any) => b.tierScore - a.tierScore);
+    let results;
+    if (cachedResults) {
+      results = cachedResults;
+    } else {
+      // Fresh search
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: message, provider: 'serper' })
+      });
+      const data = await res.json();
+      if (!data.results?.length) return null;
+      
+      results = data.results
+        .map((r: {snippet?: string; domain?: string; tierScore?: number; confidence?: string}) => {
+          let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+          content = content.replace(/\.+$/, '').trim();
+          
+          const tierScore = r.tierScore ?? cleanSource(r.domain || '').tier;
+          const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
+          const { source } = cleanSource(r.domain || '');
+          
+          if (!content || content.length < 10 || tierScore === 0) return null;
+          
+          return { content, source, tierScore, confidence };
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => b.tierScore - a.tierScore);
+      
+      // Cache results (fire and forget)
+      if (results.length > 0) {
+        cacheSearchResults(queryHash, message, results);
+      }
+    }
     
-    if (results.length === 0) return null;
+    if (!results || results.length === 0) return null;
     
     // Natural blending: max 2 sources, blend into flowing text
     const topResults = results.slice(0, 2);
@@ -552,12 +655,13 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
   }
 }
 
-async function fetchMayaContext(message: string): Promise<string> {
+async function fetchMayaContext(message: string, userId?: string): Promise<string> {
   const intent = detectIntent(message);
   
   if (intent.isCasual) return '';
 
-  const [hooksData, insightsData, searchData] = await Promise.all([
+  const [userContext, hooksData, insightsData, searchData] = await Promise.all([
+    userId ? fetchUserContext(userId).catch(() => null) : Promise.resolve(null),
     intent.isContent ? fetchHooks(message).catch(() => null) : Promise.resolve(null),
     (intent.isContent || intent.isStrategy) ? fetchInsights(message).catch(() => null) : Promise.resolve(null),
     intent.needsSearch ? fetchLiveSearch(message).catch(() => null) : Promise.resolve(null),
@@ -565,6 +669,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   const parts: string[] = [];
 
+  if (userContext) parts.push(`USER CONTEXT (remember these facts):\n${userContext}`);
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
   if (searchData) parts.push(`${searchData}\n\nUse this data naturally. Blend sources into flowing answers - never rigid blocks or lists. Cite inline: "filings show X, while industry data suggests Y, and search trends indicate Z."`);
@@ -657,6 +762,17 @@ export function useMaya() {
   const loadingRef = useRef(false);
   const activeConvIdRef = useRef<string | null | undefined>(null);
   const onCompleteRef = useRef<((conversationId: string, role: string, text: string) => void) | null>(null);
+  const userIdRef = useRef<string | null>(null);
+
+  // Get userId on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = getSupabase();
+      const { data: { user } } = await supabase.auth.getUser();
+      userIdRef.current = user?.id || null;
+    };
+    getUser();
+  }, []);
 
   const sendMessage = useCallback(async (
     userMsg: string,
@@ -683,7 +799,7 @@ export function useMaya() {
     setIsLoading(true);
 
     // Fetch knowledge context from Supabase
-    const context = await fetchMayaContext(userMsg);
+    const context = await fetchMayaContext(userMsg, userIdRef.current || undefined);
     const messageWithContext = context
       ? `${context}\n\nUSER QUERY: ${userMsg}`
       : userMsg;
