@@ -3,19 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
-import { detectIntent, getTemperature, type IntentResult } from '@/lib/intent';
-import { classifyQuery, getQueryTier, getTierParams } from '@/lib/classify';
-import { buildPrompt, CORE_IDENTITY, getBrandContext } from '@/lib/prompt';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-
-interface SearchResult {
-  title: string;
-  url: string;
-  domain: string;
-  snippet?: string;
-}
 
 const quickPrompts = [
   { label: 'Reel caption', prompt: 'Write a catchy Instagram Reel caption for my product' },
@@ -26,24 +13,6 @@ const quickPrompts = [
   { label: 'Festive campaign', prompt: 'Plan a festive campaign for upcoming festival' },
   { label: 'Research market', prompt: 'Research my market and audience' },
   { label: 'Competitor audit', prompt: 'Do a competitor audit' },
-];
-
-const templateCards = [
-  { icon: '✍️', title: 'Content', desc: 'Captions, hooks, threads' },
-  { icon: '📅', title: 'Calendar', desc: 'Full month content plan' },
-  { icon: '🤝', title: 'Influencers', desc: 'Find, pitch, track' },
-  { icon: '📊', title: 'Strategy', desc: 'Audit, trends, growth' },
-  { icon: '⚡', title: 'Bulk Generate', desc: '10 posts in one shot' },
-  { icon: '🌐', title: 'Listening', desc: 'Monitor, newsjack' },
-  { icon: '💬', title: 'Engagement', desc: 'Replies, DMs, crisis' },
-  { icon: '🔬', title: 'Diagnosis', desc: 'Why did this flop?' },
-];
-
-const recentWork = [
-  { title: 'boAt Marketing Strategy', date: '2 hours ago' },
-  { title: 'Mamaearth Festive Campaign', date: 'Yesterday' },
-  { title: 'D2C Content Calendar', date: '3 days ago' },
-  { title: 'Competitor Analysis Report', date: '1 week ago' },
 ];
 
 const megaMenuColumns = [
@@ -101,21 +70,11 @@ const megaMenuColumns = [
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [streamingText, setStreamingText] = useState('');
-  const [hasResults, setHasResults] = useState(false);
-  const [intentResult, setIntentResult] = useState<IntentResult | null>(null);
-  const [deepResearch, setDeepResearch] = useState(false);
-  const [liveSearchEnabled, setLiveSearchEnabled] = useState(true);
   const [showWorkDropdown, setShowWorkDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const workDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const outputScrollRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (workDropdownRef.current && !workDropdownRef.current.contains(e.target as Node)) {
@@ -146,152 +105,10 @@ export default function HomePage() {
     router.push('/login');
   };
 
-  const cleanText = (text: string) => {
-    return text.replace(/(━+[^━]+━+)/g, '\n\n$1\n\n');
-  };
-
-  const performLiveSearch = async (searchQuery: string): Promise<string> => {
-    if (!liveSearchEnabled) return '';
-    try {
-      const res = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, maxResults: deepResearch ? 12 : 8 })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          return data.results
-            .slice(0, deepResearch ? 8 : 5)
-            .map((r: SearchResult) => `- ${r.title}: ${r.snippet || ''} (source: ${r.domain})`)
-            .join('\n');
-        }
-      }
-    } catch (e) {
-      console.warn('Live search failed:', e);
-    }
-    return '';
-  };
-
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
-    setStreamingText('');
-    setIntentResult(null);
-    setHasResults(true);
-
-    try {
-      const intent = detectIntent(query);
-      setIntentResult(intent);
-
-      const classification = classifyQuery(query);
-      const tier = deepResearch ? 3 : getQueryTier(query);
-      const tierParams = getTierParams(tier);
-
-      let liveContext = '';
-      if (liveSearchEnabled && classification.useLiveSearch) {
-        liveContext = await performLiveSearch(query);
-      }
-
-      const brandCtx = getBrandContext();
-      const finalPrompt = buildPrompt({
-        query,
-        intent,
-        liveContext,
-        knowledgeContext: '',
-        brandCtx
-      });
-
-      let taskType = 'general';
-      if (intent.isContent) taskType = 'content';
-      else if (intent.isStrategy) taskType = 'strategy';
-      else if (intent.isResearch || intent.isTrend) taskType = 'research';
-
-      const temperature = getTemperature(intent);
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          messages: [
-            { role: 'system', content: CORE_IDENTITY },
-            { role: 'user', content: finalPrompt }
-          ],
-          taskType,
-          temperature,
-          maxTokens: tierParams.maxTokens
-        })
-      });
-      
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-                setStreamingText(text);
-              }
-            } catch {}
-          }
-        }
-      }
-    } catch (e: any) {
-      setStreamingText(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
-
   const handleQuickPrompt = (prompt: string) => {
-    setQuery(prompt);
-  };
-
-  const handleNewQuery = () => {
-    setQuery('');
-    setStreamingText('');
-    setIntentResult(null);
-    setHasResults(false);
-    inputRef.current?.focus();
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(streamingText);
-  };
-
-  const handleSave = () => {
-    if (streamingText.trim()) {
-      const saved = localStorage.getItem('smm_saved') || '[]';
-      try {
-        const arr = JSON.parse(saved);
-        arr.push({
-          id: Date.now(),
-          timestamp: new Date().toISOString(),
-          text: streamingText,
-          query: query
-        });
-        localStorage.setItem('smm_saved', JSON.stringify(arr));
-      } catch {
-        localStorage.setItem('smm_saved', JSON.stringify([{
-          id: Date.now(),
-          timestamp: new Date().toISOString(),
-          text: streamingText,
-          query: query
-        }]));
-      }
-    }
+    // Redirect to Maya with prompt
+    const encodedPrompt = encodeURIComponent(prompt);
+    router.push(`/ask?prompt=${encodedPrompt}`);
   };
 
   return (
@@ -329,304 +146,292 @@ export default function HomePage() {
               </div>
             )}
           </div>
-          <a href="/client">Clients</a>
-          <a href="/ask">Maya</a>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <a href="/settings" className="home-nav-settings" title="Settings">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </a>
+          <a href="/ask">Ask Maya</a>
           <div ref={userDropdownRef} style={{ position: 'relative' }}>
-            <button 
-              className="home-nav-avatar"
-              onClick={() => setShowUserDropdown(!showUserDropdown)}
+            <a 
+              href="#" 
+              className="dropdown-trigger"
+              onClick={(e) => { e.preventDefault(); setShowUserDropdown(!showUserDropdown); }}
             >
-              <div className="avatar-circle">{user?.email?.[0]?.toUpperCase() || 'U'}</div>
-            </button>
+              {user?.email?.split('@')[0] || 'Account'}
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" style={{ marginLeft: '4px' }}>
+                <path d="M2 4l4 4 4-4" />
+              </svg>
+            </a>
             {showUserDropdown && (
               <div className="user-dropdown">
-                <a href="/profile" className="user-dropdown-item" onClick={() => setShowUserDropdown(false)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  Profile
-                </a>
-                <a href="/settings" className="user-dropdown-item" onClick={() => setShowUserDropdown(false)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-                  </svg>
-                  Settings
-                </a>
-                <button className="user-dropdown-item danger" onClick={handleSignOut}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  Sign Out
-                </button>
+                <a href="/settings">Settings</a>
+                <a href="/saved">Saved</a>
+                <button onClick={handleSignOut}>Sign Out</button>
               </div>
             )}
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="home-hero">
-        <h1 className="home-hero-title">
-          Your AI Social<br /><span>Media Partner</span>
-        </h1>
-        <p className="home-hero-subtitle">
-          Create, schedule, and analyze — all in one place
-        </p>
-
-        {/* Search Box */}
-        <div className="home-search-container">
-          <div className="home-search-box">
-            <textarea
-              ref={inputRef}
-              className="home-search-input"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }}
-              placeholder="What do you need? (e.g. a week of Instagram posts for my cafe)"
-              rows={1}
-            />
-            <button className="home-search-btn" onClick={handleSearch} disabled={loading}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-            </button>
-          </div>
-          <div className="home-search-hint">Press Enter to send · Shift+Enter for new line</div>
-        </div>
-
-        {/* Toggles */}
-        <div className="home-toggles">
-          <label className="home-toggle">
-            <input type="checkbox" checked={deepResearch} onChange={(e) => setDeepResearch(e.target.checked)} />
-            Deep Research
-          </label>
-          <label className="home-toggle">
-            <input type="checkbox" checked={liveSearchEnabled} onChange={(e) => setLiveSearchEnabled(e.target.checked)} />
-            Live Search
-          </label>
+      {/* Main Content */}
+      <main className="home-content">
+        <div className="hero-section">
+          <h1>Welcome to SMM Agent</h1>
+          <p>Your AI-powered social media marketing assistant</p>
+          <button className="cta-button" onClick={() => router.push('/ask')}>
+            Start Chatting with Maya →
+          </button>
         </div>
 
         {/* Quick Prompts */}
-        <div className="home-prompts">
-          {quickPrompts.map((qp, i) => (
-            <button key={i} className="home-prompt-btn" onClick={() => handleQuickPrompt(qp.prompt)}>
-              {qp.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Response Section */}
-        {hasResults && (
-          <div className="home-response">
-            <div className="home-response-header">
-              <div className="home-response-label">
-                <span className="home-response-dot"></span>
-                AGENT RESPONSE
-              </div>
-              <div className="home-response-actions">
-                <button className="home-response-btn" onClick={handleCopy}>Copy</button>
-                <button className="home-response-btn" onClick={handleSave}>Save</button>
-                <button className="home-response-btn" onClick={handleNewQuery}>New query</button>
-              </div>
-            </div>
-
-            <div className="home-response-content" ref={outputScrollRef}>
-              {loading && !streamingText && (
-                <div className="home-loading">
-                  <div className="home-spinner"></div>
-                  Thinking<span className="home-cursor">▊</span>
-                </div>
-              )}
-              {streamingText && (
-                <div className="home-response-text">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                    {cleanText(streamingText)}
-                  </ReactMarkdown>
-                  {loading && <span className="home-cursor">▊</span>}
-                </div>
-              )}
-
-              {streamingText && !loading && (
-                <div className="home-reactions">
-                  <button className="home-reaction-btn">👍</button>
-                  <button className="home-reaction-btn">👎</button>
-                  <button className="home-reaction-btn" onClick={handleCopy}>Copy</button>
-                </div>
-              )}
-            </div>
+        <div className="quick-prompts">
+          <h2>Quick Actions</h2>
+          <div className="prompt-grid">
+            {quickPrompts.map((item, idx) => (
+              <button
+                key={idx}
+                className="prompt-card"
+                onClick={() => handleQuickPrompt(item.prompt)}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-        )}
-      </section>
-
-      {/* Template Cards */}
-      <section className="home-templates">
-        <div className="home-section-title">Quick Actions</div>
-        <div className="home-templates-grid">
-          {templateCards.map((card, i) => (
-            <a key={i} href={`/${card.title.toLowerCase().replace(' ', '-')}`} className="home-template-card">
-              <div className="home-template-icon">{card.icon}</div>
-              <div className="home-template-title">{card.title}</div>
-              <div className="home-template-desc">{card.desc}</div>
-            </a>
-          ))}
         </div>
-      </section>
 
-      {/* Recent Work */}
-      <section className="home-recent-work">
-        <div className="home-section-title">Recent Work</div>
-        <div className="home-work-list">
-          {recentWork.map((item, i) => (
-            <div key={i} className="home-work-item">
-              <span className="home-work-title">{item.title}</span>
-              <span className="home-work-meta">{item.date}</span>
-            </div>
-          ))}
+        {/* Feature Cards */}
+        <div className="feature-grid">
+          <a href="/strategy" className="feature-card">
+            <span className="feature-icon">📊</span>
+            <h3>Strategy</h3>
+            <p>Build winning social strategies</p>
+          </a>
+          <a href="/content" className="feature-card">
+            <span className="feature-icon">✍️</span>
+            <h3>Content</h3>
+            <p>Create viral content</p>
+          </a>
+          <a href="/calendar" className="feature-card">
+            <span className="feature-icon">📅</span>
+            <h3>Calendar</h3>
+            <p>Plan your content</p>
+          </a>
+          <a href="/influencer" className="feature-card">
+            <span className="feature-icon">🤝</span>
+            <h3>Influencers</h3>
+            <p>Find and track influencers</p>
+          </a>
         </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="home-footer">
-        <div className="home-footer-links">
-          <a href="/settings">Settings</a>
-          <a href="/help">Help</a>
-          <a href="/privacy">Privacy</a>
-        </div>
-        <div className="home-footer-copy">© 2026 SMM Agent</div>
-      </footer>
+      </main>
 
       <style jsx>{`
-        .dropdown-trigger {
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-        }
-        
-        .mega-dropdown {
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-top: 8px;
-          background: #111113;
-          border: 1px solid #1E1E20;
-          border-radius: 16px;
-          padding: 24px;
-          z-index: 1000;
-          min-width: 600px;
-        }
-        
-        .mega-dropdown-inner {
-          display: flex;
-          gap: 40px;
-        }
-        
-        .mega-column {
-          min-width: 100px;
-        }
-        
-        .mega-column-title {
+        .home-main {
+          min-height: 100vh;
+          background: #0a0a0b;
           color: #fff;
-          font-weight: 600;
-          font-size: 12px;
-          margin-bottom: 12px;
         }
-        
-        .mega-item {
-          display: block;
-          color: #717068;
-          font-size: 13px;
-          padding: 4px 0;
+
+        .home-nav {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 2rem;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .home-nav-brand {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        .home-nav-links {
+          display: flex;
+          gap: 1.5rem;
+          align-items: center;
+        }
+
+        .home-nav-links a {
+          color: #9ca3af;
           text-decoration: none;
           transition: color 0.2s;
         }
-        
-        .mega-item:hover {
-          color: #F2F1ED;
-        }
-        
-        .home-nav-settings {
-          color: #666;
-          display: flex;
-          align-items: center;
-          transition: color 0.2s;
-        }
-        
-        .home-nav-settings:hover {
+
+        .home-nav-links a:hover,
+        .home-nav-links a.active {
           color: #fff;
         }
-        
-        .home-nav-avatar {
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 0;
-        }
-        
-        .avatar-circle {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: #14B8A6;
-          color: #0A0A0B;
+
+        .dropdown-trigger {
           display: flex;
           align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          font-size: 14px;
         }
-        
+
+        .mega-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 0.5rem;
+          background: #1a1a1a;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px;
+          padding: 1rem;
+          min-width: 400px;
+          z-index: 100;
+        }
+
+        .mega-dropdown-inner {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 1rem;
+        }
+
+        .mega-column-title {
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #fff;
+        }
+
+        .mega-item {
+          display: block;
+          padding: 0.25rem 0;
+          color: #9ca3af;
+          text-decoration: none;
+          font-size: 0.875rem;
+        }
+
+        .mega-item:hover {
+          color: #fff;
+        }
+
         .user-dropdown {
           position: absolute;
           top: 100%;
           right: 0;
-          margin-top: 8px;
-          background: #111113;
-          border: 1px solid #1E1E20;
-          border-radius: 10px;
-          padding: 6px;
-          min-width: 140px;
-          z-index: 1000;
+          margin-top: 0.5rem;
+          background: #1a1a1a;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px;
+          padding: 0.5rem;
+          min-width: 150px;
+          z-index: 100;
         }
-        
-        .user-dropdown-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
+
+        .user-dropdown a,
+        .user-dropdown button {
+          display: block;
           width: 100%;
-          padding: 8px 12px;
+          padding: 0.5rem;
+          color: #9ca3af;
+          text-decoration: none;
+          text-align: left;
           background: none;
           border: none;
-          color: #717068;
-          font-size: 13px;
-          text-decoration: none;
           cursor: pointer;
-          border-radius: 6px;
+          font-size: 0.875rem;
+        }
+
+        .user-dropdown a:hover,
+        .user-dropdown button:hover {
+          color: #fff;
+        }
+
+        .home-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 3rem 2rem;
+        }
+
+        .hero-section {
+          text-align: center;
+          padding: 3rem 0;
+        }
+
+        .hero-section h1 {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+        }
+
+        .hero-section p {
+          color: #9ca3af;
+          margin-bottom: 2rem;
+        }
+
+        .cta-button {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          border: none;
+          padding: 1rem 2rem;
+          font-size: 1rem;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .cta-button:hover {
+          transform: scale(1.05);
+        }
+
+        .quick-prompts {
+          margin: 3rem 0;
+        }
+
+        .quick-prompts h2 {
+          margin-bottom: 1rem;
+        }
+
+        .prompt-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 1rem;
+        }
+
+        .prompt-card {
+          background: #1a1a1a;
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #fff;
+          padding: 1rem;
+          border-radius: 8px;
+          cursor: pointer;
           transition: all 0.2s;
           text-align: left;
         }
-        
-        .user-dropdown-item:hover {
-          background: #1a1a1a;
-          color: #fff;
+
+        .prompt-card:hover {
+          border-color: #667eea;
+          background: #252525;
         }
-        
-        .user-dropdown-item.danger:hover {
-          background: rgba(255, 68, 68, 0.1);
-          color: #ff4444;
+
+        .feature-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 1.5rem;
+          margin-top: 3rem;
+        }
+
+        .feature-card {
+          background: #1a1a1a;
+          border: 1px solid rgba(255,255,255,0.1);
+          padding: 1.5rem;
+          border-radius: 12px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.2s;
+        }
+
+        .feature-card:hover {
+          border-color: #667eea;
+          transform: translateY(-4px);
+        }
+
+        .feature-icon {
+          font-size: 2rem;
+        }
+
+        .feature-card h3 {
+          margin: 0.75rem 0 0.5rem;
+        }
+
+        .feature-card p {
+          color: #9ca3af;
+          font-size: 0.875rem;
+          margin: 0;
         }
       `}</style>
     </div>
