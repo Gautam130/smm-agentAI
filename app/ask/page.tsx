@@ -69,29 +69,40 @@ function CitationBadge({ source }: { source: string }) {
 
 function CitationBlock({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
-  const regex = /\s*\(([A-Za-z0-9_\-\.]+)\)\s*$/g;
   let key = 0;
 
   const lines = text.split('\n');
   
   for (const line of lines) {
-    const trimmedLine = line.trim();
+    let trimmedLine = line.trim();
     if (!trimmedLine) continue;
 
-    const match = trimmedLine.match(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*$/);
-    if (match) {
-      const source = match[1];
-      const sentence = trimmedLine.slice(0, -match[0].length).trim();
-      if (sentence && source.length < 30) {
-        parts.push(
-          <div key={key++} style={{ marginBottom: '8px' }}>
-            <span style={{ marginRight: '8px' }}>{sentence}</span>
-            <CitationBadge source={source} />
-          </div>
-        );
-      } else {
-        parts.push(<ReactMarkdown key={key++}>{trimmedLine}</ReactMarkdown>);
-      }
+    let source = null;
+    let sentence = trimmedLine;
+
+    // Match (source) format at end of line
+    const parenMatch = trimmedLine.match(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*\.?\s*$/);
+    if (parenMatch) {
+      source = parenMatch[1];
+      sentence = trimmedLine.slice(0, parenMatch[0].length).trim();
+      if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
+    }
+    
+    // Match {cite:source} format
+    const citeMatch = trimmedLine.match(/\{cite:\s*([A-Za-z0-9_\-\.]+)\}\s*/i);
+    if (citeMatch && !source) {
+      source = citeMatch[1];
+      sentence = trimmedLine.replace(/\{cite:\s*[A-Za-z0-9_\-\.]+\}\s*/gi, '').trim();
+      if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
+    }
+
+    if (source && sentence && source.length < 30) {
+      parts.push(
+        <div key={key++} style={{ marginBottom: '8px', lineHeight: '1.6' }}>
+          <span style={{ marginRight: '10px' }}>{sentence}</span>
+          <CitationBadge source={source} />
+        </div>
+      );
     } else {
       parts.push(<ReactMarkdown key={key++}>{trimmedLine}</ReactMarkdown>);
     }
