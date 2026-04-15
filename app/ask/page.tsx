@@ -67,24 +67,17 @@ function CitationBlock({ text }: { text: string }) {
     return null;
   }
   
-  let processed = text;
+  // Normalize: join lines that have sources on next line
+  let processed = text.replace(/([a-zA-Z0-9])\s*\n\s*([A-Za-z0-9])/g, '$1 $2');
   
-  // Normalize: join line breaks with sources (e.g., "...bold move hai\nInc42" -> "...bold move hai Inc42")
-  processed = processed.replace(/([a-zA-Z0-9])\s*\n\s*([A-Za-z0-9])/g, '$1 $2');
-  
-  // Replace {cite:Source} with badge
-  processed = processed.replace(/\{cite:([^}]+)\}/gi, (_, source) => {
-    return ` [BADGE:${source.trim()}] `;
+  // Replace {cite:Source} with SourceName + badge
+  processed = processed.replace(/\{cite:\s*([^}]+)\}/gi, (_, source) => {
+    return `${source.trim()} [BADGE:${source.trim()}]`;
   });
   
-  // Replace (Source) at end of sentences with badge
-  processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*\./g, (_, source) => {
-    return ` [BADGE:${source}] .`;
-  });
-
-  // For any remaining (Source) pattern, replace with badge
+  // Replace (Source) with SourceName + badge
   processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*/g, (_, source) => {
-    return ` [BADGE:${source}] `;
+    return ` ${source} [BADGE:${source}]`;
   });
 
   // Remove standalone domain names on their own line
