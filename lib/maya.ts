@@ -399,6 +399,65 @@ interface UserContext {
   brand_name?: string;
 }
 
+// Patterns that clearly indicate user context
+const BUSINESS_PATTERNS = [
+  /i (run|have|own|started|launched|build|build|created)\s+(a\s+)?(\w+\s+)?(brand|business|company|startup|store|shop|store)/i,
+  /(brand|business|company|startup|product)\s+(is|named|called)\s+[\w\s]+/i,
+  /we('re| are)?\s+(a\s+)?(D2C|SaaS|ecommerce|fashion|skincare|healthcare|food|tech)/i,
+];
+
+const AUDIENCE_PATTERNS = [
+  /targeting?\s+(women|men|gen[sz]|age|mumbai|delhi|tier[\s-]?\d|metro|two\s+plus)/i,
+  /(women|men|gen[sz]|audience|customers|users)\s+(aged?|between|in their)\s+\d/i,
+  /(my|our|target|ideal)\s+(customer|audience|user|buyer|market)\s+(is|are|aged?)/i,
+  /(selling|catering|focused on|serving)\s+(women|men|gen[sz]|people|business)/i,
+];
+
+const GOALS_PATTERNS = [
+  /want\s+to\s+(grow|increase|boost|scale|improve|build|get|achieve|reach)/i,
+  /(goal|objective|aim)\s+(is|are|to)\s+(grow|increase|reach|get|build)/i,
+  /looking\s+to\s+(grow|increase|boost|scale|expand|reach)/i,
+  /need\s+to\s+(grow|increase|reach|get|build|sell)/i,
+];
+
+// Extract context from user message
+function extractUserContext(message: string): Partial<UserContext> | null {
+  const context: Partial<UserContext> = {};
+  let found = false;
+  
+  // Extract business type
+  for (const pattern of BUSINESS_PATTERNS) {
+    const match = message.match(pattern);
+    if (match) {
+      context.business_type = match[0].replace(/^(i (run|have|own|started|launched|build|created)|we('re| are)?|brand|business|company|startup|product|is|named|called|a)\s+/i, '').trim();
+      found = true;
+      break;
+    }
+  }
+  
+  // Extract audience
+  for (const pattern of AUDIENCE_PATTERNS) {
+    const match = message.match(pattern);
+    if (match) {
+      context.audience = match[0].trim();
+      found = true;
+      break;
+    }
+  }
+  
+  // Extract goals
+  for (const pattern of GOALS_PATTERNS) {
+    const match = message.match(pattern);
+    if (match) {
+      context.goals = match[0].trim();
+      found = true;
+      break;
+    }
+  }
+  
+  return found ? context : null;
+}
+
 async function fetchUserContext(userId: string): Promise<string | null> {
   try {
     const supabase = getSupabase();
@@ -422,26 +481,49 @@ async function fetchUserContext(userId: string): Promise<string | null> {
   }
 }
 
-async function saveUserContext(userId: string, context: Partial<UserContext>): Promise<void> {
+async function updateUserContext(userId: string, message: string): Promise<void> {
+  if (!userId) return;
+  
+  const extracted = extractUserContext(message);
+  if (!extracted) return;
+  
   try {
     const supabase = getSupabase();
+    
+    // Get existing context
+    const { data: existing } = await supabase
+      .from('user_context')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    // Update with new values (overwrite if exists)
+    const updated: Partial<UserContext> = {
+      ...(existing || {}),
+      ...extracted,
+    };
+    
     await supabase
       .from('user_context')
       .upsert({
         user_id: userId,
-        ...context,
+        business_type: updated.business_type,
+        audience: updated.audience,
+        goals: updated.goals,
+        brand_name: updated.brand_name,
         updated_at: new Date().toISOString()
       });
   } catch (e) {
-    console.warn('Failed to save user context:', e);
+    console.warn('Failed to update user context:', e);
   }
 }
 
 // ============================================================================
-// SEARCH CACHE - Short-term cache
+// SEARCH CACHE - Short-term cache (24 hours, max 500 entries)
 // ============================================================================
 
-const SEARCH_CACHE_TTL_MINUTES = 60; // 1 hour cache
+const SEARCH_CACHE_TTL_HOURS = 24;
+const MAX_CACHE_ENTRIES = 500;
 
 async function getCachedSearch(queryHash: string): Promise<any[] | null> {
   try {
@@ -463,8 +545,9 @@ async function getCachedSearch(queryHash: string): Promise<any[] | null> {
 async function cacheSearchResults(queryHash: string, queryText: string, results: any[]): Promise<void> {
   try {
     const supabase = getSupabase();
-    const expiresAt = new Date(Date.now() + SEARCH_CACHE_TTL_MINUTES * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + SEARCH_CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString();
     
+    // Upsert cache entry
     await supabase
       .from('search_cache')
       .upsert({
@@ -472,7 +555,39 @@ async function cacheSearchResults(queryHash: string, queryText: string, results:
         query_text: queryText,
         results,
         expires_at: expiresAt
+      }, {
+        onConflict: 'query_hash'
       });
+    
+    // Cleanup: delete expired + keep only latest 500
+    const cutoff = new Date(Date.now() - SEARCH_CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString();
+    
+    // Delete expired
+    await supabase
+      .from('search_cache')
+      .delete()
+      .lt('expires_at', cutoff);
+    
+    // Count and trim if over limit
+    const { count } = await supabase
+      .from('search_cache')
+      .select('id', { count: 'exact', head: true });
+    
+    if (count && count > MAX_CACHE_ENTRIES) {
+      const toDelete = count - MAX_CACHE_ENTRIES;
+      const { data: oldest } = await supabase
+        .from('search_cache')
+        .select('id')
+        .order('created_at', { ascending: true })
+        .limit(toDelete);
+      
+      if (oldest && oldest.length > 0) {
+        await supabase
+          .from('search_cache')
+          .delete()
+          .in('id', oldest.map((r: any) => r.id));
+      }
+    }
   } catch (e) {
     console.warn('Failed to cache search results:', e);
   }
@@ -803,6 +918,11 @@ export function useMaya() {
     const messageWithContext = context
       ? `${context}\n\nUSER QUERY: ${userMsg}`
       : userMsg;
+
+    // Auto-update user context if new info detected (fire and forget)
+    if (userIdRef.current) {
+      updateUserContext(userIdRef.current, userMsg);
+    }
 
     const intent = detectIntent(userMsg);
 
