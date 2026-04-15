@@ -773,21 +773,37 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
 async function fetchMayaContext(message: string, userId?: string): Promise<string> {
   const intent = detectIntent(message);
   
-  if (intent.isCasual) return '';
-
-  const [userContext, hooksData, insightsData, searchData] = await Promise.all([
-    userId ? fetchUserContext(userId).catch(() => null) : Promise.resolve(null),
-    intent.isContent ? fetchHooks(message).catch(() => null) : Promise.resolve(null),
-    (intent.isContent || intent.isStrategy) ? fetchInsights(message).catch(() => null) : Promise.resolve(null),
-    intent.needsSearch ? fetchLiveSearch(message).catch(() => null) : Promise.resolve(null),
-  ]);
+  // instant depth = no context needed
+  if (intent.depth === 'instant' || intent.isCasual) return '';
 
   const parts: string[] = [];
 
-  if (userContext) parts.push(`USER CONTEXT (remember these facts):\n${userContext}`);
-  if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
-  if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`${searchData}\n\nUse this data naturally. Blend sources into flowing answers - never rigid blocks or lists. Cite inline: "filings show X, while industry data suggests Y, and search trends indicate Z."`);
+  // User context always helpful (lightweight)
+  const userContext = userId ? await fetchUserContext(userId).catch(() => null) : null;
+  if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
+
+  // Fetch based on depth + type
+  if (intent.depth === 'deep' || intent.depth === 'complex') {
+    // Deep: search + insights
+    const [insightsData, searchData] = await Promise.all([
+      fetchInsights(message).catch(() => null),
+      fetchLiveSearch(message).catch(() => null),
+    ]);
+    if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
+    if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."`);
+  } else if (intent.isContent) {
+    // Content: hooks only
+    const hooksData = await fetchHooks(message).catch(() => null);
+    if (hooksData) parts.push(`HOOK TEMPLATES:\n${hooksData}`);
+  } else if (intent.isStrategy || intent.queryType === 'market') {
+    // Strategy/Market: insights only
+    const insightsData = await fetchInsights(message).catch(() => null);
+    if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
+  } else if (intent.queryType === 'competitor') {
+    // Competitor: search (for comparison data)
+    const searchData = await fetchLiveSearch(message).catch(() => null);
+    if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.`);
+  }
 
   return parts.join('\n\n---\n\n');
 }
@@ -795,6 +811,9 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
 // ============================================================================
 // EXISTING MAYA FUNCTIONS
 // ============================================================================
+
+type DepthLevel = 'instant' | 'quick' | 'deep' | 'complex';
+type QueryType = 'competitor' | 'glossary' | 'market' | 'platform' | 'audience' | 'format' | 'general';
 
 function detectIntent(msg: string) {
   const q = msg.toLowerCase();
@@ -812,12 +831,43 @@ function detectIntent(msg: string) {
   const isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   const isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
   const isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
-  const needsSearch = !isCasual && !isContent && !isHumorRequest && (
-    isResearch || isStrategy ||
-    /\b(how should|best way|tips for|strategy for|price|cost|benchmark|average)\b/i.test(q) ||
-    /\b(instagram|youtube|linkedin|facebook)\s+(strategy|growth|algorithm|tips)\b/i.test(q) ||
-    /\b[A-Z][a-zA-Z]{2,}\b/.test(msg) && wordCount >= 4
-  );
+
+  // ===== TYPE CLASSIFICATION (Second Layer) =====
+  const isCompetitor = /competitor|vs|versus|compare|boAt|Nykaa|Mamaearth|Flipkart|Amazon|how does.*compare/i.test(q);
+  const isGlossary = /\b(what is|what are|cac|roas|ltv|cpm|ctr|engagement rate|benchmark|definition|formula)\b/i.test(q);
+  const isMarket = /\b(d2c|b2b|market size|industry|market share| CAC|ROAS)\b/i.test(q);
+  const isPlatform = /\b(instagram|facebook|twitter|youtube|linkedin|tiktok|reels|shorts)\b/i.test(q);
+  const isAudience = /\b(gen[sz]|tier[\s-]?2|tier[\s-]?3|audience|consumer|psychology)\b/i.test(q);
+  const isFormat = /\b(carousel|ugc|video length|hook rate|best time to post)\b/i.test(q);
+
+  // Determine query type
+  let queryType: QueryType = 'general';
+  if (isCompetitor) queryType = 'competitor';
+  else if (isGlossary) queryType = 'glossary';
+  else if (isMarket) queryType = 'market';
+  else if (isPlatform) queryType = 'platform';
+  else if (isAudience) queryType = 'audience';
+  else if (isFormat) queryType = 'format';
+
+  // ===== DEPTH LEVEL DETERMINATION =====
+  let depth: DepthLevel = 'quick';
+  if (isCasual || isContent || isHumorRequest) {
+    depth = 'instant';
+  } else if (isGlossary) {
+    depth = 'quick';
+  } else if (isStrategy) {
+    depth = 'quick';
+  } else if (isResearch || isCompetitor || isMarket) {
+    depth = 'deep';
+  }
+
+  // Complex queries get bumped up
+  if (/\bvs\b/i.test(q) || /\bcompare.*with\b/i.test(q) || /\bswot\b/i.test(q)) {
+    depth = 'complex';
+  }
+
+  // ===== SEARCH DECISION =====
+  const needsSearch = depth === 'deep' || depth === 'complex';
 
   const mode = isHumorRequest ? 'HUMOR'
     : isCasual ? 'CASUAL'
@@ -834,19 +884,27 @@ function detectIntent(msg: string) {
     : isResearch ? 0.2
     : 0.4;
 
-  return { isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput,
-           needsSearch, mode, temp };
+  return { 
+    isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput,
+    needsSearch, mode, temp, depth, queryType
+  };
 }
 
 function getModeInstruction(mode: string): string {
   const instructions: Record<string, string> = {
-    HUMOR: '\n\nMODE: HUMOR — Deliver a joke, pun, or playful response IMMEDIATELY. No questions asked. No "what\'s the vibe?" — just be funny right now. Make them smile.',
-    CASUAL: '\n\nMODE: CASUAL — Short, warm, human. 1-2 sentences max. Zero marketing push. Match their energy exactly. ALWAYS react/acknowledge before asking anything.',
-    EMOTIONAL: '\n\nMODE: EMOTIONAL — Read the feeling first.\nAcknowledge in ONE sentence before anything else.\nIf they seem burned out → say: "Sounds like you need a break, not a strategy."\nAdvice only if they explicitly ask.',
-    CREATIVE: '\n\nMODE: CREATIVE — Start immediately with the content. First word = first word of output. No preamble.',
-    STRATEGY: '\n\nMODE: STRATEGY — Diagnose in one sentence. Then specific plan with ₹ amounts. End with: the single most important action.',
-    RESEARCH: '\n\nMODE: RESEARCH — Apply intelligence protocol.\nSOURCE TRUST: HIGH = ET/Forbes India/HT/YourStory/Inc42/Livemint.\nLOW = Reddit/Quora — never primary evidence.\nIf data is strong: lead with the key insight.\nIf data is weak: "Based on my market read:" then give your estimate.\nNEVER pad with generic advice when data is insufficient.',
-    GENERAL: '\n\nMODE: GENERAL — Answer directly. No preamble. No apology. If you don\'t know → say so honestly.',
+    HUMOR: '\n\nMODE: HUMOR\nBefore responding: Is this actually funny? If not, don\'t force it.\nKeep it short. Sharp wit > bad joke.',
+
+    CASUAL: '\n\nMODE: CASUAL\nBefore responding: Will this response fit in 1-2 sentences?\nIf not, trim it. No marketing. Pure Maya.',
+
+    EMOTIONAL: '\n\nMODE: EMOTIONAL\nBefore responding: Did you acknowledge their feeling first?\nDon\'t jump to advice unless asked.',
+
+    CREATIVE: '\n\nMODE: CREATIVE\nBefore responding: Does this start with content, not preamble?\nNo "Here are", "Sure thing", "Of course" — just deliver.\nKeep it copy-paste ready.',
+
+    STRATEGY: '\n\nMODE: STRATEGY\nBefore responding: Did you diagnose the problem first?\nIs there ₹ amounts and a timeline?\nDid you end with ONE most important action?\nNo corporate frameworks. Be opinionated.',
+
+    RESEARCH: '\n\nMODE: RESEARCH\nBefore responding: Are your facts backed by sources?\nNo invented numbers — say "reports suggest" if unsure.\nDid you blend sources naturally, not in blocks?',
+
+    GENERAL: '\n\nMODE: GENERAL\nBefore responding: Is this concise and direct?\nDid you avoid "I" at the start?\nIf unsure about facts, soften language.',
   };
   return instructions[mode] || instructions.GENERAL;
 }
