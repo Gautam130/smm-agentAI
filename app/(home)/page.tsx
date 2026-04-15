@@ -15,6 +15,24 @@ const quickPrompts = [
   { label: 'Competitor audit', prompt: 'Do a competitor audit' },
 ];
 
+const templateCards = [
+  { icon: '✍️', title: 'Content', desc: 'Captions, hooks, threads', href: '/content' },
+  { icon: '📅', title: 'Calendar', desc: 'Full month content plan', href: '/calendar' },
+  { icon: '🤝', title: 'Influencers', desc: 'Find, pitch, track', href: '/influencer' },
+  { icon: '📊', title: 'Strategy', desc: 'Audit, trends, growth', href: '/strategy' },
+  { icon: '⚡', title: 'Bulk Generate', desc: '10 posts in one shot', href: '/bulk' },
+  { icon: '🌐', title: 'Listening', desc: 'Monitor, newsjack', href: '/listen' },
+  { icon: '💬', title: 'Engagement', desc: 'Replies, DMs, crisis', href: '/engage' },
+  { icon: '🔬', title: 'Diagnosis', desc: 'Why did this flop?', href: '/diagnose' },
+];
+
+const recentWork = [
+  { title: 'boAt Marketing Strategy', date: '2 hours ago' },
+  { title: 'Mamaearth Festive Campaign', date: 'Yesterday' },
+  { title: 'D2C Content Calendar', date: '3 days ago' },
+  { title: 'Competitor Analysis Report', date: '1 week ago' },
+];
+
 const megaMenuColumns = [
   {
     title: 'Create',
@@ -106,9 +124,7 @@ export default function HomePage() {
   };
 
   const handleQuickPrompt = (prompt: string) => {
-    // Redirect to Maya with prompt
-    const encodedPrompt = encodeURIComponent(prompt);
-    router.push(`/ask?prompt=${encodedPrompt}`);
+    router.push(`/ask?prompt=${encodeURIComponent(prompt)}`);
   };
 
   return (
@@ -160,6 +176,7 @@ export default function HomePage() {
             </a>
             {showUserDropdown && (
               <div className="user-dropdown">
+                <a href="/profile">Profile</a>
                 <a href="/settings">Settings</a>
                 <a href="/saved">Saved</a>
                 <button onClick={handleSignOut}>Sign Out</button>
@@ -169,56 +186,64 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="home-content">
-        <div className="hero-section">
-          <h1>Welcome to SMM Agent</h1>
-          <p>Your AI-powered social media marketing assistant</p>
-          <button className="cta-button" onClick={() => router.push('/ask')}>
-            Start Chatting with Maya →
-          </button>
-        </div>
+      {/* Hero */}
+      <section className="home-hero">
+        <h1 className="home-hero-title">
+          Your AI Social<br /><span>Media Partner</span>
+        </h1>
+        <p className="home-hero-subtitle">
+          Create, schedule, and analyze — all in one place
+        </p>
+
+        <a href="/ask" className="home-cta-btn">
+          Chat with Maya →
+        </a>
 
         {/* Quick Prompts */}
-        <div className="quick-prompts">
-          <h2>Quick Actions</h2>
-          <div className="prompt-grid">
-            {quickPrompts.map((item, idx) => (
-              <button
-                key={idx}
-                className="prompt-card"
-                onClick={() => handleQuickPrompt(item.prompt)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+        <div className="home-prompts">
+          {quickPrompts.map((qp, i) => (
+            <button key={i} className="home-prompt-btn" onClick={() => handleQuickPrompt(qp.prompt)}>
+              {qp.label}
+            </button>
+          ))}
         </div>
+      </section>
 
-        {/* Feature Cards */}
-        <div className="feature-grid">
-          <a href="/strategy" className="feature-card">
-            <span className="feature-icon">📊</span>
-            <h3>Strategy</h3>
-            <p>Build winning social strategies</p>
-          </a>
-          <a href="/content" className="feature-card">
-            <span className="feature-icon">✍️</span>
-            <h3>Content</h3>
-            <p>Create viral content</p>
-          </a>
-          <a href="/calendar" className="feature-card">
-            <span className="feature-icon">📅</span>
-            <h3>Calendar</h3>
-            <p>Plan your content</p>
-          </a>
-          <a href="/influencer" className="feature-card">
-            <span className="feature-icon">🤝</span>
-            <h3>Influencers</h3>
-            <p>Find and track influencers</p>
-          </a>
+      {/* Template Cards */}
+      <section className="home-templates">
+        <div className="home-section-title">Quick Actions</div>
+        <div className="home-templates-grid">
+          {templateCards.map((card, i) => (
+            <a key={i} href={card.href} className="home-template-card">
+              <div className="home-template-icon">{card.icon}</div>
+              <div className="home-template-title">{card.title}</div>
+              <div className="home-template-desc">{card.desc}</div>
+            </a>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Recent Work */}
+      <section className="home-recent-work">
+        <div className="home-section-title">Recent Work</div>
+        <div className="home-work-list">
+          {recentWork.map((item, i) => (
+            <div key={i} className="home-work-item">
+              <span className="home-work-title">{item.title}</span>
+              <span className="home-work-meta">{item.date}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <div className="home-footer-links">
+          <a href="/settings">Settings</a>
+          <a href="/saved">Saved</a>
+        </div>
+        <div className="home-footer-copy">© 2026 SMM Agent</div>
+      </footer>
 
       <style jsx>{`
         .home-main {
@@ -232,13 +257,12 @@ export default function HomePage() {
           justify-content: space-between;
           align-items: center;
           padding: 1rem 2rem;
-          border-bottom: 1px solid rgba(255,255,255,0.1);
+          border-bottom: 1px solid #1E1E20;
         }
 
         .home-nav-brand {
           font-size: 1.25rem;
           font-weight: 700;
-          color: #fff;
         }
 
         .home-nav-links {
@@ -250,7 +274,7 @@ export default function HomePage() {
         .home-nav-links a {
           color: #9ca3af;
           text-decoration: none;
-          transition: color 0.2s;
+          font-size: 0.875rem;
         }
 
         .home-nav-links a:hover,
@@ -266,32 +290,36 @@ export default function HomePage() {
         .mega-dropdown {
           position: absolute;
           top: 100%;
-          left: 0;
-          margin-top: 0.5rem;
-          background: #1a1a1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          padding: 1rem;
-          min-width: 400px;
-          z-index: 100;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-top: 8px;
+          background: #111113;
+          border: 1px solid #1E1E20;
+          border-radius: 16px;
+          padding: 24px;
+          z-index: 1000;
+          min-width: 600px;
         }
 
         .mega-dropdown-inner {
           display: grid;
           grid-template-columns: repeat(5, 1fr);
-          gap: 1rem;
+          gap: 24px;
         }
 
         .mega-column-title {
           font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #fff;
+          margin-bottom: 12px;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #9ca3af;
         }
 
         .mega-item {
           display: block;
-          padding: 0.25rem 0;
-          color: #9ca3af;
+          padding: 6px 0;
+          color: #d4d4d8;
           text-decoration: none;
           font-size: 0.875rem;
         }
@@ -304,134 +332,218 @@ export default function HomePage() {
           position: absolute;
           top: 100%;
           right: 0;
-          margin-top: 0.5rem;
-          background: #1a1a1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          padding: 0.5rem;
-          min-width: 150px;
-          z-index: 100;
+          margin-top: 8px;
+          background: #111113;
+          border: 1px solid #1E1E20;
+          border-radius: 12px;
+          padding: 8px;
+          min-width: 160px;
+          z-index: 1000;
         }
 
         .user-dropdown a,
         .user-dropdown button {
           display: block;
           width: 100%;
-          padding: 0.5rem;
-          color: #9ca3af;
+          padding: 10px 12px;
+          color: #d4d4d8;
           text-decoration: none;
           text-align: left;
           background: none;
           border: none;
+          border-radius: 8px;
           cursor: pointer;
           font-size: 0.875rem;
         }
 
         .user-dropdown a:hover,
         .user-dropdown button:hover {
+          background: #1a1a1c;
           color: #fff;
         }
 
-        .home-content {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 3rem 2rem;
-        }
-
-        .hero-section {
+        .home-hero {
           text-align: center;
-          padding: 3rem 0;
+          padding: 80px 24px;
+          max-width: 800px;
+          margin: 0 auto;
         }
 
-        .hero-section h1 {
-          font-size: 3rem;
-          margin-bottom: 1rem;
+        .home-hero-title {
+          font-size: 3.5rem;
+          font-weight: 700;
+          line-height: 1.1;
+          margin-bottom: 16px;
         }
 
-        .hero-section p {
+        .home-hero-title span {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .home-hero-subtitle {
+          font-size: 1.125rem;
           color: #9ca3af;
-          margin-bottom: 2rem;
+          margin-bottom: 32px;
         }
 
-        .cta-button {
+        .home-cta-btn {
+          display: inline-block;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: #fff;
-          border: none;
-          padding: 1rem 2rem;
-          font-size: 1rem;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: transform 0.2s;
+          padding: 14px 28px;
+          border-radius: 12px;
+          text-decoration: none;
+          font-weight: 600;
+          margin-bottom: 40px;
         }
 
-        .cta-button:hover {
-          transform: scale(1.05);
+        .home-cta-btn:hover {
+          transform: translateY(-2px);
         }
 
-        .quick-prompts {
-          margin: 3rem 0;
+        .home-prompts {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: center;
+          max-width: 600px;
+          margin: 0 auto;
         }
 
-        .quick-prompts h2 {
-          margin-bottom: 1rem;
-        }
-
-        .prompt-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 1rem;
-        }
-
-        .prompt-card {
-          background: #1a1a1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #fff;
-          padding: 1rem;
-          border-radius: 8px;
+        .home-prompt-btn {
+          background: #18181b;
+          border: 1px solid #27272a;
+          color: #d4d4d8;
+          padding: 10px 16px;
+          border-radius: 20px;
+          font-size: 0.875rem;
           cursor: pointer;
           transition: all 0.2s;
-          text-align: left;
         }
 
-        .prompt-card:hover {
-          border-color: #667eea;
-          background: #252525;
+        .home-prompt-btn:hover {
+          border-color: #6366f1;
+          color: #fff;
         }
 
-        .feature-grid {
+        .home-section-title {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #71717a;
+          margin-bottom: 16px;
+        }
+
+        .home-templates {
+          padding: 40px 24px;
+          max-width: 1000px;
+          margin: 0 auto;
+        }
+
+        .home-templates-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-top: 3rem;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
         }
 
-        .feature-card {
-          background: #1a1a1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          padding: 1.5rem;
-          border-radius: 12px;
+        .home-template-card {
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 16px;
+          padding: 20px;
           text-decoration: none;
           color: inherit;
           transition: all 0.2s;
         }
 
-        .feature-card:hover {
-          border-color: #667eea;
-          transform: translateY(-4px);
+        .home-template-card:hover {
+          border-color: #6366f1;
+          transform: translateY(-2px);
         }
 
-        .feature-icon {
-          font-size: 2rem;
+        .home-template-icon {
+          font-size: 1.5rem;
+          margin-bottom: 12px;
         }
 
-        .feature-card h3 {
-          margin: 0.75rem 0 0.5rem;
+        .home-template-title {
+          font-weight: 600;
+          margin-bottom: 4px;
         }
 
-        .feature-card p {
-          color: #9ca3af;
+        .home-template-desc {
+          font-size: 0.75rem;
+          color: #71717a;
+        }
+
+        .home-recent-work {
+          padding: 40px 24px;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .home-work-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .home-work-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 16px;
+          background: #18181b;
+          border-radius: 8px;
+        }
+
+        .home-work-title {
+          color: #d4d4d8;
+        }
+
+        .home-work-meta {
+          color: #52525b;
           font-size: 0.875rem;
-          margin: 0;
+        }
+
+        .home-footer {
+          display: flex;
+          justify-content: space-between;
+          padding: 24px;
+          border-top: 1px solid #1E1E20;
+          max-width: 1000px;
+          margin: 0 auto;
+        }
+
+        .home-footer-links {
+          display: flex;
+          gap: 24px;
+        }
+
+        .home-footer-links a {
+          color: #71717a;
+          text-decoration: none;
+          font-size: 0.875rem;
+        }
+
+        .home-footer-links a:hover {
+          color: #fff;
+        }
+
+        .home-footer-copy {
+          color: #52525b;
+          font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+          .home-hero-title {
+            font-size: 2.5rem;
+          }
+
+          .home-templates-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
       `}</style>
     </div>

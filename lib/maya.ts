@@ -842,12 +842,23 @@ function detectIntent(msg: string) {
   const isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
 
   // ===== TYPE CLASSIFICATION (Second Layer) =====
-  const isCompetitor = /competitor|vs|versus|compare|boAt|Nykaa|Mamaearth|Flipkart|Amazon|how does.*compare/i.test(q);
-  const isGlossary = /\b(what is|what are|cac|roas|ltv|cpm|ctr|engagement rate|benchmark|definition|formula)\b/i.test(q);
-  const isMarket = /\b(d2c|b2b|market size|industry|market share| CAC|ROAS)\b/i.test(q);
-  const isPlatform = /\b(instagram|facebook|twitter|youtube|linkedin|tiktok|reels|shorts)\b/i.test(q);
-  const isAudience = /\b(gen[sz]|tier[\s-]?2|tier[\s-]?3|audience|consumer|psychology)\b/i.test(q);
-  const isFormat = /\b(carousel|ugc|video length|hook rate|best time to post)\b/i.test(q);
+  // Competitor patterns
+  const isCompetitor = /competitor|vs|versus|compare|boAt|Nykaa|Mamaearth|Flipkart|Amazon|How does.*compare|analyse\s+[A-Z]|analyze\s+[A-Z]|audit\s+[A-Z]|who is\b|find (me )?(top|best)|influencer(s)?\b|news|update|launch|announce/i.test(q);
+
+  // Glossary patterns
+  const isGlossary = /\b(what is|what are|does)\b/i.test(q) && /definition|meaning|formula|cac|roas|ltv|cpm|ctr|er|cpc|cpa|arpu|benchmark|hook rate|explain|tell me about|how to calculate|good.*benchmark|healthy.*cac|ideal.*roas/i.test(q);
+
+  // Market patterns
+  const isMarket = /\b(d2c|b2b|b2c)\s+(market|size|growth)|india(n)?\s+(market|market size)|cac\b|roas\b|influencer\s+(rate|price|cost)|festive\s+(ad|campaign|spend|cost)|market\s+share|market\s+size/i.test(q);
+
+  // Platform patterns
+  const isPlatform = /\b(instagram|facebook|twitter|youtube|linkedin|tiktok|reels|stories|shorts)\b/i.test(q) || /whatsapp\s+(marketing|business)/i.test(q);
+
+  // Audience patterns
+  const isAudience = /\b(gen[ -]?z|gen[ -]?z\b|tier[ -]?2|tier[ -]?3|audience|consumer|psychology|purchase|buying|shopping)\s+(behavior|pattern|habit)|festive\s+(season|buying|shopping)|vernacular/i.test(q);
+
+  // Format patterns
+  const isFormat = /\b(carousel|ugc)\s+(tips?|best|strategy)|video\s+(length|size|duration)|stories?\s+(tips?|best|strategy)|reel(s)?\s+(tips?|best|strategy|length)|hook(s)?\s+(tips?|best|strategy)|shorts?\s+(tips?|best)|post(ing)?\s+(time|frequency|schedule)|best\s+time\s+to\s+post|how\s+often/i.test(q);
 
   // Determine query type
   let queryType: QueryType = 'general';
