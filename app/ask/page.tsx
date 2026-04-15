@@ -495,7 +495,9 @@ export default function AskMayaPage() {
     }
     
     // Get the response from Maya (knowledge injection is handled inside sendMessage)
-    sendMessage(messageToSend, attachedFiles, convId);
+    sendMessage(messageToSend, attachedFiles, convId, (conversationId, role, text) => {
+      saveMessage(conversationId, role as 'user' | 'assistant', text);
+    });
     setInput('');
     setAttachedFiles([]);
     
@@ -509,25 +511,6 @@ export default function AskMayaPage() {
       imageInputRef.current.value = '';
     }
   };
-
-  // Save assistant response to Supabase immediately when streaming completes
-  useEffect(() => {
-    if (isLoading) return;
-    if (messages.length < 2) return;
-    
-    const lastMessage = messages[messages.length - 1];
-    const secondLastMessage = messages[messages.length - 2];
-    
-    if (lastMessage.role === 'assistant' && secondLastMessage?.role === 'user') {
-      const convId = lastMessage.conversationId;
-      if (!convId) return;
-      const saveKey = `maya_saved_${convId}_${secondLastMessage.text.slice(0, 30)}`;
-      if (!localStorage.getItem(saveKey)) {
-        saveMessage(convId, 'assistant', lastMessage.text);
-        localStorage.setItem(saveKey, 'true');
-      }
-    }
-  }, [isLoading, messages, saveMessage]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

@@ -328,13 +328,20 @@ export function useMaya() {
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
   const activeConvIdRef = useRef<string | null | undefined>(null);
+  const onCompleteRef = useRef<((conversationId: string, role: string, text: string) => void) | null>(null);
 
-  const sendMessage = useCallback(async (userMsg: string, attachments: Attachment[] = [], convId?: string | null) => {
+  const sendMessage = useCallback(async (
+    userMsg: string,
+    attachments: Attachment[] = [],
+    convId?: string | null,
+    onComplete?: (conversationId: string, role: string, text: string) => void
+  ) => {
     if (!userMsg.trim() && attachments.length === 0) return;
     if (loadingRef.current) return;
 
     loadingRef.current = true;
     setStreamingText('');
+    if (onComplete) onCompleteRef.current = onComplete;
     
     let displayMsg = userMsg;
     if (attachments.length > 0) {
@@ -483,7 +490,15 @@ export function useMaya() {
     setMessages(prev => {
       const lastMsg = prev[prev.length - 1];
       if (lastMsg?.conversationId !== convIdForResponse) return prev;
-      return [...prev, { id: crypto.randomUUID(), role: 'assistant', text: fullText || 'No response received.', conversationId: convIdForResponse }];
+      const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: fullText || 'No response received.', conversationId: convIdForResponse };
+      
+      // Save assistant message to Supabase immediately
+      if (onCompleteRef.current && convIdForResponse) {
+        onCompleteRef.current(convIdForResponse, 'assistant', newMsg.text);
+        onCompleteRef.current = null;
+      }
+      
+      return [...prev, newMsg];
     });
   }, []);
 
