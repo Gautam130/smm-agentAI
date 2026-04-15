@@ -48,19 +48,14 @@ const StreamingMessage = memo(function StreamingMessage({ text }: { text: string
 function CitationBadge({ source }: { source: string }) {
   return (
     <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: '3px 8px',
+      display: 'inline-block',
+      padding: '2px 8px',
       backgroundColor: '#6B7280',
-      borderRadius: '4px',
-      fontSize: '10px',
-      color: '#FFFFFF',
-      marginBottom: '6px',
-      fontWeight: 600,
-      letterSpacing: '0.03em',
-      textTransform: 'uppercase' as const,
-      fontFamily: 'system-ui, sans-serif',
+      borderRadius: '12px',
+      fontSize: '11px',
+      color: '#fff',
+      fontWeight: 500,
+      verticalAlign: 'middle',
     }}>
       {source}
     </span>
@@ -68,44 +63,42 @@ function CitationBadge({ source }: { source: string }) {
 }
 
 function CitationBlock({ text }: { text: string }) {
+  let processed = text;
+  
+  // Replace {cite:Source} with badge
+  processed = processed.replace(/\{cite:([^}]+)\}/gi, (_, source) => {
+    return ` [BADGE:${source}] `;
+  });
+  
+  // Replace (Source) at end of sentences with badge
+  processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*\./g, (_, source) => {
+    return ` [BADGE:${source}] `;
+  });
+
+  // For any remaining (Source) pattern, replace with badge
+  processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*/g, (_, source) => {
+    return ` [BADGE:${source}] `;
+  });
+
+  // Render badges
+  const badgeRegex = /\[BADGE:([^\]]+)\]/g;
   const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
   let key = 0;
 
-  const lines = text.split('\n');
-  
-  for (const line of lines) {
-    let trimmedLine = line.trim();
-    if (!trimmedLine) continue;
-
-    let source = null;
-    let sentence = trimmedLine;
-
-    // Match (source) format anywhere in line (not just at end)
-    const parenMatch = trimmedLine.match(/\(([A-Za-z0-9_\-\.]+)\)/);
-    if (parenMatch) {
-      source = parenMatch[1];
-      sentence = trimmedLine.replace(/\([A-Za-z0-9_\-\.]+\)/, '').trim();
-      if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
-    }
-    
-    // Match {cite:source} format
-    const citeMatch = trimmedLine.match(/\{cite:\s*([A-Za-z0-9_\-\.]+)\}\s*/i);
-    if (citeMatch && !source) {
-      source = citeMatch[1];
-      sentence = trimmedLine.replace(/\{cite:\s*[A-Za-z0-9_\-\.]+\}\s*/gi, '').trim();
-      if (sentence.endsWith('.')) sentence = sentence.slice(0, -1);
-    }
-
-    if (source && sentence && source.length < 40) {
+  while ((match = badgeRegex.exec(processed)) !== null) {
+    if (match.index > lastIndex) {
       parts.push(
-        <div key={key++} style={{ marginBottom: '8px', lineHeight: '1.6' }}>
-          <span style={{ marginRight: '10px' }}>{sentence}</span>
-          <CitationBadge source={source} />
-        </div>
+        <ReactMarkdown key={key++}>{processed.slice(lastIndex, match.index)}</ReactMarkdown>
       );
-    } else {
-      parts.push(<ReactMarkdown key={key++}>{trimmedLine}</ReactMarkdown>);
     }
+    parts.push(<CitationBadge key={key++} source={match[1]} />);
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < processed.length) {
+    parts.push(<ReactMarkdown key={key++}>{processed.slice(lastIndex)}</ReactMarkdown>);
   }
 
   return <>{parts}</>;
@@ -141,7 +134,7 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        {message.text.includes('(') && message.text.includes(')') ? (
+        {message.text.includes('(') || message.text.includes('{cite:') ? (
           <CitationBlock text={message.text} />
         ) : (
           <ReactMarkdown>{message.text}</ReactMarkdown>
