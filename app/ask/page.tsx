@@ -77,9 +77,13 @@ function CitationBlock({ text }: { text: string }) {
     return ` [BADGE:${source.trim()}]`;
   });
   
-  // Replace (Source) with badge only (no source name text)
-  processed = processed.replace(/\s*\(([A-Za-z0-9_\-\.]+)\)\s*/g, (_, source) => {
-    return ` [BADGE:${source}]`;
+  // Replace (Source) with badge only - allow spaces and common chars in source names
+  // Only match if it looks like a source name (starts with capital, contains no digits alone)
+  processed = processed.replace(/\s*\(([A-Z][A-Za-z\s&]+?)\)\s*/g, (_, source) => {
+    const trimmed = source.trim();
+    // Skip if it's likely a number or parenthetical
+    if (/^\d+[,\d]*$/.test(trimmed)) return `(${trimmed})`;
+    return ` [BADGE:${trimmed}]`;
   });
 
   // Remove standalone domain names on their own line

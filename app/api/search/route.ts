@@ -3,37 +3,39 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const DOMAIN_SCORES: Record<string, number> = {
-  // Premium Indian Sources (10)
+  // Premium Indian Sources (10) - Free access
   'inc42.com': 10,
-  'economictimes.indiatimes.com': 10,
-  'forbesindia.com': 10,
   'moneycontrol.com': 10,
   'theprint.in': 10,
-  'businesstoday.in': 10,
   'livemint.com': 10,
   'cnbctv18.com': 10,
   'ndtv.com': 10,
   'hindustantimes.com': 10,
   
-  // Global Premium (8)
-  'linkedin.com': 8,
-  'mckinsey.com': 8,
-  'bcg.com': 8,
-  'bain.com': 8,
-  'hbr.org': 8,
-  'bloomberg.com': 8,
-  'reuters.com': 8,
-  'wsj.com': 8,
-  'economist.com': 8,
-  'ft.com': 8,
+  // Indian Sources (8) - Some paywall
+  'forbesindia.com': 8,
+  'businesstoday.in': 8,
+  'economictimes.indiatimes.com': 8,
   
-  // Data/Reports (8)
-  'statista.com': 8,
-  'datareportal.com': 8,
-  'wearesocial.com': 8,
-  'emarketer.com': 8,
-  'idc.com': 8,
-  'gartner.com': 8,
+  // Global Premium (7) - Free access
+  'linkedin.com': 7,
+  'mckinsey.com': 7,
+  'bcg.com': 7,
+  'bain.com': 7,
+  'hbr.org': 7,
+  'reuters.com': 7,
+  
+  // Data/Reports (7) - Free
+  'statista.com': 7,
+  'datareportal.com': 7,
+  'wearesocial.com': 7,
+  'gartner.com': 7,
+  
+  // Paywalled (5) - Lower tier
+  'bloomberg.com': 5,
+  'economist.com': 5,
+  'wsj.com': 5,
+  'ft.com': 5,
   
   // Marketing/Business (6)
   'socialmediaexaminer.com': 6,
@@ -53,14 +55,13 @@ const DOMAIN_SCORES: Record<string, number> = {
   'wired.com': 5,
   'thenextweb.com': 5,
   'medianama.com': 5,
-  'ETlogo': 5,
   'yourstory.com': 5,
   'entrackr.com': 5,
   
-  // Lower priority (3)
-  'medium.com': 3,
-  'substack.com': 3,
-  'quora.com': 3,
+  // Never cite (2)
+  'medium.com': 2,
+  'substack.com': 2,
+  'quora.com': 2,
   'reddit.com': 2,
   'youtube.com': 2,
   'twitter.com': 2,

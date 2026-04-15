@@ -120,14 +120,17 @@ UNDERSTAND SOURCE TIERS:
 • Tier <5 (Medium, Reddit, YouTube) → NEVER CITE
 
 HOW TO USE TIERS:
-• Tier 8-10 → Speak confidently, cite freely
-• Tier 5-7 → Support only, soften language
-• Tier <5 → Never cite, ignore
+• Tier 10 (Inc42, Moneycontrol, ThePrint, Livemint) → Speak confidently, cite freely
+• Tier 7-8 (LinkedIn, McKinsey, Statista, Forbes India) → Cite confidently, high credibility
+• Tier 5-6 (Buffer, TechCrunch, YourStory) → Support only, soften language
+• Tier <5 (Bloomberg, WSJ) → Lower priority, verify before citing
+• Tier 0 (Medium, Reddit, YouTube) → NEVER cite, ignore
 
 CITATION RULES:
 1. Cite ONLY when: number, specific claim, non-obvious fact
 2. NOT every line — only where it matters
 3. Keep citation INLINE at end of sentence
+4. Prefer FREE sources: Inc42, ThePrint, LinkedIn, McKinsey over paywalled ones
 
 CLAIM CONFIDENCE:
 • Multiple strong sources agree → Confident statement
@@ -135,22 +138,16 @@ CLAIM CONFIDENCE:
 • Only weak sources → Skip or say "based on industry patterns"
 
 CONFLICT RESOLUTION:
-• If sources disagree → Acknowledge: "Estimates vary — ET reports X, Inc42 suggests Y"
-• Prefer higher tier
+• If sources disagree → Acknowledge: "Estimates vary — Inc42 reports X, Forbes India suggests Y"
+• Prefer free tier 10 sources over paywalled
 • Never pick one and pretend it's settled
 
-WRONG: "Flipkart has 10M users (Inc42)"
-RIGHT: "Flipkart has seen strong adoption (industry reports)" or "Estimates suggest strong adoption, though exact figures vary"
-
 EXAMPLE TRANSFORMATIONS:
-❌ "CoD is 60% of orders (Inc42)"
-✅ "CoD continues to be significant in Tier-2/3 markets (industry reports)"
+❌ "CoD is 60% of orders (Economic Times)"
+✅ "CoD continues to be significant in Tier-2/3 markets (Inc42)"
 
 ❌ "Instagram has 500M users"
 ✅ "Instagram has massive reach in India (Social Media Examiner)"
-
-❌ "This strategy gets 5x engagement"
-✅ "This type of content typically performs well for D2C brands"
 
 ═══════════════════════════════════════
 DNA — EVERYTHING YOU SAY STARTS HERE
@@ -402,32 +399,32 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
   
   const lower = domain.toLowerCase();
   
-  // Tier 10 - Premium Indian
+  // Tier 10 - Premium Indian (Free access)
   const tier10: Record<string, string> = {
     'inc42.com': 'Inc42',
-    'economictimes.indiatimes.com': 'Economic Times',
-    'forbesindia.com': 'Forbes India',
     'moneycontrol.com': 'Moneycontrol',
     'theprint.in': 'ThePrint',
-    'businesstoday.in': 'Business Today',
     'livemint.com': 'Livemint',
     'cnbctv18.com': 'CNBCTV18',
     'ndtv.com': 'NDTV',
     'hindustantimes.com': 'Hindustan Times',
   };
   
-  // Tier 8 - Global Premium
+  // Tier 8 - Indian with paywall
   const tier8: Record<string, string> = {
+    'economictimes.indiatimes.com': 'Economic Times',
+    'forbesindia.com': 'Forbes India',
+    'businesstoday.in': 'Business Today',
+  };
+  
+  // Tier 7 - Global Premium (Free)
+  const tier7: Record<string, string> = {
     'linkedin.com': 'LinkedIn',
     'mckinsey.com': 'McKinsey',
     'bcg.com': 'BCG',
     'bain.com': 'Bain',
     'hbr.org': 'Harvard Business Review',
-    'bloomberg.com': 'Bloomberg',
     'reuters.com': 'Reuters',
-    'wsj.com': 'WSJ',
-    'economist.com': 'The Economist',
-    'ft.com': 'Financial Times',
     'statista.com': 'Statista',
     'datareportal.com': 'DataReportal',
     'wearesocial.com': 'We Are Social',
@@ -446,8 +443,12 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
     'afaqs.com': 'afaqs',
   };
   
-  // Tier 5 - Tech
+  // Tier 5 - Paywalled/Moderate
   const tier5: Record<string, string> = {
+    'bloomberg.com': 'Bloomberg',
+    'economist.com': 'The Economist',
+    'wsj.com': 'WSJ',
+    'ft.com': 'Financial Times',
     'techcrunch.com': 'TechCrunch',
     'venturebeat.com': 'VentureBeat',
     'wired.com': 'Wired',
@@ -462,6 +463,9 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
   for (const [d, name] of Object.entries(tier8)) {
     if (lower.includes(d)) return { source: name, credible: true, tier: 8 };
   }
+  for (const [d, name] of Object.entries(tier7)) {
+    if (lower.includes(d)) return { source: name, credible: true, tier: 7 };
+  }
   for (const [d, name] of Object.entries(tier6)) {
     if (lower.includes(d)) return { source: name, credible: true, tier: 6 };
   }
@@ -469,10 +473,10 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
     if (lower.includes(d)) return { source: name, credible: true, tier: 5 };
   }
   
-  // Weak sources - filter out completely
+  // Weak sources - filter out
   const weakDomains = ['medium.com', 'reddit.com', 'slideshare.net', 'youtube.com', 
     'twitter.com', 'x.com', 'quora.com', 'wikipedia.org', 'substack.com', 
-    'blogspot.com', 'wordpress.com', 'quora.com'];
+    'blogspot.com', 'wordpress.com'];
   
   for (const w of weakDomains) {
     if (lower.includes(w)) return { source: '', credible: false, tier: 0 };
