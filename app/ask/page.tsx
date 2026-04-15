@@ -377,7 +377,7 @@ export default function AskMayaPage() {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     const loadedMessages = await loadMessages(conversationId);
-    setMessages(loadedMessages || []);
+    setMessages(loadedMessages || [], conversationId);
     setIsSwitching(false);
     
     // Scroll to bottom after messages load

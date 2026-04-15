@@ -508,8 +508,8 @@ export function useMaya() {
     activeConvIdRef.current = undefined;
   }, []);
 
-  const setMessagesState = useCallback((newMessages: ChatMessage[]) => {
-    activeConvIdRef.current = undefined;
+  const setMessagesState = useCallback((newMessages: ChatMessage[], conversationId?: string | null) => {
+    activeConvIdRef.current = conversationId ?? null;
     abortRef.current?.abort();
     setMessages(newMessages);
   }, []);
