@@ -259,7 +259,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nCRITICAL CITATION RULE: When referencing data from LIVE WEB DATA, you MUST use this exact format:\n{citation: source_name}\nContent here...\n\nExample: "{citation: Inc42} Indian startup funding reached $5B in Q1 2024."\n\nDO NOT write domain names as headings. DO NOT use bold text for sources. Always use {citation: source} format at the START of any sentence that uses web data.`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nMANDATORY CITATION FORMAT: When you use data from LIVE WEB DATA, you MUST write it as:\n{citation: SourceName}\nYour response content here...\n\nExample: "{citation: Inc42} Indian startup funding reached $5B in Q1 2024, according to the report."\n\nNEVER write domain names like "domain.com" or "Source:" as separate text. ALWAYS use {citation: SourceName} at the start of that sentence. The frontend will display it as a styled badge.`);
 
   return parts.join('\n\n---\n\n');
 }

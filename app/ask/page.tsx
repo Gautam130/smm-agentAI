@@ -51,17 +51,19 @@ function CitationBadge({ source }: { source: string }) {
       display: 'inline-flex',
       alignItems: 'center',
       gap: '4px',
-      padding: '2px 8px',
-      background: '#374151',
-      borderRadius: '4px',
+      padding: '4px 10px',
+      backgroundColor: '#4B5563',
+      borderRadius: '6px',
       fontSize: '11px',
-      color: '#9ca3af',
+      color: '#E5E7EB',
       marginBottom: '8px',
+      fontWeight: 500,
+      letterSpacing: '0.02em',
+      textTransform: 'uppercase',
     }}>
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="16" x2="12" y2="12"/>
-        <line x1="12" y1="8" x2="12.01" y2="8"/>
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
       </svg>
       {source}
     </span>
