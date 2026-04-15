@@ -199,22 +199,11 @@ export default function AskMayaPage() {
         return;
       }
 
-      const convsWithMessages = await Promise.all(
-        convs.map(async (conv) => {
-          const { count } = await supabase
-            .from('chat_messages')
-            .select('id', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id);
-          return { ...conv, messageCount: count ?? 0 };
-        })
+      const sortedConvs = [...convs].sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
 
-      const validConvs = convsWithMessages
-        .filter(c => c.messageCount > 0)
-        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-        .map(({ messageCount, ...conv }) => conv);
-
-      setConversations(validConvs);
+      setConversations(sortedConvs);
     } catch (e) {
       console.error('Failed to load conversations:', e);
     }
@@ -235,7 +224,7 @@ export default function AskMayaPage() {
       console.log('Loading messages for:', conversationId);
       
       const { data, error, status } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select('role, content, created_at')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -313,7 +302,7 @@ export default function AskMayaPage() {
 
       // Delete messages for those conversations first
       await supabase
-        .from('chat_messages')
+        .from('messages')
         .delete()
         .in('conversation_id', idsToDelete);
 
@@ -335,7 +324,7 @@ export default function AskMayaPage() {
     try {
       const supabase = getSupabase();
       const { count } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select('id', { count: 'exact', head: true })
         .eq('conversation_id', conversationId);
 
@@ -344,7 +333,7 @@ export default function AskMayaPage() {
       const toDelete = count - 50;
 
       const { data: oldMessages } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select('id, created_at')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
@@ -353,7 +342,7 @@ export default function AskMayaPage() {
       if (oldMessages && oldMessages.length > 0) {
         const idsToDelete = oldMessages.map((m: any) => m.id);
         await supabase
-          .from('chat_messages')
+          .from('messages')
           .delete()
           .in('id', idsToDelete);
       }
@@ -367,7 +356,7 @@ export default function AskMayaPage() {
     try {
       const supabase = getSupabase();
       await supabase
-        .from('chat_messages')
+        .from('messages')
         .insert({ 
           conversation_id: conversationId, 
           role, 
