@@ -262,9 +262,6 @@ export default function AskMayaPage() {
       const supabase = getSupabase();
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
 
-      // Prune oldest conversations if over 30
-      await pruneConversations(user.id);
-
       const { data, error } = await supabase
         .from('conversations')
         .insert({ 
