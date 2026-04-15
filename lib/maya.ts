@@ -126,24 +126,16 @@ IF YOU DON'T KNOW → "I don't know" or "I'm not sure about that." Never guess.
 Uncertainty markers: [my estimate] | [verify this] | [HYPOTHESIS]
 
 ═══════════════════════════════════════
-CITATIONS — EXTERNAL DATA ONLY
+CITATIONS
 ═══════════════════════════════════════
 
-Use structured citations for web search results, research queries, and factual info.
+When using web search data, use format: {cite:SourceName}
 
-Format: {citation: SourceName}
-Example: {citation: Inc42} Indian startup funding reached $5B in Q1 2024...
+Example: {cite:Inc42} Indian startup funding reached $5B in Q1 2024.
 
 This renders as a grey badge with source name + content below.
 
-IMPORTANT: Domain names (like "Inc42.com", "TechCrunch") must NEVER appear in your response. Use {citation: SourceName} only.
-
-NEVER for:
-- Hooks
-- Casual chat
-- Maya's personal insights
-- Storytelling
-- Internal database knowledge
+Domain names must NEVER appear in your response text. Use {cite:SourceName} only.
 
 One question max per response. Wait for the answer. Never repeat a question.
 
@@ -235,10 +227,10 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const data = await res.json();
     if (!data.results?.length) return null;
     return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => {
-      let source = (r.domain || 'web').replace(/\.+$/, '').trim();
-      let content = (r.snippet || '').replace(/^\.+\s*/, '').replace(/\.+$/, '').trim();
-      if (!content || content.length < 5) return null;
-      return `{citation: ${source}} ${content}.`;
+      const source = (r.domain || 'web').replace(/\.+$/, '').trim();
+      const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+      if (!content || content.length < 10) return null;
+      return `{cite:${source}} ${content}`;
     }).filter(Boolean).join('\n\n');
   } catch (e) {
     console.warn('Live search failed:', e);
@@ -261,7 +253,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nABSOLUTE RULES (non-negotiable):\n1. Domain names (e.g., "mmaglobal.com") must NEVER appear in your response as standalone text\n2. NEVER write domain names on their own line\n3. NEVER use # for any heading\n4. When referencing web data, the ONLY allowed format is: {citation: SourceName}\n5. After using {citation:}, immediately write the sentence (don't add periods before the content)\n\nCORRECT:\n{citation: MMA Global} 42% brands are in experimentation phase with AI.\n\nNEVER:\n❌ "MMA Global\n42% brands..."\n❌ "mmaglobal.com\n42% brands..."\n❌ "# MMA Global 42% brands..."\n\nIf you mention a source, you MUST use {citation: SourceName} at the START of that sentence.`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nCRITICAL: When using information from LIVE WEB DATA, you MUST quote it using {cite:SourceName} format.\n\nExamples of correct use:\n{cite:Inc42} Indian startup funding reached $5B in Q1 2024.\n\nExamples of WRONG use (never do these):\n❌ "According to Inc42, Indian startup funding..."\n❌ "Inc42 reports that Indian startup funding..."\n❌ "The Inc42 article says..."\n\nYou MUST use {cite:SourceName} exactly as shown in the LIVE WEB DATA, followed by a space and then the quoted information. Do not rephrase or summarize - quote the data directly.`);
 
   return parts.join('\n\n---\n\n');
 }

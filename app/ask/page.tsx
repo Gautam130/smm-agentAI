@@ -28,7 +28,7 @@ const suggestions = [
 ];
 
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
-  const hasCitation = text.includes('{citation:');
+  const hasCitation = text.includes('{cite:');
   
   return (
     <div className="maya-message">
@@ -69,7 +69,7 @@ function CitationBadge({ source }: { source: string }) {
 
 function CitationBlock({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
-  const regex = /\{citation:\s*([^}]+)\}/g;
+  const regex = /\{cite:\s*([^}]+)\}/g;
   let lastIndex = 0;
   let match;
   let key = 0;
@@ -131,7 +131,7 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        {message.text.includes('{citation:') ? (
+        {message.text.includes('{cite:') ? (
           <CitationBlock text={message.text} />
         ) : (
           <ReactMarkdown>{message.text}</ReactMarkdown>
