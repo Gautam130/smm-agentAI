@@ -510,25 +510,24 @@ export default function AskMayaPage() {
     }
   };
 
-  // Save assistant response to Supabase (after streaming completes)
+  // Save assistant response to Supabase immediately when streaming completes
   useEffect(() => {
+    if (isLoading) return;
     if (messages.length < 2) return;
     
     const lastMessage = messages[messages.length - 1];
     const secondLastMessage = messages[messages.length - 2];
     
-    // If last message is assistant and second last was user
     if (lastMessage.role === 'assistant' && secondLastMessage?.role === 'user') {
       const convId = lastMessage.conversationId;
       if (!convId) return;
-      // Check if this message was already saved (avoid duplicates)
       const saveKey = `maya_saved_${convId}_${secondLastMessage.text.slice(0, 30)}`;
       if (!localStorage.getItem(saveKey)) {
         saveMessage(convId, 'assistant', lastMessage.text);
         localStorage.setItem(saveKey, 'true');
       }
     }
-  }, [messages, saveMessage]);
+  }, [isLoading, messages, saveMessage]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
