@@ -129,13 +129,11 @@ Uncertainty markers: [my estimate] | [verify this] | [HYPOTHESIS]
 CITATIONS
 ═══════════════════════════════════════
 
-When using web search data, use format: {cite:SourceName}
+When using web search data, attach source in parentheses at END of sentence.
 
-Example: {cite:Inc42} Indian startup funding reached $5B in Q1 2024.
+Example: "Indian funding reached $5B in Q1 2024 (Inc42)."
 
-This renders as a grey badge with source name + content below.
-
-Domain names must NEVER appear in your response text. Use {cite:SourceName} only.
+NEVER use curly braces {} for citations. They will NOT render.
 
 One question max per response. Wait for the answer. Never repeat a question.
 
@@ -253,7 +251,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT: LIVE WEB DATA contains search results with sources. When you use information from these results, attach the source inline at the END of your sentence.\n\nExample:\n"According to Inc42, Indian startup funding reached $5B in Q1 2024."\n\nNever write domain names as separate lines or headings. Always attach source at the end of the sentence containing that information.`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT RULES:\n1. LIVE WEB DATA has sources in parentheses like "(Inc42)" or "(Reddit)"\n2. When you use this data, keep the source in parentheses at the end of your sentence\n3. NEVER use curly braces {} for citations - they will NOT render\n4. NEVER use hashtags # for headings\n5. NEVER write domain names as separate lines\n\nCORRECT: "Indian funding reached $5B in Q1 2024 (Inc42)."\nWRONG: "{cite:Inc42} Indian funding reached $5B"\nWRONG: "# Inc42 Indian funding reached $5B"`);
 
   return parts.join('\n\n---\n\n');
 }
