@@ -164,14 +164,14 @@ export async function POST(request: Request) {
         const prevClose = meta?.previousClose || price;
         const change = price - prevClose;
         const changePercent = prevClose ? ((change / prevClose) * 100).toFixed(2) : '0';
+        const results = [{
+          title: `${meta.symbol} - Stock Data`,
+          snippet: `Current: ₹${price?.toFixed(2)} | Change: ${change >= 0 ? '+' : ''}${change?.toFixed(2)} (${changePercent}%)`,
+          url: `https://finance.yahoo.com/quote/${symbol}`,
+          domain: 'finance.yahoo.com'
+        }];
         return NextResponse.json({
-          results: [{
-            title: `${meta.symbol} - Stock Data`,
-            snippet: `Current: ₹${price?.toFixed(2)} | Change: ${change >= 0 ? '+' : ''}${change?.toFixed(2)} (${changePercent}%)`,
-            url: `https://finance.yahoo.com/quote/${symbol}`,
-            domain: 'finance.yahoo.com',
-            score: 10
-          }],
+          results: scoreAndSortResults(results),
           provider: 'stocks'
         });
       }
@@ -276,13 +276,14 @@ export async function POST(request: Request) {
         fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`).then(r=>r.json()),
         fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_KEY}`).then(r=>r.json())
       ]);
+      const results = [{
+        title: `${profile.name || symbol} (${symbol})`,
+        snippet: `Price: $${quote.c} | Change: ${quote.d >= 0 ? '+' : ''}${quote.d} (${quote.dp?.toFixed(2)}%) | High: $${quote.h} | Low: $${quote.l}`,
+        url: `https://finance.yahoo.com/quote/${symbol}`,
+        domain: 'finnhub.io'
+      }];
       return NextResponse.json({
-        results: [{
-          title: `${profile.name || symbol} (${symbol})`,
-          snippet: `Price: $${quote.c} | Change: ${quote.d >= 0 ? '+' : ''}${quote.d} (${quote.dp?.toFixed(2)}%) | High: $${quote.h} | Low: $${quote.l}`,
-          url: `https://finance.yahoo.com/quote/${symbol}`,
-          domain: 'finnhub.io'
-        }],
+        results: scoreAndSortResults(results),
         provider: 'finnhub'
       });
     } catch(e) { console.error('Finnhub error:', e); }
