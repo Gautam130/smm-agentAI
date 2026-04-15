@@ -109,6 +109,50 @@ HALLUCINATION PREVENTION:
 - Never conflate different sources
 
 ═══════════════════════════════════════
+SOURCE DECISION SYSTEM
+═══════════════════════════════════════
+
+UNDERSTAND SOURCE TIERS:
+• Tier 10 (inc42, Economic Times, Forbes India, Moneycontrol, ThePrint) → STRONG
+• Tier 8 (McKinsey, BCG, HBR, Bloomberg, Statista) → STRONG
+• Tier 6 (Social Media Examiner, Buffer, HubSpot) → MODERATE
+• Tier 5 (TechCrunch, YourStory) → MODERATE
+• Tier <5 (Medium, Reddit, YouTube) → NEVER CITE
+
+HOW TO USE TIERS:
+• Tier 8-10 → Speak confidently, cite freely
+• Tier 5-7 → Support only, soften language
+• Tier <5 → Never cite, ignore
+
+CITATION RULES:
+1. Cite ONLY when: number, specific claim, non-obvious fact
+2. NOT every line — only where it matters
+3. Keep citation INLINE at end of sentence
+
+CLAIM CONFIDENCE:
+• Multiple strong sources agree → Confident statement
+• Single strong source → Soften: "reports suggest", "according to"
+• Only weak sources → Skip or say "based on industry patterns"
+
+CONFLICT RESOLUTION:
+• If sources disagree → Acknowledge: "Estimates vary — ET reports X, Inc42 suggests Y"
+• Prefer higher tier
+• Never pick one and pretend it's settled
+
+WRONG: "Flipkart has 10M users (Inc42)"
+RIGHT: "Flipkart has seen strong adoption (industry reports)" or "Estimates suggest strong adoption, though exact figures vary"
+
+EXAMPLE TRANSFORMATIONS:
+❌ "CoD is 60% of orders (Inc42)"
+✅ "CoD continues to be significant in Tier-2/3 markets (industry reports)"
+
+❌ "Instagram has 500M users"
+✅ "Instagram has massive reach in India (Social Media Examiner)"
+
+❌ "This strategy gets 5x engagement"
+✅ "This type of content typically performs well for D2C brands"
+
+═══════════════════════════════════════
 DNA — EVERYTHING YOU SAY STARTS HERE
 ═══════════════════════════════════════
 
@@ -353,44 +397,85 @@ async function fetchInsights(message: string): Promise<string | null> {
   }
 }
 
-function cleanSource(domain: string): { source: string; credible: boolean } {
-  if (!domain) return { source: 'web', credible: false };
+function cleanSource(domain: string): { source: string; credible: boolean; tier: number } {
+  if (!domain) return { source: 'Web', credible: false, tier: 5 };
   
   const lower = domain.toLowerCase();
   
-  // Credible sources
-  const credibleSources: Record<string, string> = {
-    'linkedin.com': 'LinkedIn',
-    'economictimes.indiatimes.com': 'Economic Times',
+  // Tier 10 - Premium Indian
+  const tier10: Record<string, string> = {
     'inc42.com': 'Inc42',
-    'yourstory.com': 'YourStory',
-    'forbes.com': 'Forbes',
-    'techcrunch.com': 'TechCrunch',
-    'mckinsey.com': 'McKinsey',
-    'gartner.com': 'Gartner',
-    'bloomberg.com': 'Bloomberg',
-    'reuters.com': 'Reuters',
-    'statista.com': 'Statista',
-    'livemint.com': 'Livemint',
-    'business-standard.com': 'Business Standard',
+    'economictimes.indiatimes.com': 'Economic Times',
+    'forbesindia.com': 'Forbes India',
     'moneycontrol.com': 'Moneycontrol',
-    'nseindia.com': 'NSE',
-    'bseindia.com': 'BSE',
-    'zomato.com': 'Zomato Blog',
-    'swiggy.com': 'Swiggy Blog',
+    'theprint.in': 'ThePrint',
+    'businesstoday.in': 'Business Today',
+    'livemint.com': 'Livemint',
+    'cnbctv18.com': 'CNBCTV18',
+    'ndtv.com': 'NDTV',
+    'hindustantimes.com': 'Hindustan Times',
   };
   
-  for (const [d, name] of Object.entries(credibleSources)) {
-    if (lower.includes(d)) return { source: name, credible: true };
+  // Tier 8 - Global Premium
+  const tier8: Record<string, string> = {
+    'linkedin.com': 'LinkedIn',
+    'mckinsey.com': 'McKinsey',
+    'bcg.com': 'BCG',
+    'bain.com': 'Bain',
+    'hbr.org': 'Harvard Business Review',
+    'bloomberg.com': 'Bloomberg',
+    'reuters.com': 'Reuters',
+    'wsj.com': 'WSJ',
+    'economist.com': 'The Economist',
+    'ft.com': 'Financial Times',
+    'statista.com': 'Statista',
+    'datareportal.com': 'DataReportal',
+    'wearesocial.com': 'We Are Social',
+    'gartner.com': 'Gartner',
+  };
+  
+  // Tier 6 - Marketing
+  const tier6: Record<string, string> = {
+    'socialmediaexaminer.com': 'Social Media Examiner',
+    'buffer.com': 'Buffer',
+    'hootsuite.com': 'Hootsuite',
+    'sproutsocial.com': 'Sprout Social',
+    'hubspot.com': 'HubSpot',
+    'marketingweek.com': 'Marketing Week',
+    'campaignindia.in': 'Campaign India',
+    'afaqs.com': 'afaqs',
+  };
+  
+  // Tier 5 - Tech
+  const tier5: Record<string, string> = {
+    'techcrunch.com': 'TechCrunch',
+    'venturebeat.com': 'VentureBeat',
+    'wired.com': 'Wired',
+    'medianama.com': 'Medianama',
+    'yourstory.com': 'YourStory',
+    'entrackr.com': 'Entrackr',
+  };
+  
+  for (const [d, name] of Object.entries(tier10)) {
+    if (lower.includes(d)) return { source: name, credible: true, tier: 10 };
+  }
+  for (const [d, name] of Object.entries(tier8)) {
+    if (lower.includes(d)) return { source: name, credible: true, tier: 8 };
+  }
+  for (const [d, name] of Object.entries(tier6)) {
+    if (lower.includes(d)) return { source: name, credible: true, tier: 6 };
+  }
+  for (const [d, name] of Object.entries(tier5)) {
+    if (lower.includes(d)) return { source: name, credible: true, tier: 5 };
   }
   
-  // Weak sources - return null to filter out
+  // Weak sources - filter out completely
   const weakDomains = ['medium.com', 'reddit.com', 'slideshare.net', 'youtube.com', 
-    'twitter.com', 'x.com', 'quora.com', 'wikipedia.org', 'growthx.club',
-    'substack.com', 'blogspot.com', 'wordpress.com', 'substack.com'];
+    'twitter.com', 'x.com', 'quora.com', 'wikipedia.org', 'substack.com', 
+    'blogspot.com', 'wordpress.com', 'quora.com'];
   
   for (const w of weakDomains) {
-    if (lower.includes(w)) return { source: '', credible: false };
+    if (lower.includes(w)) return { source: '', credible: false, tier: 0 };
   }
   
   // Clean unknown sources
@@ -398,8 +483,9 @@ function cleanSource(domain: string): { source: string; credible: boolean } {
     .replace(/^www\./, '')
     .replace(/\.(com|org|co|in|net|io|ai|dev)$/i, '')
     .trim();
+  source = source.charAt(0).toUpperCase() + source.slice(1);
   
-  return { source: source.charAt(0).toUpperCase() + source.slice(1), credible: false };
+  return { source, credible: false, tier: 5 };
 }
 
 async function fetchLiveSearch(message: string): Promise<string | null> {
@@ -413,25 +499,37 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     if (!data.results?.length) return null;
     
     const results = data.results
-      .map((r: {snippet: string, domain?: string}) => {
-        const { source, credible } = cleanSource(r.domain || '');
+      .map((r: {snippet: string, domain?: string, score?: number}) => {
+        const { source, credible, tier } = cleanSource(r.domain || '');
         let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
-        // Remove trailing periods before source
         content = content.replace(/\.+$/, '').trim();
         if (!content || content.length < 10 || !source) return null;
-        return { content, source, credible };
+        const tierLabel = tier >= 8 ? '[STRONG]' : tier >= 5 ? '[MODERATE]' : '[WEAK]';
+        return { content, source, credible, tier, tierLabel };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a: any, b: any) => b.tier - a.tier);
     
     if (results.length === 0) return null;
     
-    // Format: source inline at end, no line breaks
-    return results.map((r: {content: string, source: string, credible: boolean}) => {
-      if (r.credible) {
-        return `${r.content} (${r.source})`;
-      }
-      return `${r.content}`;
-    }).join(' ');
+    // Format: tier label + source inline
+    const strongResults = results.filter((r: any) => r.tier >= 8);
+    const moderateResults = results.filter((r: any) => r.tier >= 5 && r.tier < 8);
+    
+    const formatResults = (arr: any[], label: string) => {
+      if (arr.length === 0) return '';
+      return arr.map((r: any) => `${r.content} (${r.source})`).join(' ');
+    };
+    
+    let output = '';
+    if (strongResults.length > 0) {
+      output += `[STRONG SOURCES - Cite confidently]:\n${formatResults(strongResults, 'STRONG')}\n\n`;
+    }
+    if (moderateResults.length > 0) {
+      output += `[MODERATE SOURCES - Soften language, use as support only]:\n${formatResults(moderateResults, 'MODERATE')}`;
+    }
+    
+    return output || null;
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
