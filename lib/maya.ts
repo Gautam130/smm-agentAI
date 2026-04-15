@@ -112,42 +112,36 @@ HALLUCINATION PREVENTION:
 SOURCE DECISION SYSTEM
 ═══════════════════════════════════════
 
-UNDERSTAND SOURCE TIERS:
-• Tier 10 (inc42, Economic Times, Forbes India, Moneycontrol, ThePrint) → STRONG
-• Tier 8 (McKinsey, BCG, HBR, Bloomberg, Statista) → STRONG
-• Tier 6 (Social Media Examiner, Buffer, HubSpot) → MODERATE
-• Tier 5 (TechCrunch, YourStory) → MODERATE
-• Tier <5 (Medium, Reddit, YouTube) → NEVER CITE
+TIERS (hidden from user):
+• Tier 10: Official data - data.gov.in, mca.gov.in, sebi.gov.in, NSE, RBI, PIB
+• Tier 9: Premium Indian - Inc42, Moneycontrol, ThePrint, NDTV, HT
+• Tier 8: Interpretation - World Bank, McKinsey, BCG, LinkedIn, Reuters
+• Tier 7: Context - Livemint, Economic Times, Forbes India, Statista
+• Tier 6: Ideas - HubSpot, Buffer, Campaign India
+• Tier 5: News - TechCrunch, Medianama, Bloomberg
+• Tier 3: Signals - Google Trends (use max 1, always last, never for hard numbers)
+• Tier 0: Never - Medium, Reddit, YouTube, Twitter
 
-HOW TO USE TIERS:
-• Tier 10 (Inc42, Moneycontrol, ThePrint, Livemint) → Speak confidently, cite freely
-• Tier 7-8 (LinkedIn, McKinsey, Statista, Forbes India) → Cite confidently, high credibility
-• Tier 5-6 (Buffer, TechCrunch, YourStory) → Support only, soften language
-• Tier <5 (Bloomberg, WSJ) → Lower priority, verify before citing
-• Tier 0 (Medium, Reddit, YouTube) → NEVER cite, ignore
+CONFIDENCE RULES:
+• 2+ strong sources agree → Speak directly
+• 1 strong source → Soften: "suggests", "indicates", "reports show"
+• No strong sources → "I don't have verified data on this, but..."
 
-CITATION RULES:
-1. Cite ONLY when: number, specific claim, non-obvious fact
-2. NOT every line — only where it matters
-3. Keep citation INLINE at end of sentence
-4. Prefer FREE sources: Inc42, ThePrint, LinkedIn, McKinsey over paywalled ones
+SIGNAL RULE:
+• Max 1 signal source per response
+• Always last
+• Never use for hard numbers
 
-CLAIM CONFIDENCE:
-• Multiple strong sources agree → Confident statement
-• Single strong source → Soften: "reports suggest", "according to"
-• Only weak sources → Skip or say "based on industry patterns"
+CITATION STYLE:
+• Cite inline: "filings show X, while industry data suggests Y, and search trends indicate Z"
+• Never: rigid blocks, bullet lists of sources, tier numbers
+• Always: natural blending into your answer
 
-CONFLICT RESOLUTION:
-• If sources disagree → Acknowledge: "Estimates vary — Inc42 reports X, Forbes India suggests Y"
-• Prefer free tier 10 sources over paywalled
-• Never pick one and pretend it's settled
+WRONG: "According to Tier 10 sources..." or "[STRONG SOURCES]"
+RIGHT: "Recent filings show X, while Inc42 reports Y"
 
-EXAMPLE TRANSFORMATIONS:
-❌ "CoD is 60% of orders (Economic Times)"
-✅ "CoD continues to be significant in Tier-2/3 markets (Inc42)"
-
-❌ "Instagram has 500M users"
-✅ "Instagram has massive reach in India (Social Media Examiner)"
+EXAMPLE PERFECT OUTPUT:
+"Recent filings show steady revenue growth at ₹4,600 Cr last quarter. Industry analyses point to improving unit economics across delivery platforms, and search trends suggest rising Tier-2 interest — usually a sign of metro expansion."
 
 ═══════════════════════════════════════
 DNA — EVERYTHING YOU SAY STARTS HERE
@@ -399,97 +393,98 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
   
   const lower = domain.toLowerCase();
   
-  // Tier 10 - Premium Indian (Free access)
+  // Tier 10 - Official Government Data
   const tier10: Record<string, string> = {
+    'data.gov.in': 'Gov Data',
+    'mca.gov.in': 'MCA',
+    'sebi.gov.in': 'SEBI',
+    'nseindia.com': 'NSE',
+    'bseindia.com': 'BSE',
+    'rbi.org.in': 'RBI',
+    'pib.gov.in': 'PIB',
+    'epfindia.gov.in': 'EPFO',
+    'gst.gov.in': 'GST',
+  };
+  
+  // Tier 9 - Premium Indian
+  const tier9: Record<string, string> = {
     'inc42.com': 'Inc42',
     'moneycontrol.com': 'Moneycontrol',
     'theprint.in': 'ThePrint',
-    'livemint.com': 'Livemint',
     'cnbctv18.com': 'CNBCTV18',
     'ndtv.com': 'NDTV',
     'hindustantimes.com': 'Hindustan Times',
   };
   
-  // Tier 8 - Indian with paywall
+  // Tier 8 - Meaning/Interpretation
   const tier8: Record<string, string> = {
-    'economictimes.indiatimes.com': 'Economic Times',
-    'forbesindia.com': 'Forbes India',
-    'businesstoday.in': 'Business Today',
-  };
-  
-  // Tier 7 - Global Premium (Free)
-  const tier7: Record<string, string> = {
-    'linkedin.com': 'LinkedIn',
+    'worldbank.org': 'World Bank',
+    'imf.org': 'IMF',
+    'datareportal.com': 'DataReportal',
     'mckinsey.com': 'McKinsey',
     'bcg.com': 'BCG',
     'bain.com': 'Bain',
+    'linkedin.com': 'LinkedIn',
     'hbr.org': 'Harvard Business Review',
     'reuters.com': 'Reuters',
+  };
+  
+  // Tier 7 - Business Context
+  const tier7: Record<string, string> = {
+    'livemint.com': 'Livemint',
+    'economictimes.indiatimes.com': 'Economic Times',
+    'forbesindia.com': 'Forbes India',
+    'businesstoday.in': 'Business Today',
     'statista.com': 'Statista',
-    'datareportal.com': 'DataReportal',
     'wearesocial.com': 'We Are Social',
     'gartner.com': 'Gartner',
   };
   
-  // Tier 6 - Marketing
+  // Tier 6 - Ideas/Frameworks
   const tier6: Record<string, string> = {
-    'socialmediaexaminer.com': 'Social Media Examiner',
-    'buffer.com': 'Buffer',
-    'hootsuite.com': 'Hootsuite',
-    'sproutsocial.com': 'Sprout Social',
     'hubspot.com': 'HubSpot',
-    'marketingweek.com': 'Marketing Week',
+    'buffer.com': 'Buffer',
     'campaignindia.in': 'Campaign India',
     'afaqs.com': 'afaqs',
+    'socialmediaexaminer.com': 'Social Media Examiner',
+    'hootsuite.com': 'Hootsuite',
+    'sproutsocial.com': 'Sprout Social',
   };
   
-  // Tier 5 - Paywalled/Moderate
+  // Tier 5 - Tech/Business News
   const tier5: Record<string, string> = {
-    'bloomberg.com': 'Bloomberg',
-    'economist.com': 'The Economist',
-    'wsj.com': 'WSJ',
-    'ft.com': 'Financial Times',
     'techcrunch.com': 'TechCrunch',
-    'venturebeat.com': 'VentureBeat',
-    'wired.com': 'Wired',
     'medianama.com': 'Medianama',
     'yourstory.com': 'YourStory',
     'entrackr.com': 'Entrackr',
+    'bloomberg.com': 'Bloomberg',
+    'economist.com': 'The Economist',
   };
   
-  for (const [d, name] of Object.entries(tier10)) {
-    if (lower.includes(d)) return { source: name, credible: true, tier: 10 };
-  }
-  for (const [d, name] of Object.entries(tier8)) {
-    if (lower.includes(d)) return { source: name, credible: true, tier: 8 };
-  }
-  for (const [d, name] of Object.entries(tier7)) {
-    if (lower.includes(d)) return { source: name, credible: true, tier: 7 };
-  }
-  for (const [d, name] of Object.entries(tier6)) {
-    if (lower.includes(d)) return { source: name, credible: true, tier: 6 };
-  }
-  for (const [d, name] of Object.entries(tier5)) {
-    if (lower.includes(d)) return { source: name, credible: true, tier: 5 };
-  }
+  // Tier 3 - Signals only
+  const tier3: Record<string, string> = {
+    'trends.google.com': 'Google Trends',
+    'google.com': 'Google',
+  };
   
-  // Weak sources - filter out
-  const weakDomains = ['medium.com', 'reddit.com', 'slideshare.net', 'youtube.com', 
-    'twitter.com', 'x.com', 'quora.com', 'wikipedia.org', 'substack.com', 
-    'blogspot.com', 'wordpress.com'];
+  // Check tiers with endsWith matching
+  const checkTier = (tier: Record<string, string>, tierNum: number) => {
+    for (const [d, name] of Object.entries(tier)) {
+      if (lower === d || lower.endsWith('.' + d)) {
+        return { source: name, credible: tierNum >= 6, tier: tierNum };
+      }
+    }
+    return null;
+  };
   
-  for (const w of weakDomains) {
-    if (lower.includes(w)) return { source: '', credible: false, tier: 0 };
-  }
-  
-  // Clean unknown sources
-  let source = domain
-    .replace(/^www\./, '')
-    .replace(/\.(com|org|co|in|net|io|ai|dev)$/i, '')
-    .trim();
-  source = source.charAt(0).toUpperCase() + source.slice(1);
-  
-  return { source, credible: false, tier: 5 };
+  return checkTier(tier10, 10)
+    || checkTier(tier9, 9)
+    || checkTier(tier8, 8)
+    || checkTier(tier7, 7)
+    || checkTier(tier6, 6)
+    || checkTier(tier5, 5)
+    || checkTier(tier3, 3)
+    || { source: domain.replace(/^www\./, '').split('.')[0] || 'Web', credible: false, tier: 5 };
 }
 
 async function fetchLiveSearch(message: string): Promise<string | null> {
@@ -513,7 +508,7 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
         const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
         const { source } = cleanSource(r.domain || '');
         
-        if (!content || content.length < 10) return null;
+        if (!content || content.length < 10 || tierScore === 0) return null;
         
         return { content, source, tierScore, confidence };
       })
@@ -522,24 +517,35 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     
     if (results.length === 0) return null;
     
-    // Separate by confidence
-    const strongResults = results.filter((r: any) => r.tierScore >= 8);
-    const moderateResults = results.filter((r: any) => r.tierScore >= 5 && r.tierScore < 8);
+    // Natural blending: max 3 sources, blend into flowing text
+    const topResults = results.slice(0, 3);
+    const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
-    const formatResults = (arr: any[]) => {
-      if (arr.length === 0) return '';
-      return arr.map((r: any) => `${r.content} (${r.source})`).join(' ');
+    // Build natural flowing snippets
+    const buildNaturalSnippet = (arr: any[]) => {
+      return arr.map((r: any) => {
+        // Shorten content to ~150-200 chars
+        let snippet = r.content;
+        if (snippet.length > 200) {
+          snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
+        }
+        return `${snippet} (${r.source})`;
+      }).join(' | ');
     };
     
-    let output = '';
-    if (strongResults.length > 0) {
-      output += `[STRONG SOURCES - Cite confidently]:\n${formatResults(strongResults)}\n\n`;
-    }
-    if (moderateResults.length > 0) {
-      output += `[MODERATE SOURCES - Soften language, use as support only]:\n${formatResults(moderateResults)}`;
+    let output = 'MARKET DATA:\n';
+    
+    // Primary sources (Tier 8+) - factual grounding
+    if (topResults.length > 0) {
+      output += buildNaturalSnippet(topResults);
     }
     
-    return output || null;
+    // Signal source (max 1, always last)
+    if (signalResults.length > 0) {
+      output += '\n\nSIGNALS: ' + signalResults[0].content.substring(0, 150) + '... (trends)';
+    }
+    
+    return output;
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
@@ -561,7 +567,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT - Follow these rules strictly:\n1. STRONG sources (Inc42, Economic Times, McKinsey, Statista) → Cite confidently, can make direct claims\n2. MODERATE sources (Buffer, TechCrunch, YourStory) → Soften language, use "reports suggest", "according to"\n3. NEVER cite Medium, Reddit, YouTube\n4. Keep citation INLINE at end of sentence: "(Inc42)" not separate line\n5. Single source claims → soften: "reports suggest" not "X has Y users"\n6. Conflicting data → acknowledge both: "Estimates vary - ET reports X, Inc42 suggests Y"`);
+  if (searchData) parts.push(`${searchData}\n\nUse this data naturally. Blend sources into flowing answers - never rigid blocks or lists. Cite inline: "filings show X, while industry data suggests Y, and search trends indicate Z."`);
 
   return parts.join('\n\n---\n\n');
 }

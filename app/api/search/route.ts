@@ -3,83 +3,91 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const DOMAIN_SCORES: Record<string, number> = {
-  // Premium Indian Sources (10) - Free access
-  'inc42.com': 10,
-  'moneycontrol.com': 10,
-  'theprint.in': 10,
-  'livemint.com': 10,
-  'cnbctv18.com': 10,
-  'ndtv.com': 10,
-  'hindustantimes.com': 10,
+  // Tier 10 - Official Government Data (facts)
+  'data.gov.in': 10,
+  'mca.gov.in': 10,
+  'sebi.gov.in': 10,
+  'nseindia.com': 10,
+  'bseindia.com': 10,
+  'rbi.org.in': 10,
+  'pib.gov.in': 10,
+  'epfindia.gov.in': 10,
+  'gst.gov.in': 10,
   
-  // Indian Sources (8) - Some paywall
-  'forbesindia.com': 8,
-  'businesstoday.in': 8,
-  'economictimes.indiatimes.com': 8,
+  // Tier 9 - Premium Indian (free access)
+  'inc42.com': 9,
+  'moneycontrol.com': 9,
+  'theprint.in': 9,
+  'cnbctv18.com': 9,
+  'ndtv.com': 9,
+  'hindustantimes.com': 9,
   
-  // Global Premium (7) - Free access
-  'linkedin.com': 7,
-  'mckinsey.com': 7,
-  'bcg.com': 7,
-  'bain.com': 7,
-  'hbr.org': 7,
-  'reuters.com': 7,
+  // Tier 8 - Meaning/Interpretation
+  'worldbank.org': 8,
+  'imf.org': 8,
+  'datareportal.com': 8,
+  'mckinsey.com': 8,
+  'bcg.com': 8,
+  'bain.com': 8,
+  'linkedin.com': 8,
+  'hbr.org': 8,
+  'reuters.com': 8,
   
-  // Data/Reports (7) - Free
+  // Tier 7 - Business Context
+  'livemint.com': 7,
+  'economictimes.indiatimes.com': 7,
+  'forbesindia.com': 7,
+  'businesstoday.in': 7,
   'statista.com': 7,
-  'datareportal.com': 7,
   'wearesocial.com': 7,
   'gartner.com': 7,
   
-  // Paywalled (5) - Lower tier
-  'bloomberg.com': 5,
-  'economist.com': 5,
-  'wsj.com': 5,
-  'ft.com': 5,
-  
-  // Marketing/Business (6)
-  'socialmediaexaminer.com': 6,
-  'buffer.com': 6,
-  'hootsuite.com': 6,
-  'sproutsocial.com': 6,
+  // Tier 6 - Ideas/Frameworks
   'hubspot.com': 6,
-  'marketingweek.com': 6,
+  'buffer.com': 6,
   'campaignindia.in': 6,
   'afaqs.com': 6,
   'afaqs.co.in': 6,
+  'socialmediaexaminer.com': 6,
+  'hootsuite.com': 6,
+  'sproutsocial.com': 6,
   
-  // Tech News (5)
+  // Tier 5 - Tech/Business News
   'techcrunch.com': 5,
-  'techcrunch.in': 5,
-  'venturebeat.com': 5,
-  'wired.com': 5,
-  'thenextweb.com': 5,
   'medianama.com': 5,
   'yourstory.com': 5,
   'entrackr.com': 5,
+  'bloomberg.com': 5,
+  'economist.com': 5,
   
-  // Never cite (2)
-  'medium.com': 2,
-  'substack.com': 2,
-  'quora.com': 2,
-  'reddit.com': 2,
-  'youtube.com': 2,
-  'twitter.com': 2,
-  'x.com': 2,
+  // Tier 3 - Signals only (max 1 per response, never for hard numbers)
+  'trends.google.com': 3,
+  'google.com': 3,
+  
+  // Tier 0 - Never cite
+  'medium.com': 0,
+  'substack.com': 0,
+  'reddit.com': 0,
+  'youtube.com': 0,
+  'twitter.com': 0,
+  'x.com': 0,
+  'quora.com': 0,
 };
 
 const getDomainScore = (url: string): number => {
   try {
     const domain = url?.replace(/^https?:\/\//, '').split('/')[0].toLowerCase() || '';
     
+    if (!domain) return 5;
+    
     // Check exact match first
     if (DOMAIN_SCORES[domain]) return DOMAIN_SCORES[domain];
     
-    // Check partial match (e.g., blog.medium.com -> medium.com)
-    const parts = domain.split('.');
-    if (parts.length >= 2) {
-      const baseDomain = parts.slice(-2).join('.');
-      if (DOMAIN_SCORES[baseDomain]) return DOMAIN_SCORES[baseDomain];
+    // Check if domain ends with any known domain (handles subdomains)
+    for (const [knownDomain, score] of Object.entries(DOMAIN_SCORES)) {
+      if (domain === knownDomain || domain.endsWith('.' + knownDomain)) {
+        return score;
+      }
     }
     
     return 5; // Default score for unknown domains
