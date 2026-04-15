@@ -242,8 +242,8 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const data = await res.json();
     if (!data.results?.length) return null;
     return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => 
-      `${r.title}: ${r.snippet}${r.domain ? ` (source: ${r.domain})` : ''}`
-    ).join('\n');
+      `{cite: ${r.domain || 'web'}} ${r.snippet}`
+    ).join('\n\n');
   } catch (e) {
     console.warn('Live search failed:', e);
     return null;
@@ -265,7 +265,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA (use for current events and recent news):\n${searchData}`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT: When using data from LIVE WEB DATA, start the sentence with {cite: source_name} format. Example: "{cite: Inc42} Indian startup funding reached $5B in Q1 2024."`);
 
   return parts.join('\n\n---\n\n');
 }
