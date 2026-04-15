@@ -131,9 +131,13 @@ CITATIONS
 
 When using web search data, attach source in parentheses at END of sentence.
 
-Example: "Indian funding reached $5B in Q1 2024 (Inc42)."
+Example: "Revenue grew 30% last quarter (LinkedIn)."
 
-NEVER use curly braces {} for citations. They will NOT render.
+NEVER:
+- Paste raw URLs
+- Use curly braces {}
+- Write domain names as separate text
+- Use hashtags #
 
 One question max per response. Wait for the answer. Never repeat a question.
 
@@ -215,6 +219,56 @@ async function fetchInsights(message: string): Promise<string | null> {
   }
 }
 
+function cleanSource(domain: string): string {
+  if (!domain) return 'web';
+  
+  // Remove common prefixes and clean up
+  let source = domain
+    .replace(/^www\./, '')
+    .replace(/\.(com|org|co|in|net|io|ai|dev)$/i, '')
+    .replace(/^m\./, '')
+    .replace(/^i\./, '')
+    .replace(/^news\./, '')
+    .replace(/^blog\./, '');
+  
+  // Known mappings for credibility
+  const knownSources: Record<string, string> = {
+    'linkedin': 'LinkedIn',
+    'youtube': 'YouTube',
+    'twitter': 'Twitter',
+    'x': 'X',
+    'facebook': 'Facebook',
+    'instagram': 'Instagram',
+    'reddit': 'Reddit',
+    'medium': 'Medium',
+    'quora': 'Quora',
+    'wikipedia': 'Wikipedia',
+    'nytimes': 'NYTimes',
+    'techcrunch': 'TechCrunch',
+    'inc42': 'Inc42',
+    'yourstory': 'YourStory',
+    'economictimes': 'Economic Times',
+    'livemint': 'Livemint',
+    'forbes': 'Forbes',
+    'hbr': 'Harvard Business Review',
+    'mckinsey': 'McKinsey',
+    'gartner': 'Gartner',
+    'bloomberg': 'Bloomberg',
+    'reuters': 'Reuters',
+    'wired': 'Wired',
+    'venturebeat': 'VentureBeat',
+    'statista': 'Statista',
+    'datareportal': 'DataReportal',
+    'hootsuite': 'Hootsuite',
+  };
+  
+  const lower = source.toLowerCase();
+  if (knownSources[lower]) return knownSources[lower];
+  
+  // Capitalize first letter
+  return source.charAt(0).toUpperCase() + source.slice(1);
+}
+
 async function fetchLiveSearch(message: string): Promise<string | null> {
   try {
     const res = await fetch('/api/search', {
@@ -225,7 +279,7 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const data = await res.json();
     if (!data.results?.length) return null;
     return data.results.slice(0, 5).map((r: {title: string, snippet: string, domain?: string}) => {
-      const source = (r.domain || 'web').replace(/\.+$/, '').trim();
+      const source = cleanSource(r.domain || '');
       const content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
       if (!content || content.length < 10) return null;
       return `${content} (${source})`;
@@ -251,7 +305,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT RULES:\n1. LIVE WEB DATA has sources in parentheses like "(Inc42)" or "(Reddit)"\n2. When you use this data, keep the source in parentheses at the end of your sentence\n3. NEVER use curly braces {} for citations - they will NOT render\n4. NEVER use hashtags # for headings\n5. NEVER write domain names as separate lines\n\nCORRECT: "Indian funding reached $5B in Q1 2024 (Inc42)."\nWRONG: "{cite:Inc42} Indian funding reached $5B"\nWRONG: "# Inc42 Indian funding reached $5B"`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT CITATION RULES:\n1. Sources are provided in clean format: "(LinkedIn)", "(YouTube)", "(Inc42)"\n2. When you reference this data, keep the source in parentheses at END of your sentence\n3. NEVER paste raw URLs or domain names\n4. NEVER use curly braces {} or hashtags #\n\nCORRECT: "Revenue grew 30% last quarter (LinkedIn)."\nWRONG: "Revenue grew 30% (https://linkedin.com...)"\nWRONG: "{cite:LinkedIn} Revenue grew 30%"\n\nKeep sources short and credible. Do not output raw URLs.`);
 
   return parts.join('\n\n---\n\n');
 }
