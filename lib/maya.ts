@@ -354,7 +354,7 @@ async function fetchHooks(message: string): Promise<string | null> {
 
     const { data, error } = await supabase.rpc('search_hooks', {
       search_query: message,
-      match_count: 5
+      match_count: 3
     });
 
     if (error) throw error;
@@ -373,7 +373,7 @@ async function fetchInsights(message: string): Promise<string | null> {
 
     const { data, error } = await supabase.rpc('search_insights', {
       search_query: message,
-      match_count: 5
+      match_count: 2
     });
 
     if (error) throw error;
@@ -517,8 +517,8 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     
     if (results.length === 0) return null;
     
-    // Natural blending: max 3 sources, blend into flowing text
-    const topResults = results.slice(0, 3);
+    // Natural blending: max 2 sources, blend into flowing text
+    const topResults = results.slice(0, 2);
     const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
     // Build natural flowing snippets
