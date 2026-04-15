@@ -28,16 +28,79 @@ const suggestions = [
 ];
 
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
+  const hasCitation = text.includes('{cite:');
+  
   return (
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        <span>{text}</span>
+        {hasCitation ? (
+          <CitationBlock text={text} />
+        ) : (
+          <span>{text}</span>
+        )}
         <span className="cursor-blink">▋</span>
       </div>
     </div>
   );
 });
+
+function CitationBadge({ source }: { source: string }) {
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '2px 8px',
+      background: '#374151',
+      borderRadius: '4px',
+      fontSize: '11px',
+      color: '#9ca3af',
+      marginBottom: '8px',
+    }}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      {source}
+    </span>
+  );
+}
+
+function CitationBlock({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  const regex = /\{cite:\s*([^}]+)\}/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(
+        <ReactMarkdown key={key++}>{text.slice(lastIndex, match.index)}</ReactMarkdown>
+      );
+    }
+    const source = match[1].trim();
+    const afterCite = text.slice(match.index + match[0].length).match(/^\s*([^{]+)/);
+    const content = afterCite ? afterCite[1].trim() : '';
+    parts.push(
+      <div key={key++} style={{ marginBottom: '12px' }}>
+        <CitationBadge source={source} />
+        <ReactMarkdown>{content}</ReactMarkdown>
+      </div>
+    );
+    lastIndex = match.index + match[0].length + content.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(
+      <ReactMarkdown key={key++}>{text.slice(lastIndex)}</ReactMarkdown>
+    );
+  }
+
+  return <>{parts}</>;
+}
 
 const CompletedMessage = memo(function CompletedMessage({ message }: { message: ChatMessage }) {
   const getTime = () => {
@@ -69,7 +132,11 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        <ReactMarkdown>{message.text}</ReactMarkdown>
+        {message.text.includes('{cite:') ? (
+          <CitationBlock text={message.text} />
+        ) : (
+          <ReactMarkdown>{message.text}</ReactMarkdown>
+        )}
       </div>
     </div>
   );
