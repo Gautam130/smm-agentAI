@@ -232,26 +232,34 @@ export default function AskMayaPage() {
   const loadMessages = useCallback(async (conversationId: string): Promise<ChatMessage[]> => {
     try {
       const supabase = getSupabase();
-      const { data, error } = await supabase
+      console.log('Loading messages for:', conversationId);
+      
+      const { data, error, status } = await supabase
         .from('messages')
         .select('role, content, created_at')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
+      console.log('Messages response:', { error, status, count: data?.length });
+
       if (error) {
-        console.error('Failed to load messages:', error.message);
+        console.error('Failed to load messages:', error.message, status);
         return [];
       }
 
       if (!data || data.length === 0) {
+        console.log('No messages found for conversation');
         return [];
       }
 
-      return data.map((m: StoredMessage) => ({
+      const messages = data.map((m: StoredMessage) => ({
         id: crypto.randomUUID(),
         role: m.role as 'user' | 'assistant',
         text: m.content,
       }));
+      
+      console.log('Loaded messages:', messages.length);
+      return messages;
     } catch (e) {
       console.error('Failed to load messages:', e);
       return [];
@@ -388,17 +396,21 @@ export default function AskMayaPage() {
 
   // Handle conversation selection
   const handleSelectConversation = async (conversationId: string) => {
+    console.log('handleSelectConversation called:', conversationId);
     if (conversationId === currentConversationId) return;
     
     setCurrentConversationId(conversationId);
     setIsSwitching(true);
+    console.log('Switching conversation, waiting...');
     
     // Small delay to let Supabase settle after save/prune
     await new Promise(resolve => setTimeout(resolve, 300));
     
     const loadedMessages = await loadMessages(conversationId);
-    setMessages(loadedMessages || [], conversationId);
+    console.log('Setting messages:', loadedMessages.length);
+    setMessages(loadedMessages, conversationId);
     setIsSwitching(false);
+    console.log('Conversation switched, isSwitching = false');
     
     // Scroll to bottom after messages load
     setTimeout(() => {
