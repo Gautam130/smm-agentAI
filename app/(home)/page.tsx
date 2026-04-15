@@ -88,10 +88,12 @@ const megaMenuColumns = [
 export default function HomePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [query, setQuery] = useState('');
   const [showWorkDropdown, setShowWorkDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const workDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -121,6 +123,12 @@ export default function HomePage() {
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
+  };
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      router.push(`/ask?prompt=${encodeURIComponent(query)}`);
+    }
   };
 
   const handleQuickPrompt = (prompt: string) => {
@@ -195,9 +203,27 @@ export default function HomePage() {
           Create, schedule, and analyze — all in one place
         </p>
 
-        <a href="/ask" className="home-cta-btn">
-          Chat with Maya →
-        </a>
+        {/* Search Box */}
+        <div className="home-search-container">
+          <div className="home-search-box">
+            <textarea
+              ref={inputRef}
+              className="home-search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSearch(); } }}
+              placeholder="What do you need? (e.g. a week of Instagram posts for my cafe)"
+              rows={1}
+            />
+            <button className="home-search-btn" onClick={handleSearch}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div className="home-search-hint">Press Enter to send · Shift+Enter for new line</div>
+        </div>
 
         {/* Quick Prompts */}
         <div className="home-prompts">
@@ -385,22 +411,60 @@ export default function HomePage() {
         .home-hero-subtitle {
           font-size: 1.125rem;
           color: #9ca3af;
-          margin-bottom: 32px;
-        }
-
-        .home-cta-btn {
-          display: inline-block;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #fff;
-          padding: 14px 28px;
-          border-radius: 12px;
-          text-decoration: none;
-          font-weight: 600;
           margin-bottom: 40px;
         }
 
-        .home-cta-btn:hover {
-          transform: translateY(-2px);
+        .home-search-container {
+          max-width: 600px;
+          margin: 0 auto 32px;
+        }
+
+        .home-search-box {
+          display: flex;
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 16px;
+          padding: 8px 8px 8px 16px;
+          align-items: center;
+          transition: border-color 0.2s;
+        }
+
+        .home-search-box:focus-within {
+          border-color: #6366f1;
+        }
+
+        .home-search-input {
+          flex: 1;
+          background: none;
+          border: none;
+          outline: none;
+          color: #fff;
+          font-size: 1rem;
+          resize: none;
+          max-height: 120px;
+        }
+
+        .home-search-input::placeholder {
+          color: #52525b;
+        }
+
+        .home-search-btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+          border-radius: 10px;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+
+        .home-search-hint {
+          color: #52525b;
+          font-size: 0.75rem;
+          margin-top: 8px;
         }
 
         .home-prompts {
@@ -408,8 +472,6 @@ export default function HomePage() {
           flex-wrap: wrap;
           gap: 10px;
           justify-content: center;
-          max-width: 600px;
-          margin: 0 auto;
         }
 
         .home-prompt-btn {
