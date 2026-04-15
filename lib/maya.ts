@@ -498,35 +498,41 @@ async function fetchLiveSearch(message: string): Promise<string | null> {
     const data = await res.json();
     if (!data.results?.length) return null;
     
+    // Use tierScore/confidence from API response
     const results = data.results
-      .map((r: {snippet: string, domain?: string, score?: number}) => {
-        const { source, credible, tier } = cleanSource(r.domain || '');
+      .map((r: {snippet?: string; domain?: string; tierScore?: number; confidence?: string}) => {
         let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
         content = content.replace(/\.+$/, '').trim();
-        if (!content || content.length < 10 || !source) return null;
-        const tierLabel = tier >= 8 ? '[STRONG]' : tier >= 5 ? '[MODERATE]' : '[WEAK]';
-        return { content, source, credible, tier, tierLabel };
+        
+        // Use API's tierScore, fallback to cleanSource if not present
+        const tierScore = r.tierScore ?? cleanSource(r.domain || '').tier;
+        const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
+        const { source } = cleanSource(r.domain || '');
+        
+        if (!content || content.length < 10) return null;
+        
+        return { content, source, tierScore, confidence };
       })
       .filter(Boolean)
-      .sort((a: any, b: any) => b.tier - a.tier);
+      .sort((a: any, b: any) => b.tierScore - a.tierScore);
     
     if (results.length === 0) return null;
     
-    // Format: tier label + source inline
-    const strongResults = results.filter((r: any) => r.tier >= 8);
-    const moderateResults = results.filter((r: any) => r.tier >= 5 && r.tier < 8);
+    // Separate by confidence
+    const strongResults = results.filter((r: any) => r.tierScore >= 8);
+    const moderateResults = results.filter((r: any) => r.tierScore >= 5 && r.tierScore < 8);
     
-    const formatResults = (arr: any[], label: string) => {
+    const formatResults = (arr: any[]) => {
       if (arr.length === 0) return '';
       return arr.map((r: any) => `${r.content} (${r.source})`).join(' ');
     };
     
     let output = '';
     if (strongResults.length > 0) {
-      output += `[STRONG SOURCES - Cite confidently]:\n${formatResults(strongResults, 'STRONG')}\n\n`;
+      output += `[STRONG SOURCES - Cite confidently]:\n${formatResults(strongResults)}\n\n`;
     }
     if (moderateResults.length > 0) {
-      output += `[MODERATE SOURCES - Soften language, use as support only]:\n${formatResults(moderateResults, 'MODERATE')}`;
+      output += `[MODERATE SOURCES - Soften language, use as support only]:\n${formatResults(moderateResults)}`;
     }
     
     return output || null;
@@ -551,7 +557,7 @@ async function fetchMayaContext(message: string): Promise<string> {
 
   if (hooksData) parts.push(`HOOK TEMPLATES (use as creative inspiration, always adapt to user's brand):\n${hooksData}`);
   if (insightsData) parts.push(`VERIFIED MARKETING KNOWLEDGE (trust for benchmarks and best practices):\n${insightsData}`);
-  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT CITATION RULES:\n1. Sources are provided inline at end: "(Inc42)", "(LinkedIn)"\n2. When you reference this data, keep source INLINE at END of your sentence\n3. NEVER put source on separate line\n\nCORRECT: "Revenue grew last quarter (LinkedIn)."\nWRONG:\n"Revenue grew last quarter\n(LinkedIn)."`);
+  if (searchData) parts.push(`LIVE WEB DATA:\n${searchData}\n\nIMPORTANT - Follow these rules strictly:\n1. STRONG sources (Inc42, Economic Times, McKinsey, Statista) → Cite confidently, can make direct claims\n2. MODERATE sources (Buffer, TechCrunch, YourStory) → Soften language, use "reports suggest", "according to"\n3. NEVER cite Medium, Reddit, YouTube\n4. Keep citation INLINE at end of sentence: "(Inc42)" not separate line\n5. Single source claims → soften: "reports suggest" not "X has Y users"\n6. Conflicting data → acknowledge both: "Estimates vary - ET reports X, Inc42 suggests Y"`);
 
   return parts.join('\n\n---\n\n');
 }
