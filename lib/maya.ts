@@ -289,8 +289,22 @@ For claims in marketing mode:
 ✅ "test with your audience" for assumptions
 
 ═══════════════════════════════════════
-CITATIONS
+CITATIONS - CRITICAL FORMAT RULES
 ═══════════════════════════════════════
+
+ALWAYS use parentheses for citations:
+❌ "X study shows Y KPMG."
+❌ "X study shows Y - KPMG"
+✅ "X study shows Y (KPMG)."
+
+CITATION RULES:
+✅ Always put source in parentheses at END of sentence
+✅ Capitalize source names: (Inc42), (KPMG), (McKinsey)
+✅ End with period INSIDE parentheses: (Inc42).
+✅ Examples:
+   - "The market is ₹2,500 crore (Inc42)."
+   - "Revenue grew last quarter (LinkedIn)."
+   - "Users spend 3 hours daily (DataReportal)."
 
 ONLY cite from VERIFIED sources:
 ✅ Company filings, press releases, official blogs
@@ -303,8 +317,6 @@ NEVER cite for factual claims:
 ❌ Medium, Slideshare, Reddit, random blogs
 ❌ GrowthX, random startup newsletters
 ❌ YouTube, Twitter (unless official)
-
-When citing: "Revenue grew last quarter (LinkedIn)."
 
 ONLY attach citation if claim is from search data with credible source.
 
