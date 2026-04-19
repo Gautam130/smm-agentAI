@@ -781,9 +781,12 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
           .filter(Boolean)
           .sort((a: any, b: any) => b.tierScore - a.tierScore);
         
-        // Cache results (fire and forget)
-        if (results.length > 0) {
-          cacheSearchResults(queryHash, message, results);
+        // Cache only high-quality results (tierScore >= 6, min 2 results)
+        const validResults = results.filter((r: any) => r.tierScore >= 6);
+        if (validResults.length >= 2) {
+          cacheSearchResults(queryHash, message, validResults);
+        } else if (results.length > 0) {
+          console.warn('Skipping cache: low quality results', { total: results.length, valid: validResults.length });
         }
       } catch (fetchError: any) {
         clearTimeout(timeout);
