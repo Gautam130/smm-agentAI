@@ -749,34 +749,50 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     if (cachedResults) {
       results = cachedResults;
     } else {
-      // Fresh search
-      const res = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: message, provider: 'serper' })
-      });
-      const data = await res.json();
-      if (!data.results?.length) return null;
+      // Fresh search with 5 second timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
       
-      results = data.results
-        .map((r: {snippet?: string; domain?: string; tierScore?: number; confidence?: string}) => {
-          let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
-          content = content.replace(/\.+$/, '').trim();
-          
-          const tierScore = r.tierScore ?? cleanSource(r.domain || '').tier;
-          const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
-          const { source } = cleanSource(r.domain || '');
-          
-          if (!content || content.length < 10 || tierScore === 0) return null;
-          
-          return { content, source, tierScore, confidence };
-        })
-        .filter(Boolean)
-        .sort((a: any, b: any) => b.tierScore - a.tierScore);
-      
-      // Cache results (fire and forget)
-      if (results.length > 0) {
-        cacheSearchResults(queryHash, message, results);
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: message, provider: 'serper' }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        
+        const data = await res.json();
+        if (!data.results?.length) return null;
+        
+        results = data.results
+          .map((r: {snippet?: string; domain?: string; tierScore?: number; confidence?: string}) => {
+            let content = (r.snippet || '').replace(/^\.+\s*/, '').trim();
+            content = content.replace(/\.+$/, '').trim();
+            
+            const tierScore = r.tierScore ?? cleanSource(r.domain || '').tier;
+            const confidence = r.confidence ?? (tierScore >= 8 ? 'high' : tierScore >= 5 ? 'medium' : 'low');
+            const { source } = cleanSource(r.domain || '');
+            
+            if (!content || content.length < 10 || tierScore === 0) return null;
+            
+            return { content, source, tierScore, confidence };
+          })
+          .filter(Boolean)
+          .sort((a: any, b: any) => b.tierScore - a.tierScore);
+        
+        // Cache results (fire and forget)
+        if (results.length > 0) {
+          cacheSearchResults(queryHash, message, results);
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeout);
+        if (fetchError.name === 'AbortError' || fetchError.message?.includes('abort')) {
+          console.warn('Search timed out after 5 seconds');
+        } else {
+          console.warn('Search fetch failed:', fetchError.message);
+        }
+        return null;
       }
     }
     
