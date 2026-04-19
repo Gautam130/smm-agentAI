@@ -475,7 +475,7 @@ async function fetchUserContext(userId: string): Promise<string | null> {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('user_context')
-      .select('*')
+      .select('business_type, audience, goals, brand_name')
       .eq('user_id', userId)
       .single();
     
@@ -488,6 +488,22 @@ async function fetchUserContext(userId: string): Promise<string | null> {
     if (data.brand_name) parts.push(`Brand: ${data.brand_name}`);
     
     return parts.length > 0 ? parts.join(' | ') : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string } | null> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('user_context')
+      .select('business_type, audience')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error || !data) return null;
+    return data;
   } catch (e) {
     return null;
   }
@@ -536,6 +552,25 @@ async function updateUserContext(userId: string, message: string): Promise<void>
 
 const SEARCH_CACHE_TTL_HOURS = 24;
 const MAX_CACHE_ENTRIES = 500;
+
+function buildCacheKey(message: string, userContext?: { business_type?: string | null; audience?: string | null } | null): string {
+  const normalizedQuery = message
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .substring(0, 200);
+
+  const isContextSensitive = /d2c|market|audience|strategy|trend|industry|campaign|brand|competitor|india/i.test(message);
+
+  let contextKey = 'general';
+
+  if (isContextSensitive && userContext?.business_type) {
+    contextKey = userContext.business_type.toLowerCase().slice(0, 15).replace(/\s+/g, '_');
+  }
+
+  return `${contextKey}:${normalizedQuery}`;
+}
 
 async function getCachedSearch(queryHash: string): Promise<any[] | null> {
   try {
@@ -704,10 +739,10 @@ function cleanSource(domain: string): { source: string; credible: boolean; tier:
     || { source: domain.replace(/^www\./, '').split('.')[0] || 'Web', credible: false, tier: 5 };
 }
 
-async function fetchLiveSearch(message: string): Promise<string | null> {
+async function fetchLiveSearch(message: string, userContext?: { business_type?: string | null; audience?: string | null } | null): Promise<string | null> {
   try {
-    // Check cache first
-    const queryHash = message.toLowerCase().trim().substring(0, 200);
+    // Build context-aware cache key
+    const queryHash = buildCacheKey(message, userContext);
     const cachedResults = await getCachedSearch(queryHash);
     
     let results;
@@ -790,8 +825,10 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
 
   const parts: string[] = [];
 
-  // User context always helpful (lightweight)
+  // Fetch both formatted and raw context
   const userContext = userId ? await fetchUserContext(userId).catch(() => null) : null;
+  const userContextRaw = userId ? await getUserContextRaw(userId).catch(() => null) : null;
+  
   if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
 
   // Fetch based on depth + type
@@ -799,7 +836,7 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
     // Deep: search + insights
     const [insightsData, searchData] = await Promise.all([
       fetchInsights(message).catch(() => null),
-      fetchLiveSearch(message).catch(() => null),
+      fetchLiveSearch(message, userContextRaw).catch(() => null),
     ]);
     if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
     if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."`);
@@ -813,14 +850,14 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
     if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
   } else if (intent.queryType === 'competitor') {
     // Competitor: search (for comparison data)
-    const searchData = await fetchLiveSearch(message).catch(() => null);
+    const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.`);
   } else if (intent.queryType === 'glossary') {
     // Glossary: only search for niche/technical terms
     const nicheTerms = /\b(ROAS|CAC|LTV|ARPU|ERM|ABM|SOV|CPM|CPC|CTR)\b/i.test(message);
     if (nicheTerms) {
       // Niche terms = light search
-      const searchData = await fetchLiveSearch(message).catch(() => null);
+      const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
       if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.`);
     }
     // Basic terms = no search needed, Maya knows them
