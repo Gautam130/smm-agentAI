@@ -31,9 +31,77 @@ export async function POST(req: NextRequest) {
       ? [{ role: 'system', content: systemPrompt }, ...baseMessages]
       : baseMessages;
 
-    const GROQ_KEY = process.env.GROQ_API_KEY || process.env.GROQ_KEY;
+    // Load balancer - picks random Groq key for normal traffic
+    const groqKeys = [
+      process.env.GROQ_API_KEY,
+      process.env.GROQ_API_KEY_2
+    ].filter((k): k is string => Boolean(k));
+    
+    function getGroqKey(): string {
+      return groqKeys[Math.floor(Math.random() * groqKeys.length)] || '';
+    }
+
     const MISTRAL_KEY = process.env.MISTRAL_API_KEY || process.env.MISTRAL_KEY;
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+
+    // Full fallback chain - try each provider until one works
+    const providers = [
+      { 
+        name: 'Groq', 
+        key: getGroqKey(), 
+        model: 'llama-3.3-70b-versatile',
+        url: 'https://api.groq.com/openai/v1/chat/completions'
+      },
+      { 
+        name: 'Mistral', 
+        key: MISTRAL_KEY, 
+        model: 'mistral-large-latest',
+        url: 'https://api.mistral.ai/v1/chat/completions'
+      },
+      { 
+        name: 'OpenRouter', 
+        key: OPENROUTER_KEY, 
+        model: 'meta-llama/llama-3.3-70b-instruct',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        extraHeaders: { 'HTTP-Referer': 'https://smm-agent.vercel.app', 'X-Title': 'SMM Agent' }
+      },
+    ].filter(p => p.key);
+
+    // Try providers in order - first success wins
+    for (const provider of providers) {
+      try {
+        console.log(`Trying provider: ${provider.name}`);
+        const response = await streamAIResponse(provider.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${provider.key}`,
+            ...(provider.extraHeaders || {})
+          },
+          body: JSON.stringify({
+            model: provider.model,
+            messages: messagesWithSystem,
+            temperature,
+            max_tokens: smartMaxTokens,
+            stream: true
+          })
+        });
+        
+        // If response is valid, return it
+        console.log(`Provider ${provider.name} succeeded`);
+        return response;
+        
+      } catch (e: any) {
+        console.warn(`${provider.name} failed:`, e.message || e);
+        continue; // Try next provider
+      }
+    }
+
+    // All providers failed
+    return new NextResponse(
+      JSON.stringify({ error: 'All AI providers failed. Please try again later.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
 
     async function streamAIResponse(fetchUrl: string, fetchOptions: RequestInit) {
       const response = await fetch(fetchUrl, fetchOptions);
@@ -73,76 +141,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 1. Groq with streaming (primary)
-    if (GROQ_KEY) {
-      try {
-        return await streamAIResponse('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: messagesWithSystem,
-            temperature,
-            max_tokens: smartMaxTokens,
-            stream: true
-          })
-        });
-      } catch (e: any) {
-        console.error('Groq error:', e.message || e);
-      }
-    }
-
-    // 2. Mistral with streaming
-    if (MISTRAL_KEY) {
-      try {
-        return await streamAIResponse('https://api.mistral.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${MISTRAL_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'mistral-large-latest',
-            messages: messagesWithSystem,
-            temperature,
-            max_tokens: smartMaxTokens,
-            stream: true
-          })
-        });
-      } catch (e: any) {
-        console.error('Mistral error:', e.message || e);
-      }
-    }
-
-    // 3. OpenRouter with streaming
-    if (OPENROUTER_KEY) {
-      try {
-        return await streamAIResponse('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_KEY}`,
-            'HTTP-Referer': 'https://smm-agent.vercel.app',
-            'X-Title': 'SMM Agent'
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-3.3-70b-instruct',
-            messages: messagesWithSystem,
-            temperature,
-            max_tokens: smartMaxTokens,
-            stream: true
-          })
-        });
-      } catch (e: any) {
-        console.error('OpenRouter error:', e.message || e);
-      }
-    }
-
     // No keys configured
-    if (!GROQ_KEY && !MISTRAL_KEY && !OPENROUTER_KEY) {
+    if (providers.length === 0) {
       return new NextResponse(
         JSON.stringify({ error: 'No AI API key configured. Add GROQ_API_KEY to environment variables.' }),
         { 
@@ -151,14 +151,6 @@ export async function POST(req: NextRequest) {
         }
       );
     }
-
-    return new NextResponse(
-      JSON.stringify({ error: 'All AI providers failed. Please check API keys and try again.' }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
 
   } catch (error: any) {
     console.error('Chat API error:', error);
