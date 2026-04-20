@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
+import { useSearch } from '@/lib/hooks/useSearch';
+import { search } from '@/lib/api/search';
 
 type TabType = 'monitor' | 'newsjack' | 'sentiment';
 
@@ -20,53 +23,97 @@ export default function ListenPage() {
   const [sentBrand, setSentBrand] = useState('');
   const [sentIndustry, setSentIndustry] = useState('');
   const [sentType, setSentType] = useState('Overall public sentiment right now');
-  
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
+  const { response, isLoading, sendMessage } = useStreamingChat();
+  const { data: searchData, execute: doSearch, isLoading: searchLoading } = useSearch();
+
+  const runMonitor = async () => {
+    if (!brand) return;
+    
+    const searchQueries = {
+      'Brand mentions & sentiment': `${brand} ${industry} India`,
+      'Competitor activity this week': `${competitors || industry} competitor activity India`,
+      'Industry conversations to join': `${industry} trends India 2026`,
+      'Negative sentiment to address': `${brand} complaints issues India`
+    };
+    
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
+      await doSearch('serper', searchQueries[monitorType as keyof typeof searchQueries] || brand, { niche: industry, city });
+      
+      const prompt = `Analyze brand monitoring for ${brand} in ${industry} industry (${city || 'Pan-India'}).
+
+SEARCH RESULTS:
+${searchData?.results?.slice(0, 10).map((r: any) => `${r.title}: ${r.snippet}`).join('\n') || 'No search results'}
+
+Provide:
+- Current brand mentions and sentiment
+- Key conversations happening
+- Opportunities to join
+- Risks to address`;
+      
+      await sendMessage([
+        { role: 'user', content: prompt }
+      ], { task: 'research' });
+    } catch (err) {
+      console.error(err);
     }
-    setLoading(false);
   };
 
-  const runMonitor = () => generate(`Monitor brand: ${brand}. Industry: ${industry}. City: ${city}. Audience: ${audience}. Competitors: ${competitors}. What to monitor: ${monitorType}. Provide a comprehensive monitoring report.`);
-  const runNewsjack = () => generate(`Find today's newsjacking opportunities for ${njBrand}. Platform: ${njPlatform}. What trending topics can we leverage for this brand?`);
-  const runSentiment = () => generate(`Check sentiment for ${sentBrand} in ${sentIndustry} industry. What to find: ${sentType}. Provide detailed sentiment analysis.`);
+  const runNewsjack = async () => {
+    if (!njBrand) return;
+    
+    try {
+      await doSearch('gnews', `trending today India ${njPlatform}`, { niche: njBrand, limit: 10 });
+      
+      const prompt = `Find newsjacking opportunities for ${njBrand}.
+
+TRENDING NEWS:
+${searchData?.results?.slice(0, 8).map((r: any) => `${r.title}: ${r.snippet}`).join('\n') || 'No news found'}
+
+Provide:
+- 3-5 trending topics we can tie into
+- Suggested angles for ${njPlatform}
+- Example hooks for each`;
+      
+      await sendMessage([
+        { role: 'user', content: prompt }
+      ], { task: 'research' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const runSentiment = async () => {
+    if (!sentBrand) return;
+    
+    try {
+      const searchQuery = sentType === 'Overall public sentiment right now' 
+        ? `${sentBrand} ${sentIndustry} reviews India`
+        : sentType === 'What people are complaining about'
+        ? `${sentBrand} complaints problems India`
+        : `${sentBrand} positive reviews India`;
+      
+      await doSearch('reddit', searchQuery, { niche: sentIndustry });
+      
+      const prompt = `Sentiment analysis for ${sentBrand} in ${sentIndustry}.
+
+WHAT PEOPLE ARE SAYING:
+${searchData?.results?.slice(0, 10).map((r: any) => `${r.title}: ${r.snippet}`).join('\n') || 'No results found'}
+
+Provide:
+- Overall sentiment (positive/negative/mixed)
+- Key themes in conversations
+- What people love
+- What people complain about
+- Recommendations for brand`;
+
+      await sendMessage([
+        { role: 'user', content: prompt }
+      ], { task: 'research' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const tabs = [
     { id: 'monitor', label: 'Brand monitoring' },
@@ -84,7 +131,7 @@ export default function ListenPage() {
       
       <div className="tabs mb-4">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}>
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); }} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}>
             {tab.label}
           </button>
         ))}
@@ -114,7 +161,7 @@ export default function ListenPage() {
           </div>
           <div className="field mb-4">
             <label className="lbl">Known competitors (optional)</label>
-            <input value={competitors} onChange={(e) => setCompetitors(e.target.value)} placeholder="e.g. Bhaane, Nicobar, FabIndia — leave blank if unsure" />
+            <input value={competitors} onChange={(e) => setCompetitors(e.target.value)} placeholder="e.g. Bhaane, Nicobar, FabIndia" />
           </div>
           <div className="field mb-4">
             <label className="lbl">What to monitor</label>
@@ -125,7 +172,9 @@ export default function ListenPage() {
               <option>Negative sentiment to address</option>
             </select>
           </div>
-          <button onClick={runMonitor} disabled={loading || !brand} className="run-btn">{loading ? 'Monitoring...' : 'Search & monitor ✦'}</button>
+          <button onClick={runMonitor} disabled={isLoading || searchLoading || !brand} className="run-btn">
+            {isLoading || searchLoading ? 'Monitoring...' : 'Search & monitor ✦'}
+          </button>
         </>
       )}
 
@@ -145,7 +194,9 @@ export default function ListenPage() {
               </select>
             </div>
           </div>
-          <button onClick={runNewsjack} disabled={loading || !njBrand} className="run-btn">{loading ? 'Finding opportunities...' : "Find today's opportunities ✦"}</button>
+          <button onClick={runNewsjack} disabled={isLoading || searchLoading || !njBrand} className="run-btn">
+            {isLoading || searchLoading ? 'Finding opportunities...' : "Find today's opportunities ✦"}
+          </button>
         </>
       )}
 
@@ -170,11 +221,29 @@ export default function ListenPage() {
               <option>Emerging controversies to be aware of</option>
             </select>
           </div>
-          <button onClick={runSentiment} disabled={loading || !sentBrand} className="run-btn">{loading ? 'Checking sentiment...' : 'Check sentiment ✦'}</button>
+          <button onClick={runSentiment} disabled={isLoading || searchLoading || !sentBrand} className="run-btn">
+            {isLoading || searchLoading ? 'Checking sentiment...' : 'Check sentiment ✦'}
+          </button>
         </>
       )}
+
+      {searchData?.results && (
+        <div className="output-wrap mb-4">
+          <div className="output-header">
+            <div className="output-label">🔍 Search Results</div>
+          </div>
+          <div className="output-box" style={{ background: 'var(--bg-card)', maxHeight: '200px', overflow: 'auto' }}>
+            {searchData.results.slice(0, 5).map((r: any, i: number) => (
+              <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px' }}>{r.title}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{r.snippet?.substring(0, 150)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
-      {result && (
+      {response && (
         <div className="output-wrap" style={{ borderLeft: '2px solid var(--accent)' }}>
           <div className="output-header">
             <div className="output-label">
@@ -183,10 +252,10 @@ export default function ListenPage() {
               {activeTab === 'newsjack' && "Newsjacking Opportunities"}
               {activeTab === 'sentiment' && 'Sentiment Report'}
             </div>
-            <button className="action-btn" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+            <button className="action-btn" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
           </div>
           <div className="output-box">
-            {result}
+            {response}
           </div>
         </div>
       )}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
+import { searchInfluencers } from '@/lib/api/search';
 
 type TabType = 'find' | 'pitch' | 'dmauto' | 'brief' | 'track' | 'shortlist';
 
@@ -24,53 +26,76 @@ export default function InfluencerPage() {
   const [briefProduct, setBriefProduct] = useState('');
   const [briefDeliverables, setBriefDeliverables] = useState('');
   const [briefGuidelines, setBriefGuidelines] = useState('');
-  
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const { response, isLoading, error, sendMessage } = useStreamingChat();
+
+  const tierMap: Record<string, string> = {
+    'Nano (1k–10k)': 'nano',
+    'Micro (10k–100k)': 'micro',
+    'Mid-tier (100k–500k)': 'mid',
+    'Macro (500k+)': 'macro'
   };
 
-  const runFind = () => generate(`Find ${count} ${tier} influencers for ${brand}. Niche: ${niche}. Platform: ${platform}. City: ${city}. Content style: ${style}. Offer: ${offer}. Include their handles, follower counts, and engagement rates.`);
-  const runPitch = () => generate(`Write 3 pitch DM templates for ${pitchBrand}. Influencer tier: ${pitchTier}. Platform: ${pitchPlatform}. Include a casual version, professional version, and value-first approach.`);
-  const runBrief = () => generate(`Create a detailed creator brief for ${briefCreator}. Product: ${briefProduct}. Deliverables: ${briefDeliverables}. Guidelines: ${briefGuidelines}. Include timeline, compensation, do's and don'ts, and hashtag requirements.`);
+  const runFind = async () => {
+    if (!brand || !niche) return;
+    
+    setSearchResults(null);
+    
+    try {
+      const results = await searchInfluencers(niche, {
+        niche,
+        platform,
+        city,
+        tier: tierMap[tier],
+        limit: parseInt(count)
+      });
+      setSearchResults(results);
+      
+      const handlesText = results.handles?.length 
+        ? `Found ${results.handles.length} influencer handles: ${results.handles.slice(0, 10).join(', ')}`
+        : 'No specific handles found. Here are relevant profiles:';
+      
+      const summaryPrompt = `${handlesText}
+
+Provide a summary of these influencer search results. For each influencer, include:
+- Profile name/handle
+- Why they're a good fit for ${brand} (${niche})
+- Engagement potential
+- Suggested outreach approach
+
+Search results:
+${results.results.slice(0, 8).map((r: any) => `${r.title}: ${r.snippet}`).join('\n\n')}`;
+
+      await sendMessage([
+        { role: 'system', content: 'You are an influencer marketing expert. Analyze influencer profiles and provide actionable insights.' },
+        { role: 'user', content: summaryPrompt }
+      ], { task: 'influencer' });
+      
+    } catch (err) {
+      console.error('Search error:', err);
+    }
+  };
+
+  const runPitch = async () => {
+    if (!pitchBrand) return;
+    
+    const prompt = `Write 3 pitch DM templates for ${pitchBrand}. Influencer tier: ${pitchTier}. Platform: ${pitchPlatform}. Include a casual version, professional version, and value-first approach.`;
+    
+    await sendMessage([
+      { role: 'user', content: prompt }
+    ], { task: 'content' });
+  };
+
+  const runBrief = async () => {
+    if (!briefCreator) return;
+    
+    const prompt = `Create a detailed creator brief for ${briefCreator}. Product: ${briefProduct}. Deliverables: ${briefDeliverables}. Guidelines: ${briefGuidelines}. Include timeline, compensation, do's and don'ts, and hashtag requirements.`;
+    
+    await sendMessage([
+      { role: 'user', content: prompt }
+    ], { task: 'content' });
+  };
 
   const tabs = [
     { id: 'find', label: 'Find influencers' },
@@ -85,7 +110,7 @@ export default function InfluencerPage() {
     <>
       <div className="stabs">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
             {tab.label}
           </button>
         ))}
@@ -148,9 +173,35 @@ export default function InfluencerPage() {
               <option value="10">10 profiles</option>
             </select>
           </div>
-          <button onClick={runFind} disabled={loading || !brand || !niche} className="run-btn btn-purple">
-            {loading ? 'Searching...' : 'Find influencers ✦'}
+          <button onClick={runFind} disabled={isLoading || !brand || !niche} className="run-btn btn-purple">
+            {isLoading ? 'Searching...' : 'Find influencers ✦'}
           </button>
+
+          {searchResults && searchResults.handles && searchResults.handles.length > 0 && (
+            <div className="output-wrap" style={{ marginTop: '20px' }}>
+              <div className="output-header">
+                <div className="output-label text-purple">
+                  <span className="dot-purple"></span>
+                  Found Handles
+                </div>
+              </div>
+              <div className="output-box" style={{ background: 'var(--bg-card)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {searchResults.handles.map((handle: string, idx: number) => (
+                    <span key={idx} style={{ 
+                      background: 'rgba(168,85,247,0.2)', 
+                      padding: '4px 12px', 
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      color: '#a855f7'
+                    }}>
+                      {handle}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -180,8 +231,8 @@ export default function InfluencerPage() {
               <option>LinkedIn</option>
             </select>
           </div>
-          <button onClick={runPitch} disabled={loading || !pitchBrand} className="run-btn btn-purple">
-            {loading ? 'Generating...' : 'Write pitch DMs ✦'}
+          <button onClick={runPitch} disabled={isLoading || !pitchBrand} className="run-btn btn-purple">
+            {isLoading ? 'Generating...' : 'Write pitch DMs ✦'}
           </button>
         </>
       )}
@@ -236,8 +287,8 @@ export default function InfluencerPage() {
             <label className="lbl">Brand guidelines</label>
             <textarea value={briefGuidelines} onChange={(e) => setBriefGuidelines(e.target.value)} placeholder="e.g. Use brand colors, mention discount code, no competitor products..." rows={3} />
           </div>
-          <button onClick={runBrief} disabled={loading || !briefCreator} className="run-btn btn-purple">
-            {loading ? 'Generating...' : 'Generate brief ✦'}
+          <button onClick={runBrief} disabled={isLoading || !briefCreator} className="run-btn btn-purple">
+            {isLoading ? 'Generating...' : 'Generate brief ✦'}
           </button>
         </>
       )}
@@ -257,21 +308,21 @@ export default function InfluencerPage() {
         </div>
       )}
       
-      {result && (
+      {(response || error) && (
         <div className="output-wrap">
           <div className="output-header">
             <div className="output-label text-purple">
               <span className="dot-purple"></span>
               Results
-              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              <button className="clear-btn" onClick={() => sendMessage([], { task: 'influencer' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
               <button className="excel-export-btn">📄 Excel</button>
-              <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+              <button className="copy-output" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
             </div>
           </div>
           <div className="output-box output-purple">
-            {result}
+            {error || response}
           </div>
         </div>
       )}
