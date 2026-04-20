@@ -1030,21 +1030,47 @@ function detectIntent(msg: string) {
     : isResearch || depth === 'complex' ? 0.15
     : 0.4;
 
-  // Intent scoring data for response composition
-  const intents = topScore > 0.25 
-    ? [[topIntent, topScore], ...(secondScore > 0.25 ? [[secondIntent, secondScore]] : [])]
-    : [[topIntent, topScore]];
+  // Intent priority ordering - emotional always handled first
+  const priorityOrder = ['emotional', 'content', 'strategy', 'research', 'humor', 'casual'];
+  const sortedByPriority = [...sortedEntries].sort((a, b) => {
+    return priorityOrder.indexOf(a[0]) - priorityOrder.indexOf(b[0]);
+  });
+
+  // Behavior guards for response
+  const behaviorGuards = {
+    assumptionBlocker: false,
+    confidenceModerator: false,
+    toneStabilizer: false
+  };
+  
+  // Assumption guard - don't assume audience/demographics unless explicitly given
+  const assumedAudience = /\b(women|men|gen[sz]|tier[\s-]?\d|metro|youth|teenagers)\b/i.test(q);
+  if (!assumedAudience && /my\s+(audience|customers|users|target)\b/i.test(q)) {
+    behaviorGuards.assumptionBlocker = true;
+  }
+  
+  // Confidence guard - moderation needed for absolute claims
+  const absoluteClaims = /\b(always|every time|never fails|guaranteed|100%|certain)\b/i.test(q);
+  if (absoluteClaims && !scores.research) {
+    behaviorGuards.confidenceModerator = true;
+  }
+  
+  // Tone stabilizer - emotional queries need soft start
+  if (hasEmotional) {
+    behaviorGuards.toneStabilizer = true;
+  }
 
   return {
     isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation,
     needsSearch, mode, temp, depth, queryType,
     // New scoring data
     scores,
-    intents,
+    intents: sortedByPriority,
     topIntent,
     hasEmotional,
     isEmotionalHeavy,
-    isLowConfidence
+    isLowConfidence,
+    behaviorGuards
   };
 }
 
@@ -1152,6 +1178,18 @@ export function useMaya() {
 
     const intent = detectIntent(userMsg);
 
+    // Add behavior guard instructions
+    let behaviorInstruction = '';
+    if (intent.behaviorGuards?.assumptionBlocker) {
+      behaviorInstruction += `\n\n⚠️ CONTEXT CHECK: You don't have explicit info about the user's audience demographics. Don't assume - ask for context or give general advice.`;
+    }
+    if (intent.behaviorGuards?.confidenceModerator) {
+      behaviorInstruction += `\n\n⚠️ CONFIDENCE: Avoid absolute claims like "always", "never fails", "100%". Use "often", "typically", "in most cases".`;
+    }
+    if (intent.behaviorGuards?.toneStabilizer) {
+      behaviorInstruction += `\n\n⚠️ TONE: User may be emotional. Start soft and empathetic. Keep response short - they need support, not a strategy session.`;
+    }
+
     // Start chat with context
     const modeInstruction = getModeInstruction(intent.mode);
     
@@ -1172,7 +1210,7 @@ export function useMaya() {
     const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
 
-    const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext;
+    const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext + behaviorInstruction;
 
     const historyLimit = 15;
     const currentMessages = messagesRef.current;
