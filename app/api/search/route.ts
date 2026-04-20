@@ -64,6 +64,8 @@ export async function POST(request: Request) {
   const FINNHUB_KEY = process.env.FINNHUB_KEY;
   const TAVILY_KEY = process.env.TAVILY_API_KEY;
 
+  console.log('[DEBUG] SERPER_KEY exists:', !!SERPER_KEY, 'EXA_KEY:', !!EXA_KEY);
+
   if (provider === 'stocks') {
     const stockSymbols: Record<string, string> = { nifty: '^NSEI', sensex: '^BSESN', reliance: 'RELIANCE.NS', tcs: 'TCS.NS', infosys: 'INFY.NS', hdfc: 'HDFCBANK.NS', icici: 'ICICIBANK.NS', sbi: 'SBIN.NS', adani: 'ADANIENT.NS', tata: 'TATAMOTORS.NS', itc: 'ITC.NS' };
     let symbol = '^NSEI';
@@ -135,6 +137,8 @@ export async function POST(request: Request) {
       }
 
       const resultsArr = await Promise.all(searches);
+      console.log('[DEBUG] Influencer search results count:', resultsArr.length, 'first result keys:', Object.keys(resultsArr[0] || {}));
+      
       let allResults: { title: string; snippet: string; url: string; domain: string }[] = [];
       
       // Handle Serper results
@@ -148,8 +152,11 @@ export async function POST(request: Request) {
         }
       });
 
+      console.log('[DEBUG] Total results:', allResults.length);
+      
       const allText = allResults.map(r => r.title + ' ' + r.snippet).join(' ');
       const handles = (allText.match(/@[a-zA-Z0-9_.]{3,30}/g) || []).filter((v, i, a) => a.indexOf(v) === i).slice(0, 30);
+      console.log('[DEBUG] Found handles:', handles);
 
       return NextResponse.json({ results: scoreAndSortResults(allResults), handles, provider: 'influencer' });
     } catch (e) { console.error('Influencer search error:', e); return NextResponse.json({ results: [], provider: 'influencer' }); }
