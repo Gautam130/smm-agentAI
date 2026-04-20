@@ -5,18 +5,19 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages: baseMessages, temperature = 0.7, maxTokens = 4000, taskType = 'general' } = body;
+    const { messages: baseMessages, temperature = 0.7, maxTokens = 4000, taskType = 'general', task = 'general' } = body;
+    const effectiveTaskType = taskType !== 'general' ? taskType : task;
 
     const smartMaxTokens = 
-      taskType === 'research' ? 6000 :
-      taskType === 'strategy' ? 6000 :
-      taskType === 'calendar' ? 6000 :
-      taskType === 'influencer' ? 5000 :
-      taskType === 'content' ? 4000 :
-      taskType === 'hooks' ? 3000 :
-      taskType === 'chat' ? 3000 :
-      taskType === 'intent' ? 500 :
-      taskType === 'classify' ? 500 :
+      effectiveTaskType === 'research' ? 6000 :
+      effectiveTaskType === 'strategy' ? 6000 :
+      effectiveTaskType === 'calendar' ? 6000 :
+      effectiveTaskType === 'influencer' ? 5000 :
+      effectiveTaskType === 'content' ? 4000 :
+      effectiveTaskType === 'hooks' ? 3000 :
+      effectiveTaskType === 'chat' ? 3000 :
+      effectiveTaskType === 'intent' ? 500 :
+      effectiveTaskType === 'classify' ? 500 :
       // home-search handled by client-side lib/prompt.ts - tokens set there
       maxTokens;
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
       // This is for other taskTypes that need server-side system prompts
     };
 
-    const systemPrompt = systemPrompts[taskType];
+    const systemPrompt = systemPrompts[effectiveTaskType];
     
     const messagesWithSystem = systemPrompt 
       ? [{ role: 'system', content: systemPrompt }, ...baseMessages]
