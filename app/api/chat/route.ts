@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       : baseMessages;
 
     console.log('[CHAT API] Received messages count:', baseMessages.length);
-    console.log('[CHAT API] First few messages:', baseMessages.slice(0, 3).map(m => `${m.role}: ${(m.content || '').substring(0, 80)}`));
+    console.log('[CHAT API] First few messages:', baseMessages.slice(0, 3).map((m: any) => `${m.role}: ${(m.content || '').substring(0, 80)}`));
 
     // Load balancer - picks random Groq key for normal traffic
     const groqKeys = [
