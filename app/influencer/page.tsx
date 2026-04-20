@@ -27,6 +27,7 @@ export default function InfluencerPage() {
   const [briefDeliverables, setBriefDeliverables] = useState('');
   const [briefGuidelines, setBriefGuidelines] = useState('');
 
+  const [trackBrand, setTrackBrand] = useState('');
   const [searchResults, setSearchResults] = useState<any>(null);
   const { response, isLoading, error, sendMessage } = useStreamingChat();
 
@@ -91,6 +92,16 @@ ${results.results.slice(0, 8).map((r: any) => `${r.title}: ${r.snippet}`).join('
     if (!briefCreator) return;
     
     const prompt = `Create a detailed creator brief for ${briefCreator}. Product: ${briefProduct}. Deliverables: ${briefDeliverables}. Guidelines: ${briefGuidelines}. Include timeline, compensation, do's and don'ts, and hashtag requirements.`;
+    
+    await sendMessage([
+      { role: 'user', content: prompt }
+    ], { task: 'content' });
+  };
+
+  const runTrack = async () => {
+    if (!trackBrand) return;
+    
+    const prompt = `Create an influencer tracking spreadsheet structure for ${trackBrand}. Include columns for: influencer name, handle, platform, followers, engagement rate, posts done, reach, conversions, ROI, status (pitched/replied/posting/completed), notes. Also provide tips for tracking effectiveness.`;
     
     await sendMessage([
       { role: 'user', content: prompt }
@@ -238,33 +249,11 @@ ${results.results.slice(0, 8).map((r: any) => `${r.title}: ${r.snippet}`).join('
       )}
 
       {activeTab === 'dmauto' && (
-        <>
-          <div className="notice mb-4" style={{ background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)', padding: '16px', borderRadius: '12px' }}>
-            🤖 <strong>Auto DM System</strong> — Automatically send personalized DMs to influencers from your shortlist.
-          </div>
-          <div className="g2 mb-4">
-            <div className="field">
-              <label className="lbl">Campaign name</label>
-              <input placeholder="e.g. Diwali influencer outreach" />
-            </div>
-            <div className="field">
-              <label className="lbl">DM Template</label>
-              <select>
-                <option>Welcome - Free product</option>
-                <option>Collaboration offer</option>
-                <option>Follow up</option>
-                <option>Custom</option>
-              </select>
-            </div>
-          </div>
-          <div className="field mb-4">
-            <label className="lbl">Selected influencers (from Shortlist)</label>
-            <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No influencers in shortlist. Add influencers from "Find influencers" tab.
-            </div>
-          </div>
-          <button className="run-btn btn-purple">Start Auto DM ✦</button>
-        </>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px' }}>🤖 Auto DM</div>
+          <div style={{ fontSize: '14px', color: '#71717a', marginBottom: '24px' }}>Automatically send personalized DMs to influencers</div>
+          <div className="notice n-purple">⚡ Coming Soon</div>
+        </div>
       )}
 
       {activeTab === 'brief' && (
@@ -294,11 +283,22 @@ ${results.results.slice(0, 8).map((r: any) => `${r.title}: ${r.snippet}`).join('
       )}
 
       {activeTab === 'track' && (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px' }}>📊 Campaign Tracker</div>
-          <div style={{ fontSize: '14px', color: '#71717a', marginBottom: '24px' }}>Track your influencer campaigns from pitch to post</div>
-          <div className="notice n-purple">⚡ Coming Soon</div>
-        </div>
+        <>
+          <div className="notice n-green mb-4">
+            📊 Track your influencer campaigns from pitch to post. Get a spreadsheet-ready structure.
+          </div>
+          <div className="field mb-4">
+            <label className="lbl">Brand / Campaign name</label>
+            <input 
+              value={trackBrand} 
+              onChange={(e) => setTrackBrand(e.target.value)} 
+              placeholder="e.g. Kshm Summer Campaign" 
+            />
+          </div>
+          <button onClick={runTrack} disabled={isLoading || !trackBrand} className="run-btn btn-purple">
+            {isLoading ? 'Generating...' : 'Generate tracker ✦'}
+          </button>
+        </>
       )}
 
       {activeTab === 'shortlist' && (
