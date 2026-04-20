@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
   if (!query?.trim()) return NextResponse.json({ error: 'Query is required' }, { status: 400 });
 
-  // INFLUENCER (NEW)
+// INFLUENCER (NEW)
   if (provider === 'influencer') {
     try {
       const searches = [];
@@ -97,30 +97,56 @@ export async function POST(request: Request) {
       const tierLabel = tier?.toLowerCase() || 'micro';
       const cityStr = city || 'India';
       
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} ${cityStr} Instagram influencer ${tierLabel} ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India creator site:grynow.in ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer site:winkl.com ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer site:plixxo.com ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer site:qoruz.com ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer "paid partnership" ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer collab brand ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
-      
-      if (EXA_KEY) {
-        searches.push(fetch('https://api.exa.ai/search', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': EXA_KEY }, body: JSON.stringify({ query: `${niche || query} India influencer ${cityStr} ${platform || 'Instagram'} ${tierLabel} followers engagement collab ${year}`, num_results: maxResults, highlights: true }) }).then(r => r.json()).catch(() => ({ results: [] })));
+      // Use Serper if key exists
+      if (SERPER_KEY) {
+        searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} ${cityStr} Instagram influencer ${tierLabel} ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
+        searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India creator site:grynow.in ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
+        searches.push(fetch('https://google.serper.dev/search', { method: 'POST', headers: { 'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: `${niche || query} India influencer site:qoruz.com ${year}`, num: maxResults }) }).then(r => r.json()).catch(() => ({ organic: [] })));
+        
+        if (EXA_KEY) {
+          searches.push(fetch('https://api.exa.ai/search', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': EXA_KEY }, body: JSON.stringify({ query: `${niche || query} India influencer ${cityStr} ${platform || 'Instagram'} ${tierLabel} followers engagement collab ${year}`, num_results: maxResults, highlights: true }) }).then(r => r.json()).catch(() => ({ results: [] })));
+        }
+      } else {
+        // DuckDuckGo fallback (free, no API key needed)
+        const ddgQueries = [
+          `${niche || query} ${cityStr} Instagram influencer ${tierLabel} ${year}`,
+          `${niche || query} India influencer collab ${year}`,
+          `${niche || query} lifestyle creator India Instagram`
+        ];
+        
+        for (const ddgQ of ddgQueries.slice(0, 3)) {
+          searches.push(
+            fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(ddgQ)}&kl=in-en`, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+              .then(r => r.ok ? r.text() : Promise.resolve(''))
+              .then(html => {
+                const results: any[] = [];
+                if (html) {
+                  const matches = html.matchAll(/class="result__title"[^>]*>.*?href="([^"]+)"[^>]*>([^<]+)<\/a>[\s\S]*?class="result__snippet"[^>]*>([^<]+)/g);
+                  for (const m of matches) {
+                    results.push({ title: m[2].trim(), snippet: m[3].trim(), url: m[1], domain: m[1].replace(/^https?:\/\//, '').split('/')[0] });
+                    if (results.length >= maxResults) break;
+                  }
+                }
+                return results;
+              })
+              .catch(() => [])
+          );
+        }
       }
 
       const resultsArr = await Promise.all(searches);
       let allResults: { title: string; snippet: string; url: string; domain: string }[] = [];
       
-      resultsArr.slice(0, 7).forEach((data: any) => {
+      // Handle Serper results
+      resultsArr.forEach((data: any, idx) => {
         if (data.organic) {
           allResults.push(...data.organic.map((r: any) => ({ title: r.title || '', snippet: r.snippet || '', url: r.link || '', domain: (r.link || '').replace(/^https?:\/\//, '').split('/')[0] })));
+        } else if (Array.isArray(data)) {
+          allResults.push(...data);
+        } else if (data.results) {
+          allResults.push(...data.results.map((r: any) => ({ title: r.title || '', snippet: (r.highlights?.[0] || r.text || '').substring(0, 300), url: r.url || '', domain: (r.url || '').replace(/^https?:\/\//, '').split('/')[0] })));
         }
       });
-      
-      if (resultsArr[7]?.results) {
-        allResults.push(...resultsArr[7].results.map((r: any) => ({ title: r.title || '', snippet: (r.highlights?.[0] || r.text || '').substring(0, 300), url: r.url || '', domain: (r.url || '').replace(/^https?:\/\//, '').split('/')[0] })));
-      }
 
       const allText = allResults.map(r => r.title + ' ' + r.snippet).join(' ');
       const handles = (allText.match(/@[a-zA-Z0-9_.]{3,30}/g) || []).filter((v, i, a) => a.indexOf(v) === i).slice(0, 30);
