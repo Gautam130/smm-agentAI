@@ -58,6 +58,7 @@ export default function InfluencerPage() {
 
   const [trackBrand, setTrackBrand] = useState('');
   const [searchResults, setSearchResults] = useState<InfluencerProfile[]>([]);
+  const [searchHandles, setSearchHandles] = useState<string[]>([]);
   const [rawResponse, setRawResponse] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const { response, isLoading, error, sendMessage } = useStreamingChat();
@@ -158,7 +159,7 @@ export default function InfluencerPage() {
     setIsSearching(true);
     
     try {
-      const results = await searchInfluencers(niche, {
+      const searchResultsData = await searchInfluencers(niche, {
         niche,
         platform,
         city,
@@ -166,11 +167,11 @@ export default function InfluencerPage() {
         limit: parseInt(count)
       });
 
-      console.log('[DEBUG] Search results:', results.results?.length, 'handles:', results.handles);
-      alert(`Search got ${results.results?.length || 0} results, ${results.handles?.length || 0} handles`);
-
-      const handlesText = results.handles?.length 
-        ? `Found ${results.handles.length} influencer handles: ${results.handles.slice(0, 15).join(', ')}`
+      console.log('[DEBUG] Search results:', searchResultsData.results?.length, 'handles:', searchResultsData.handles);
+      setSearchHandles(searchResultsData.handles || []);
+      
+      const handlesText = searchResultsData.handles?.length 
+        ? `Found ${searchResultsData.handles.length} influencer handles: ${searchResultsData.handles.slice(0, 15).join(', ')}`
         : '';
 
       const prompt = `${handlesText}
@@ -191,7 +192,7 @@ OUTREACH DM: Your personalized DM message
 ===
 
 Search results:
-${results.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippet}`).join('\n\n')}`;
+${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippet}`).join('\n\n')}`;
 
       await sendMessage([
         { role: 'system', content: 'You are an influencer marketing expert. Extract REAL influencer profiles from search results. For each real profile provide structured data. If no real handles found, still analyze the search results and provide best guesses with verified handles from the data.' },
@@ -208,11 +209,14 @@ ${results.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippet}`).join(
   useEffect(() => {
     if (response && response.length > 50) {
       setRawResponse(response);
-      const handles = (response.match(/@[a-zA-Z0-9_.]{3,30}/g) || []).filter((v, i, a) => a.indexOf(v) === i);
-      const parsed = parseInfluencerResponse(response, handles);
+      const parsed = parseInfluencerResponse(response, searchHandles);
+      console.log('[DEBUG] Parsed profiles:', parsed.length);
+      if (parsed.length > 0) {
+        alert(`Showing ${parsed.length} influencer cards!`);
+      }
       setSearchResults(parsed);
     }
-  }, [response]);
+  }, [response, searchHandles]);
 
   const saveToShortlist = (profile: InfluencerProfile) => {
     if (shortlist.find(s => s.handle === profile.handle)) return;
