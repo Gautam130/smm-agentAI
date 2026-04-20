@@ -498,6 +498,13 @@ export default function AskMayaPage() {
     
     try {
       const supabase = getSupabase();
+      
+      // Delete messages first, then conversation
+      await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('conversation_id', conversationToDelete);
+      
       await supabase
         .from('conversations')
         .delete()
