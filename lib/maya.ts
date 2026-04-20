@@ -1123,6 +1123,10 @@ export function useMaya() {
       role: m.role as 'user' | 'assistant',
       content: m.text
     }));
+    
+    console.log('[MAYA DEBUG] Total messages in state:', messages.length);
+    console.log('[MAYA DEBUG] Sending history count:', recentHistory.length);
+    console.log('[MAYA DEBUG] History preview:', recentHistory.slice(-3).map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
 
     let userContent = messageWithContext;
     if (attachments.length > 0) {
