@@ -209,12 +209,15 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
   useEffect(() => {
     if (response && response.length > 50) {
       setRawResponse(response);
+      console.log('[DEBUG] searchHandles:', searchHandles);
       const parsed = parseInfluencerResponse(response, searchHandles);
-      console.log('[DEBUG] Parsed profiles:', parsed.length);
+      console.log('[DEBUG] Parsed profiles:', parsed);
       if (parsed.length > 0) {
         alert(`Showing ${parsed.length} influencer cards!`);
       }
       setSearchResults(parsed);
+    } else {
+      console.log('[DEBUG] No response or too short. response length:', response?.length);
     }
   }, [response, searchHandles]);
 
