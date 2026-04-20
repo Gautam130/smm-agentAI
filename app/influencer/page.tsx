@@ -166,6 +166,9 @@ export default function InfluencerPage() {
         limit: parseInt(count)
       });
 
+      console.log('[DEBUG] Search results:', results.results?.length, 'handles:', results.handles);
+      alert(`Search got ${results.results?.length || 0} results, ${results.handles?.length || 0} handles`);
+
       const handlesText = results.handles?.length 
         ? `Found ${results.handles.length} influencer handles: ${results.handles.slice(0, 15).join(', ')}`
         : '';
