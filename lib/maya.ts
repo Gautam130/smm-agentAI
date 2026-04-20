@@ -902,6 +902,16 @@ function detectIntent(msg: string) {
 
   const isHumorRequest = /funny|make me laugh|masti|karo|comedy| joke|chutkule|hasio|rola|hasi|smile|rofl|lmao/i.test(q);
 
+  // ============ INTENT SCORING v2 ============
+  const scores = {
+    casual: 0,
+    content: 0,
+    strategy: 0,
+    research: 0,
+    emotional: 0,
+    humor: 0
+  };
+
   const negationPatterns = [
     /\b(don't|do not|dont|not |just |only |don't want|not interested in)\b.*\b(write|create|generate|hook|caption|post|content)\b/i,
     /\b(no |don't |not )\b.*\b(hooks?|captions?|posts?)\b/i,
@@ -909,9 +919,31 @@ function detectIntent(msg: string) {
   ];
   const hasNegation = negationPatterns.some(p => p.test(q));
 
-  const isCasual = (wordCount <= 5 &&
-    !/create|write|plan|campaign|strategy|content|hook|caption|influencer|calendar|analyse|research|generate|brand|post|reel/i.test(q)) || isShortInput;
-  const isEmotional = /stressed|frustrated|tired|exhausted|worried|anxious|happy|excited|sad|angry|give up|burnout/i.test(q);
+  // Weighted scoring
+  if (/hook|caption|post|write|create|generate|draft|script|carousel|thread|hashtag|reel|story/i.test(q)) scores.content += 0.4;
+  if (/strategy|plan|audit|growth|competitor|improve|fix|scale|positioning/i.test(q)) scores.strategy += 0.5;
+  if (/research|analyze|compare|benchmark|market|intel|tell me about|who is/i.test(q)) scores.research += 0.5;
+  if (/sad|stressed|tired|frustrated|messing up|burnout|worried|anxious|exhausted/i.test(q)) scores.emotional += 0.7;
+  if (/lol|funny|joke|laugh|masti|comedy|rofl|hasi/i.test(q)) scores.humor += 0.6;
+  
+  // Short input detection
+  if (wordCount <= 5 && !scores.content && !scores.strategy && !scores.research) scores.casual += 0.5;
+
+  // Sort and get top intents
+  const sortedEntries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [topIntent, topScore] = sortedEntries[0];
+  const [secondIntent, secondScore] = sortedEntries[1];
+
+  // Confidence threshold - if all scores low, default to casual
+  const isLowConfidence = topScore < 0.3;
+
+  // Emotional flag (for depth control)
+  const hasEmotional = scores.emotional > 0.4;
+  const isEmotionalHeavy = scores.emotional > 0.6;
+
+  // Legacy compatibility - convert back to binary for existing code
+  const isCasual = scores.casual > 0.3 || isShortInput;
+  const isEmotionalLegacy = scores.emotional > 0.3;
 
   let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
@@ -981,24 +1013,38 @@ function detectIntent(msg: string) {
   const needsSearch = depth === 'deep' || depth === 'complex';
 
   const mode = isHumorRequest ? 'HUMOR'
+    : hasEmotional ? 'EMOTIONAL'
     : isCasual ? 'CASUAL'
-    : isEmotional ? 'EMOTIONAL'
     : isContent ? 'CREATIVE'
     : isStrategy ? 'STRATEGY'
     : isResearch ? 'RESEARCH'
     : 'GENERAL';
 
   // Lower temp for complex (more careful)
+  // Use emotional heavy for depth control
   const temp = isHumorRequest ? 0.95
-    : isCasual || isEmotional ? 0.92
+    : isEmotionalHeavy ? 0.92  // Keep simple when emotional heavy
+    : isCasual ? 0.92
     : isContent ? 0.88
     : isStrategy ? 0.45
     : isResearch || depth === 'complex' ? 0.15
     : 0.4;
 
+  // Intent scoring data for response composition
+  const intents = topScore > 0.25 
+    ? [[topIntent, topScore], ...(secondScore > 0.25 ? [[secondIntent, secondScore]] : [])]
+    : [[topIntent, topScore]];
+
   return {
-    isCasual, isEmotional, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation,
-    needsSearch, mode, temp, depth, queryType
+    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation,
+    needsSearch, mode, temp, depth, queryType,
+    // New scoring data
+    scores,
+    intents,
+    topIntent,
+    hasEmotional,
+    isEmotionalHeavy,
+    isLowConfidence
   };
 }
 
