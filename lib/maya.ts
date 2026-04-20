@@ -205,6 +205,12 @@ Hinglish naturally: "yaar", "bilkul", "ekdum sahi", "bas itna", "kya scene hai".
 
 Lists only when content genuinely needs one.
 
+FORMATTING:
+- NEVER use markdown dividers (***, ---, ===)
+- Use simple line breaks (empty line) between sections instead
+- No bullet over-formatting
+- Clean, minimal formatting
+
 ═══════════════════════════════════════
 BANNED ADVICE — REPLACE WITH SPECIFICS
 ═══════════════════════════════════════
@@ -1310,6 +1316,9 @@ export function useMaya() {
         fullText = e.message || 'Something went wrong. Try again.';
       }
     }
+
+    // Strip *** dividers and replace with empty lines
+    fullText = fullText.replace(/\n*\*\*\*\n*/g, '\n\n').replace(/^\*\*\*$/gm, '');
 
     // Finalize message - only add if conversation hasn't changed
     const convIdForResponse = activeConvIdRef.current;
