@@ -1045,6 +1045,12 @@ export function useMaya() {
   const [streamingText, setStreamingText] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   const activeConvIdRef = useRef<string | null | undefined>(null);
   const onCompleteRef = useRef<((conversationId: string, role: string, text: string) => void) | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -1079,7 +1085,11 @@ export function useMaya() {
     }
     
     const userMsgObj: ChatMessage = { id: crypto.randomUUID(), role: 'user', text: displayMsg, attachments, conversationId: convId ?? null };
-    setMessages(prev => [...prev, userMsgObj]);
+    setMessages(prev => {
+      const updated = [...prev, userMsgObj];
+      messagesRef.current = updated;
+      return updated;
+    });
     activeConvIdRef.current = convId ?? null;
     setIsLoading(true);
 
@@ -1119,12 +1129,13 @@ export function useMaya() {
     const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext;
 
     const historyLimit = 15;
-    const recentHistory = messages.slice(-historyLimit).map(m => ({
+    const currentMessages = messagesRef.current;
+    const recentHistory = currentMessages.slice(-historyLimit).map(m => ({
       role: m.role as 'user' | 'assistant',
       content: m.text
     }));
     
-    console.log('[MAYA DEBUG] Total messages in state:', messages.length);
+    console.log('[MAYA DEBUG] Total messages in state:', currentMessages.length);
     console.log('[MAYA DEBUG] Sending history count:', recentHistory.length);
     console.log('[MAYA DEBUG] History preview:', recentHistory.slice(-3).map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
 
@@ -1236,7 +1247,9 @@ export function useMaya() {
         onCompleteRef.current = null;
       }
       
-      return [...prev, newMsg];
+      const updated = [...prev, newMsg];
+      messagesRef.current = updated;
+      return updated;
     });
   }, []);
 
