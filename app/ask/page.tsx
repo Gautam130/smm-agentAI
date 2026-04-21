@@ -148,11 +148,11 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        <ReactMarkdown>{message.text}</ReactMarkdown>
+        <CitationBlock text={message.text} />
       </div>
     </div>
   );
-});
+}, (prev, next) => prev.message.id === next.message.id && prev.message.text === next.message.text);
 
 interface MessagesListProps {
   messages: ChatMessage[];
