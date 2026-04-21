@@ -915,7 +915,8 @@ function detectIntent(msg: string) {
     strategy: 0,
     research: 0,
     emotional: 0,
-    humor: 0
+    humor: 0,
+    image: 0
   };
 
   const negationPatterns = [
@@ -931,6 +932,7 @@ function detectIntent(msg: string) {
   if (/research|analyze|compare|benchmark|market|intel|tell me about|who is/i.test(q)) scores.research += 0.5;
   if (/sad|stressed|tired|frustrated|messing up|burnout|worried|anxious|exhausted/i.test(q)) scores.emotional += 0.7;
   if (/lol|funny|joke|laugh|masti|comedy|rofl|hasi/i.test(q)) scores.humor += 0.6;
+  if (/image|pic|photo|generate.*visual|create.*image|make.*image|design|art|illustration|cover.*image|banner|poster/i.test(q)) scores.image += 0.5;
   
   // Short input detection
   if (wordCount <= 5 && !scores.content && !scores.strategy && !scores.research) scores.casual += 0.5;
@@ -954,6 +956,7 @@ function detectIntent(msg: string) {
   let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
   let isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
+  let isImage = /image|pic|photo|visual|design|art|illustration|cover.*image|banner|poster/i.test(q);
 
   if (hasNegation) {
     if (/\b(research|analyse|analyze|info|about|tell me)\b/i.test(q)) isResearch = true;
@@ -1018,7 +1021,8 @@ function detectIntent(msg: string) {
   // ===== SEARCH DECISION =====
   const needsSearch = depth === 'deep' || depth === 'complex';
 
-  const mode = isHumorRequest ? 'HUMOR'
+  const mode = isImage ? 'IMAGE'
+    : isHumorRequest ? 'HUMOR'
     : hasEmotional ? 'EMOTIONAL'
     : isCasual ? 'CASUAL'
     : isContent ? 'CREATIVE'
@@ -1067,7 +1071,7 @@ function detectIntent(msg: string) {
   }
 
   return {
-    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation,
+    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation, isImage,
     needsSearch, mode, temp, depth, queryType,
     // New scoring data
     scores,
@@ -1093,6 +1097,8 @@ function getModeInstruction(mode: string): string {
     STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. ₹ amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there ₹ amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
     RESEARCH: '\n\nMODE: RESEARCH\nOUTPUT: Detailed but controlled. Lead with key insight.\nBEFORE RESPONDING:\n1. Are facts backed by sources?\n2. Did I invent numbers? Say "reports suggest" if unsure.\n3. Did I blend sources naturally, not in blocks?\n4. Did I over-explain? Be precise.',
+
+    IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief - they want to see the image.',
 
     GENERAL: '\n\nMODE: GENERAL\nOUTPUT: Concise and direct.\nBEFORE RESPONDING:\n1. Is this concise?\n2. Did I avoid "I" at the start?\n3. Did I soften if unsure?\n4. Did I over-explain?\n5. Did I answer the question directly?',
   };
@@ -1261,6 +1267,56 @@ export function useMaya() {
     const tokenLimit = hasAttachments 
       ? (intent.isContent ? 6000 : intent.isStrategy ? 6000 : intent.needsSearch ? 8000 : 5000)
       : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
+
+    // Image generation mode - call Modal directly instead of chat API
+    if (intent.isImage) {
+      setIsLoading(true);
+      try {
+        const imageRes = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: userMsg })
+        });
+        
+        if (!imageRes.ok) {
+          throw new Error('Image generation failed');
+        }
+        
+        const imageData = await imageRes.json();
+        
+        if (imageData.error) {
+          throw new Error(imageData.error);
+        }
+        
+        fullText = imageData.success 
+          ? `Here's your image! ✨\n\n![Generated Image](${imageData.image_url || imageData.image})\n\n*Liked it? I can create variations or different styles.*`
+          : 'Image generation failed. Try again?';
+      } catch(e: any) {
+        fullText = e.message || 'Image generation failed. Try again?';
+      }
+      
+      // Finalize
+      const convIdForResponse = activeConvIdRef.current;
+      setIsLoading(false);
+      setStreamingText('');
+      loadingRef.current = false;
+      
+      if (convIdForResponse === undefined) return;
+      
+      setMessages(prev => {
+        const lastMsg = prev[prev.length - 1];
+        if (lastMsg?.conversationId !== convIdForResponse) return prev;
+        const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: fullText, conversationId: convIdForResponse };
+        if (onCompleteRef.current && convIdForResponse) {
+          onCompleteRef.current(convIdForResponse, 'assistant', newMsg.text);
+          onCompleteRef.current = null;
+        }
+        const updated = [...prev, newMsg];
+        messagesRef.current = updated;
+        return updated;
+      });
+      return;
+    }
 
     abortRef.current = new AbortController();
     let fullText = '';

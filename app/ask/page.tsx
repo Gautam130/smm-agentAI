@@ -135,59 +135,99 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
                   {att.name}
                 </div>
               ))}
-            </div>
-          )}
-          {message.text}
-          <div className="chat-time">{getTime()}</div>
-        </div>
-      </div>
-    );
-  }
+</div>
+        )}
 
-  return (
-    <div className="maya-message">
-      <div className="maya-avatar">M</div>
-      <div className="maya-text">
-        <CitationBlock text={message.text} />
-      </div>
+      {/* Image Generation Modal */}
+      {showImageGen && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+          onClick={(e) => e.target === e.currentTarget && setShowImageGen(false)}
+        >
+          <div 
+            style={{
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '90%',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>Generate Image</h3>
+              <button 
+                onClick={() => setShowImageGen(false)}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '20px' }}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              id="image-gen-prompt"
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '12px',
+                color: '#fff',
+                fontSize: '14px',
+                resize: 'none',
+                marginBottom: '16px',
+              }}
+              placeholder="Describe the image you want to create..."
+            />
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowImageGen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: 'rgba(255,255,255,0.8)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const prompt = (document.getElementById('image-gen-prompt') as HTMLTextAreaElement)?.value;
+                  if (prompt?.trim()) {
+                    setShowImageGen(false);
+                    sendMessage(prompt);
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #00ffcc, #00cc99)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: '#000',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}, (prev, next) => prev.message.id === next.message.id);
-
-interface MessagesListProps {
-  messages: ChatMessage[];
-  chatRef: React.RefObject<HTMLDivElement | null>;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  isSwitching?: boolean;
-  streamingText?: string;
 }
-
-const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching, streamingText }: MessagesListProps) {
-  return (
-    <div 
-      ref={chatRef} 
-      style={{ padding: '20px 24px' }}
-    >
-      {isSwitching ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-          <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#14B8A6', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-        </div>
-      ) : messages.length === 0 && !streamingText ? (
-        <div className="text-center" style={{ color: '#666', padding: '40px', fontSize: '14px' }}>
-          Ask Maya anything about your social media strategy
-        </div>
-      ) : (
-        <>
-          {messages.map((msg) => (
-            <div key={msg.id} style={{ marginBottom: '24px' }}>
-              <CompletedMessage message={msg} />
-            </div>
-          ))}
-          {streamingText !== undefined && streamingText !== '' && (
-            <div style={{ marginBottom: '24px' }}>
-              <StreamingMessage text={streamingText} />
-            </div>
-          )}
           <div ref={messagesEndRef} />
         </>
       )}
@@ -218,6 +258,7 @@ export default function AskMayaPage() {
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showImageGen, setShowImageGen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -1218,6 +1259,21 @@ export default function AskMayaPage() {
                       </svg>
                       Upload Image
                     </label>
+                    <button 
+                      className="attach-option" 
+                      onClick={() => {
+                        setShowAttachMenu(false);
+                        setShowImageGen(true);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <path d="M21 15l-5-5L5 21"/>
+                      </svg>
+                      Generate Image
+                    </button>
                     {ocrProgress && (
                       <div style={{ padding: '8px 12px', fontSize: '11px', color: '#00ffcc', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                         {ocrProgress}
