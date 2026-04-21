@@ -1271,6 +1271,7 @@ export function useMaya() {
     // Image generation mode - call Modal directly instead of chat API
     if (intent.isImage) {
       setIsLoading(true);
+      let imageResult = '';
       try {
         const imageRes = await fetch('/api/generate-image', {
           method: 'POST',
@@ -1288,11 +1289,11 @@ export function useMaya() {
           throw new Error(imageData.error);
         }
         
-        fullText = imageData.success 
+        imageResult = imageData.success 
           ? `Here's your image! ✨\n\n![Generated Image](${imageData.image_url || imageData.image})\n\n*Liked it? I can create variations or different styles.*`
           : 'Image generation failed. Try again?';
       } catch(e: any) {
-        fullText = e.message || 'Image generation failed. Try again?';
+        imageResult = e.message || 'Image generation failed. Try again?';
       }
       
       // Finalize
@@ -1306,7 +1307,7 @@ export function useMaya() {
       setMessages(prev => {
         const lastMsg = prev[prev.length - 1];
         if (lastMsg?.conversationId !== convIdForResponse) return prev;
-        const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: fullText, conversationId: convIdForResponse };
+        const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: imageResult, conversationId: convIdForResponse };
         if (onCompleteRef.current && convIdForResponse) {
           onCompleteRef.current(convIdForResponse, 'assistant', newMsg.text);
           onCompleteRef.current = null;

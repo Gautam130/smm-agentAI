@@ -135,99 +135,56 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
                   {att.name}
                 </div>
               ))}
-</div>
-        )}
-
-      {/* Image Generation Modal */}
-      {showImageGen && (
-        <div 
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-          }}
-          onClick={(e) => e.target === e.currentTarget && setShowImageGen(false)}
-        >
-          <div 
-            style={{
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-              borderRadius: '16px',
-              padding: '24px',
-              maxWidth: '500px',
-              width: '90%',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>Generate Image</h3>
-              <button 
-                onClick={() => setShowImageGen(false)}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '20px' }}
-              >
-                ×
-              </button>
             </div>
-            <textarea
-              id="image-gen-prompt"
-              style={{
-                width: '100%',
-                minHeight: '80px',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                padding: '12px',
-                color: '#fff',
-                fontSize: '14px',
-                resize: 'none',
-                marginBottom: '16px',
-              }}
-              placeholder="Describe the image you want to create..."
-            />
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowImageGen(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  color: 'rgba(255,255,255,0.8)',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const prompt = (document.getElementById('image-gen-prompt') as HTMLTextAreaElement)?.value;
-                  if (prompt?.trim()) {
-                    setShowImageGen(false);
-                    sendMessage(prompt);
-                  }
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, #00ffcc, #00cc99)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 20px',
-                  color: '#000',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Generate
-              </button>
-            </div>
-          </div>
+          )}
+          <ReactMarkdown>{message.text}</ReactMarkdown>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', textAlign: 'right' }}>{getTime()}</div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+      <div className="bubble-maya">
+        <ReactMarkdown>{message.text}</ReactMarkdown>
+        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>{getTime()}</div>
+      </div>
     </div>
   );
+});
+
+interface MessagesListProps {
+  messages: ChatMessage[];
+  chatRef: React.RefObject<HTMLDivElement | null>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  isSwitching?: boolean;
+  streamingText?: string;
 }
+
+const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching, streamingText }: MessagesListProps) {
+  return (
+    <div ref={chatRef} style={{ padding: '20px 24px' }}>
+      {isSwitching ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+          <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#14B8A6', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+        </div>
+      ) : messages.length === 0 && !streamingText ? (
+        <div style={{ color: '#666', padding: '40px', fontSize: '14px', textAlign: 'center' }}>
+          Ask Maya anything about your social media strategy
+        </div>
+      ) : (
+        <>
+          {messages.map((msg) => (
+            <div key={msg.id} style={{ marginBottom: '24px' }}>
+              <CompletedMessage message={msg} />
+            </div>
+          ))}
+          {streamingText !== undefined && streamingText !== '' && (
+            <div style={{ marginBottom: '24px' }}>
+              <StreamingMessage text={streamingText} />
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </>
       )}
@@ -1405,6 +1362,94 @@ export default function AskMayaPage() {
           background: rgba(255,255,255,0.06) !important;
         }
       `}</style>
+
+      {/* Image Generation Modal */}
+      {showImageGen && (
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+          onClick={(e) => e.target === e.currentTarget && setShowImageGen(false)}
+        >
+          <div 
+            style={{
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '90%',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ color: '#fff', margin: 0, fontSize: '18px' }}>Generate Image</h3>
+              <button 
+                onClick={() => setShowImageGen(false)}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '20px' }}
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              id="image-gen-prompt"
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '12px',
+                color: '#fff',
+                fontSize: '14px',
+                resize: 'none',
+                marginBottom: '16px',
+              }}
+              placeholder="Describe the image you want to create..."
+            />
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowImageGen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: 'rgba(255,255,255,0.8)',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const prompt = (document.getElementById('image-gen-prompt') as HTMLTextAreaElement)?.value;
+                  if (prompt?.trim()) {
+                    setShowImageGen(false);
+                    sendMessage(prompt);
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #00ffcc, #00cc99)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  color: '#000',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
