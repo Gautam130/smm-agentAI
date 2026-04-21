@@ -5,12 +5,10 @@ Usage: modal deploy modal_generate.py
 
 import io
 import base64
-import os
 
 import modal
-from modal import Image, Secret
+from modal import Image
 
-# Image with required dependencies
 image = (
     Image.from_registry("pytorch/pytorch:2.4.0-cuda12.4-cudnn9-runtime")
     .pip_install(
@@ -26,7 +24,6 @@ image = (
 
 app = modal.App("flux-gen", image=image)
 
-# Global model cache
 pipe = None
 
 
@@ -38,10 +35,10 @@ pipe = None
 @modal.fastapi_endpoint(method="POST")
 def generate(request):
     """Generate image from prompt using FLUX.1-schnell"""
-    from flask import request as flask_request
+    from fastapi import Request
     import json
 
-    data = flask_request.get_json()
+    data = request.json()
     prompt = data.get("prompt", "") or data.get("p", "")
     width = data.get("width", 1024)
     height = data.get("height", 1024)
@@ -49,7 +46,7 @@ def generate(request):
     guidance = data.get("guidance", 3.0)
 
     if not prompt:
-        return json.dumps({"error": "No prompt provided"}), 400, {"Content-Type": "application/json"}
+        return {"error": "No prompt provided"}
 
     global pipe
     try:
@@ -58,7 +55,6 @@ def generate(request):
             from diffusers import FluxPipeline
             import torch
 
-            # Use public model (no auth needed for FLUX.1-schnell)
             pipe = FluxPipeline.from_pretrained(
                 "black-forest-labs/FLUX.1-schnell",
                 torch_dtype=torch.float16,
@@ -76,17 +72,16 @@ def generate(request):
             max_sequence_length=256,
         ).images[0]
 
-        # Convert to base64
         buffer = io.BytesIO()
         result.save(buffer, format="PNG")
         img_b64 = base64.b64encode(buffer.getvalue()).decode()
 
-        return json.dumps({
+        return {
             "success": True,
             "image": f"data:image/png;base64,{img_b64}",
             "prompt": prompt,
-        }), 200, {"Content-Type": "application/json"}
+        }
 
     except Exception as e:
         print(f"Error: {e}")
-        return json.dumps({"error": str(e)}), 500, {"Content-Type": "application/json"}
+        return {"error": str(e)}
