@@ -126,11 +126,11 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
   if (message.role === 'user') {
     return (
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-        <div className="bubble-user" style={{ background: '#14B8A6', color: '#000', padding: '12px 16px', borderRadius: '18px', maxWidth: '80%' }}>
+        <div className="bubble-user">
           {message.attachments && message.attachments.length > 0 && (
             <div style={{ marginBottom: '8px' }}>
               {message.attachments.map((att: any, idx: number) => (
-                <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.1)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
+                <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '11px', marginRight: '4px', marginBottom: '4px' }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   {att.name}
                 </div>
@@ -138,16 +138,16 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
             </div>
           )}
           <ReactMarkdown>{message.text}</ReactMarkdown>
-          <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '4px', textAlign: 'right' }}>{getTime()}</div>
+          <div className="chat-time">{getTime()}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="maya-message" style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '24px' }}>
+    <div className="maya-message">
       <div className="maya-avatar">M</div>
-      <div className="maya-text" style={{ flex: 1 }}>
+      <div className="maya-text">
         <ReactMarkdown>{message.text}</ReactMarkdown>
       </div>
     </div>
