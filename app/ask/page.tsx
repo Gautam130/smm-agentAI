@@ -160,9 +160,11 @@ interface MessagesListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   isSwitching?: boolean;
   streamingText?: string;
+  isLoading?: boolean;
+  mayaStatus?: string;
 }
 
-const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching, streamingText }: MessagesListProps) {
+const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEndRef, isSwitching, streamingText, isLoading, mayaStatus }: MessagesListProps) {
   return (
     <div ref={chatRef} style={{ padding: '20px 24px' }}>
       {isSwitching ? (
@@ -1159,7 +1161,7 @@ export default function AskMayaPage() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
-            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} isSwitching={isSwitching} streamingText={streamingText} />
+            <MessagesList messages={messages} chatRef={chatRef as React.RefObject<HTMLDivElement | null>} messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement | null>} isSwitching={isSwitching} streamingText={streamingText} isLoading={isLoading} mayaStatus={mayaStatus} />
           </div>
         </div>
 

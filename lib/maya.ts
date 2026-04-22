@@ -1192,6 +1192,7 @@ export function useMaya() {
       updateUserContext(userIdRef.current, userMsg);
     }
 
+    // Set status based on intent
     const intent = detectIntent(userMsg);
 
     // Set status based on intent
