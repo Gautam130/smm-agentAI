@@ -1128,6 +1128,7 @@ export function useMaya() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [mayaStatus, setMayaStatus] = useState<string>('');
   const abortRef = useRef<AbortController | null>(null);
   const loadingRef = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -1177,9 +1178,11 @@ export function useMaya() {
     });
     activeConvIdRef.current = convId ?? null;
     setIsLoading(true);
+    setMayaStatus('Understanding your question...');
 
     // Fetch knowledge context from Supabase
     const context = await fetchMayaContext(userMsg, userIdRef.current || undefined);
+    setMayaStatus('Loading knowledge...');
     const messageWithContext = context
       ? `${context}\n\nUSER QUERY: ${userMsg}`
       : userMsg;
@@ -1190,6 +1193,19 @@ export function useMaya() {
     }
 
     const intent = detectIntent(userMsg);
+
+    // Set status based on intent
+    if (intent.needsSearch) {
+      setMayaStatus('Researching your question...');
+    } else if (intent.isContent) {
+      setMayaStatus('Creating content...');
+    } else if (intent.isStrategy) {
+      setMayaStatus('Building strategy...');
+    } else if (intent.isImage) {
+      setMayaStatus('Generating image...');
+    } else {
+      setMayaStatus('Thinking...');
+    }
 
     // Add behavior guard instructions
     let behaviorInstruction = '';
@@ -1420,8 +1436,9 @@ export function useMaya() {
     abortRef.current?.abort();
     setIsLoading(false);
     setStreamingText('');
+    setMayaStatus('');
     activeConvIdRef.current = undefined;
   }, []);
 
-  return { messages, isLoading, streamingText, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState };
+  return { messages, isLoading, streamingText, sendMessage, clearChat, stopStreaming, setMessages: setMessagesState, mayaStatus };
 }

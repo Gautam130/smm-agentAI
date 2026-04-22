@@ -185,6 +185,16 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
               <StreamingMessage text={streamingText} />
             </div>
           )}
+          {isLoading && !streamingText && mayaStatus && (
+            <div style={{ 
+              color: '#14B8A6', 
+              fontSize: '14px',
+              fontStyle: 'italic',
+              padding: '8px 0'
+            }}>
+              {mayaStatus}
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </>
       )}
@@ -211,7 +221,7 @@ function getRelativeTime(dateStr: string): string {
 export default function AskMayaPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const { messages, isLoading, streamingText, sendMessage, clearChat, setMessages } = useMaya();
+  const { messages, isLoading, streamingText, sendMessage, clearChat, setMessages, mayaStatus } = useMaya();
   const [input, setInput] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string; content?: string; file?: File; previewUrl?: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
