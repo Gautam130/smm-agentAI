@@ -1097,7 +1097,7 @@ function getModeInstruction(mode: string): string {
 
     STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. ₹ amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there ₹ amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
-    RESEARCH: '\n\nMODE: RESEARCH\nOUTPUT: Detailed but controlled. Lead with key insight.\nBEFORE RESPONDING:\n1. Are facts backed by sources?\n2. Did I invent numbers? Say "reports suggest" if unsure.\n3. Did I blend sources naturally, not in blocks?\n4. Did I over-explain? Be precise.',
+    RESEARCH: '\n\nMODE: RESEARCH\nOUTPUT: Use this STRUCTURE for each insight:\n- WHAT: What is happening (1-2 sentences)\n- WHY: Why it matters/root cause\n- SO WHAT: What this means for user\n- REAL: Specific example or data point\n\nKeep each insight in this structure. Lead with key insight.\nBEFORE RESPONDING:\n1. Are facts backed by sources?\n2. Cite sources inline at end of sentence.\n3. Did I blend sources naturally?\n4. Be concise - no marketing hype.',
 
     IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief - they want to see the image.',
 
