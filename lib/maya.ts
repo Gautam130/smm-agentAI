@@ -957,7 +957,7 @@ function detectIntent(msg: string) {
   let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
   let isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
-  let isImage = /image|pic|photo|visual|design|art|illustration|cover.*image|banner|poster/i.test(q);
+  let isImage = /\b(image|pic|photo|visual|design|art|illustration)\b|banner|poster|cover\s*image/i.test(q);
 
   if (hasNegation) {
     if (/\b(research|analyse|analyze|info|about|tell me)\b/i.test(q)) isResearch = true;
