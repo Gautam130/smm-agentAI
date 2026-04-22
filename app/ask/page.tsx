@@ -169,7 +169,7 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
     <div ref={chatRef} style={{ padding: '20px 24px' }}>
       {isSwitching ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-          <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#14B8A6', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+          <div style={{ width: '20px', height: '20px', border: '2px solid #333', borderTopColor: '#ffffff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
         </div>
       ) : messages.length === 0 && !streamingText ? (
         <div style={{ color: '#666', padding: '40px', fontSize: '14px', textAlign: 'center' }}>
@@ -192,12 +192,12 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
               <div style={{ 
                 width: '16px', 
                 height: '16px', 
-                border: '2px solid #14B8A6', 
+                border: '2px solid #ffffff', 
                 borderTopColor: 'transparent', 
                 borderRadius: '50%', 
                 animation: 'spin 0.7s linear infinite' 
               }} />
-              <span style={{ color: '#14B8A6', fontSize: '14px', fontStyle: 'italic' }}>
+              <span style={{ color: '#ffffff', fontSize: '14px', fontStyle: 'italic' }}>
                 {mayaStatus}
               </span>
             </div>
@@ -1078,7 +1078,7 @@ export default function AskMayaPage() {
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
-                background: '#14B8A6',
+                background: '#ffffff',
                 color: '#000',
                 display: 'flex',
                 alignItems: 'center',

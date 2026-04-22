@@ -314,7 +314,7 @@ export default function HomePage() {
           width: 32px;
           height: 32px;
           border-radius: 50%;
-          background: #14B8A6;
+          background: #ffffff;
           color: #0A0A0B;
           display: flex;
           align-items: center;
