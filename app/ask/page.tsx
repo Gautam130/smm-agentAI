@@ -86,6 +86,18 @@ function CitationBlock({ text }: { text: string }) {
     return ` [BADGE:${trimmed}]`;
   });
 
+  // Handle source names on their own line followed by period
+  // Pattern: newline, source name starting with capital, newline, period
+  processed = processed.replace(/\n([A-Z][A-Za-z\s&]+?)\n\./g, (_, source) => {
+    return ` [BADGE:${source.trim()}]`;
+  });
+
+  // Handle source names at end of text followed by just a period (no newline needed)
+  // Pattern: space, source name, period at end of text
+  processed = processed.replace(/([A-Z][A-Za-z\s&]+?)\.\s*$/gm, (_, source) => {
+    return ` [BADGE:${source.trim()}]`;
+  });
+
   // Remove standalone domain names on their own line
   processed = processed.replace(/\n([A-Za-z0-9_\-\.]+\.(com|org|co|in|net|io|ai|dev|info|biz))\s*\n/gi, '\n');
 
