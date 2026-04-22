@@ -483,7 +483,7 @@ async function fetchUserContext(userId: string): Promise<string | null> {
       .from('user_context')
       .select('business_type, audience, goals, brand_name')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     if (error || !data) return null;
     
@@ -506,7 +506,7 @@ async function getUserContextRaw(userId: string): Promise<{ business_type?: stri
       .from('user_context')
       .select('business_type, audience')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     if (error || !data) return null;
     return data;
@@ -529,7 +529,7 @@ async function updateUserContext(userId: string, message: string): Promise<void>
       .from('user_context')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     // Update with new values (overwrite if exists)
     const updated: Partial<UserContext> = {
@@ -586,7 +586,7 @@ async function getCachedSearch(queryHash: string): Promise<any[] | null> {
       .select('results')
       .eq('query_hash', queryHash)
       .gt('expires_at', new Date().toISOString())
-      .single();
+      .maybeSingle();
     
     if (error || !data) return null;
     return data.results;
