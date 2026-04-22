@@ -188,13 +188,18 @@ const MessagesList = memo(function MessagesList({ messages, chatRef, messagesEnd
             </div>
           )}
           {isLoading && !streamingText && mayaStatus && (
-            <div style={{ 
-              color: '#14B8A6', 
-              fontSize: '14px',
-              fontStyle: 'italic',
-              padding: '8px 0'
-            }}>
-              {mayaStatus}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0' }}>
+              <div style={{ 
+                width: '16px', 
+                height: '16px', 
+                border: '2px solid #14B8A6', 
+                borderTopColor: 'transparent', 
+                borderRadius: '50%', 
+                animation: 'spin 0.7s linear infinite' 
+              }} />
+              <span style={{ color: '#14B8A6', fontSize: '14px', fontStyle: 'italic' }}>
+                {mayaStatus}
+              </span>
             </div>
           )}
           <div ref={messagesEndRef} />
