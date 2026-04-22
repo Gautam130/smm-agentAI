@@ -241,9 +241,10 @@ TONE: Researcher's voice
 - Accurate > Engaging
 
 CITATION RULES (MUST FOLLOW):
-- Source inline at END of sentence: "Muse Spark processes text and images (Meta Blog)."
-- NEVER put source on separate line
-- NEVER cite without inline format
+- ALWAYS inline at END of sentence: "products DataReportal." ← source right after period
+- NEVER put source on new line like "products\nDataReportal" ← this is WRONG
+- NEVER separate source from sentence with newline
+- Each sentence that has a claim must cite immediately after period
 
 SEPARATION RULES:
 - NEVER conflate different products: "Muse Spark" ≠ "TRIBE"
