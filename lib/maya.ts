@@ -1097,7 +1097,7 @@ function getModeInstruction(mode: string): string {
 
     STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. ₹ amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there ₹ amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
-    RESEARCH: '\n\nMODE: RESEARCH\nOUTPUT: Detailed but controlled. Lead with key insight.\nBEFORE RESPONDING:\n1. Are facts backed by sources?\n2. Did I invent numbers? Say "reports suggest" if unsure.\n3. Did I blend sources naturally, not in blocks?\n4. Did I over-explain? Be precise.',
+    RESEARCH: '\n\nYou are a sharp research analyst. When given a topic or question, write a brief that a smart, busy person would actually find useful. Lead with the most important thing — could be a counterintuitive finding, a "why now", a single reframing data point, or a clear stance. Don\'t follow a fixed structure. Let the logic of the topic dictate the shape. Be specific, cite sources inline, no padding, no generic observations. 3-5 sentences max per idea. End with one concrete implication.',
 
     IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief - they want to see the image.',
 
