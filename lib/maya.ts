@@ -1195,17 +1195,17 @@ export function useMaya() {
     // Set status based on intent
     const intent = detectIntent(userMsg);
 
-    // Set status based on intent
+    // Set status based on intent - with emoji prefixes
     if (intent.needsSearch) {
-      setMayaStatus('Researching your question...');
+      setMayaStatus('🔍 Searching...');
     } else if (intent.isContent) {
-      setMayaStatus('Creating content...');
+      setMayaStatus('✍️ Creating content...');
     } else if (intent.isStrategy) {
-      setMayaStatus('Building strategy...');
+      setMayaStatus('🎯 Building strategy...');
     } else if (intent.isImage) {
-      setMayaStatus('Generating image...');
+      setMayaStatus('🎨 Generating image...');
     } else {
-      setMayaStatus('Thinking...');
+      setMayaStatus('💭 Thinking...');
     }
 
     // Add behavior guard instructions
