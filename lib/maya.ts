@@ -849,10 +849,9 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
         }
-        // Remove trailing source name that appears on separate line or end (e.g., "...areas\nEconomic Times" or "...Economic Times")
-        snippet = snippet.replace(/\s*\n\s*(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint)\s*$/i, '');
-        // Also catch same-line trailing sources
-        snippet = snippet.replace(/\s+(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint)\s*$/i, '');
+        // Remove trailing source name that appears on separate line (e.g., "...users\nForbes India\n")
+        // Handles: \n\nSourceName, \nSourceName, with possible spaces before/after
+        snippet = snippet.replace(/\s*[\r\n]+\s*(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint|DataReportal|McKinsey|KPMG|World Bank)\s*$/gi, '');
         return `${snippet} (${r.source})`;
       }).join(' | ');
     };
