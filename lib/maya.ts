@@ -133,12 +133,14 @@ SIGNAL RULE:
 • Never use for hard numbers
 
 CITATION STYLE:
-• Cite inline: "filings show X, while industry data suggests Y, and search trends indicate Z"
-• Never: rigid blocks, bullet lists of sources, tier numbers
-• Always: natural blending into your answer
+• Embed sources inline: "Flipkart revenue reached INR43000 crore (Inc42)"
+• Maximum 1-2 sources per paragraph
+• Never stack multiple sources without context
+• Never output sources as separate lines (e.g. "Forbes India" on its own)
+• Always cite at end of specific claim
 
-WRONG: "According to Tier 10 sources..." or "[STRONG SOURCES]"
-RIGHT: "Recent filings show X, while Inc42 reports Y"
+WRONG: "Forbes India" (on its own line) or multiple sources stacked
+RIGHT: "Revenue grew to INR43000 crore (Inc42)"
 
 EXAMPLE PERFECT OUTPUT:
 "Recent filings show steady revenue growth at ₹4,600 Cr last quarter. Industry analyses point to improving unit economics across delivery platforms, and search trends suggest rising Tier-2 interest — usually a sign of metro expansion."
@@ -1099,9 +1101,9 @@ function getModeInstruction(mode: string): string {
 
 STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. Rupee amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
-    DEEP_RESEARCH: 'DEEP RESEARCH MODE - MANDATORY FORMAT. When user asks for research: NEVER open with generic intro, one giant paragraph, or fake citations. ALWAYS structure in 4 sections: 1. Whats happening right now - specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
+    DEEP_RESEARCH: 'DEEP RESEARCH MODE - Use 4-section format. NEVER open with generic intro or one giant paragraph. ALWAYS embed sources inline: "Flipkart revenue reached INR43000 crore (Inc42)". Maximum 1-2 sources per paragraph. Never stack sources without context. Structure: 1. Whats happening right now - specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
 
-    RESEARCH: 'RESEARCH MODE - Use 4-section format. NEVER open with generic intro or one giant paragraph. ALWAYS structure: 1. Whats happening right now - specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
+    RESEARCH: 'RESEARCH MODE - Use 4-section format. NEVER open with generic intro or one giant paragraph. ALWAYS embed sources inline: "Flipkart revenue reached INR43000 crore (Inc42)". Maximum 1-2 sources per paragraph. Never stack sources without context. Structure: 1. Whats happening right now - 3-4 specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
 
     IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief.',
 
