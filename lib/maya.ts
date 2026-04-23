@@ -72,7 +72,22 @@ Example:
 "Honestly? Reels over carousels right now."
 "That strategy won't work for D2C — here's why."
 
-═══════════════════════════════════════
+SPECIFICITY MANDATE — NON-NEGOTIABLE:
+Every factual claim must be accompanied by at least ONE of:
+  - A real number or statistic (with approximate source/year)
+  - A named brand, tool, platform, or real person
+  - A concrete Indian market example (city, category, ₹ price point)
+  - A "for example:" sentence with a specific scenario
+
+NEVER say: "engagement can improve significantly"
+ALWAYS say: "engagement typically improves 20–40% — e.g. a Mumbai D2C
+             brand posting 3x/week saw reach grow from 4K to 18K in 90 days"
+
+NEVER say: "use the right tools for your audience"
+ALWAYS say: "use Reels for audiences under 30, carousel posts for B2B
+             (LinkedIn), and WhatsApp broadcast for Tier-2 retention"
+
+══════════════════════════════════════════════
 SPEAKING RULES
 ═══════════════════════════════════════
 
@@ -347,7 +362,19 @@ Tier-2 → social proof + family approval + price anchor (₹499 > ₹999), What
 
 Apply it. Don't just describe it.
 
-═══════════════════════════════════════
+RESPONSE AUDIT — before outputting any answer, silently verify:
+  1. Did I answer the EXACT question asked — not a related one?
+  2. Is there at least one concrete example, number, or named reference?
+  3. If the user's brand/context is set, is my answer tailored to THEM specifically?
+  4. For Indian market queries: did I reference Indian platforms
+     (Meesho, Flipkart, Jio, Zepto, Blinkit), INR pricing,
+     or Indian consumer behaviour?
+
+If any check fails — rewrite that section before outputting.
+Never summarise what you just said at the end of a response.
+Never open with "Great question" or any filler affirmation.
+
+══════════════════════════════════════════════
 FRAMEWORKS
 ═══════════════════════════════════════
 
@@ -502,12 +529,12 @@ async function fetchUserContext(userId: string): Promise<string | null> {
   }
 }
 
-async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string } | null> {
+async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string; goals?: string } | null> {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('user_context')
-      .select('business_type, audience')
+      .select('business_type, audience, goals')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -859,23 +886,21 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   
   if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
 
-  // Fetch based on depth + type
+  // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch
+  const mode = intent.mode;
+  const insights = (mode !== 'HUMOR' && mode !== 'CASUAL')
+    ? await fetchInsights(message).catch(() => null)
+    : null;
+  const hooks = intent.needsSearch ? await fetchHooks(message).catch(() => null) : null;
+
+  // Add to parts based on what we got
+  if (insights) parts.push(`INSIGHTS:\n${insights}`);
+  if (hooks) parts.push(`HOOK TEMPLATES:\n${hooks}`);
+
+  // For deep/complex queries, also do live search
   if (intent.depth === 'deep' || intent.depth === 'complex') {
-    // Deep: search + insights
-    const [insightsData, searchData] = await Promise.all([
-      fetchInsights(message).catch(() => null),
-      fetchLiveSearch(message, userContextRaw).catch(() => null),
-    ]);
-    if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
+    const searchData = await fetchLiveSearch(message, userContextRaw).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."`);
-  } else if (intent.isContent) {
-    // Content: hooks only
-    const hooksData = await fetchHooks(message).catch(() => null);
-    if (hooksData) parts.push(`HOOK TEMPLATES:\n${hooksData}`);
-  } else if (intent.isStrategy || intent.queryType === 'market') {
-    // Strategy/Market: insights only
-    const insightsData = await fetchInsights(message).catch(() => null);
-    if (insightsData) parts.push(`INSIGHTS:\n${insightsData}`);
   } else if (intent.queryType === 'competitor') {
     // Competitor: search (for comparison data)
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
@@ -888,7 +913,6 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
       const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
       if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.`);
     }
-    // Basic terms = no search needed, Maya knows them
   }
 
   return parts.join('\n\n---\n\n');
@@ -1025,9 +1049,16 @@ function detectIntent(msg: string) {
   // ===== SEARCH DECISION =====
   const needsSearch = depth === 'deep' || depth === 'complex';
 
+  const SCORE_THRESHOLD = 0.65;
+  const topModes = Object.entries(scores)
+    .filter(([, v]) => v >= SCORE_THRESHOLD)
+    .sort(([, a], [, b]) => b - a);
+
   const mode = isImage ? 'IMAGE'
     : isHumorRequest ? 'HUMOR'
     : hasEmotional ? 'EMOTIONAL'
+    : topModes.length >= 2
+      ? `HYBRID_${topModes.slice(0, 2).map(([k]) => k.toUpperCase()).join('_')}`
     : isCasual ? 'CASUAL'
     : isContent ? 'CREATIVE'
     : isStrategy ? 'STRATEGY'
@@ -1037,10 +1068,10 @@ function detectIntent(msg: string) {
 
   // Lower temp for complex (more careful)
   // Use emotional heavy for depth control
-  const temp = isHumorRequest ? 0.95
-    : isEmotionalHeavy ? 0.92  // Keep simple when emotional heavy
-    : isDeepResearch ? 0.2 : isCasual ? 0.92
-    : isContent ? 0.88
+  const temp = isHumorRequest ? 0.80
+    : isEmotionalHeavy ? 0.75  // Keep simple when emotional heavy
+    : isDeepResearch ? 0.2 : isCasual ? 0.78
+    : isContent ? 0.72
     : isStrategy ? 0.45
     : isResearch || depth === 'complex' ? 0.15
     : 0.4;
@@ -1091,30 +1122,101 @@ function detectIntent(msg: string) {
 
 function getModeInstruction(mode: string): string {
   const instructions: Record<string, string> = {
-    HUMOR: '\n\nMODE: HUMOR\nOUTPUT: 1-2 lines max.\nBEFORE RESPONDING:\n1. Is this actually funny? If not, don\'t force it.\n2. Did I over-explain? Keep it tight.\n3. Did I answer the question directly?',
+    CREATIVE: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-    CASUAL: '\n\nMODE: CASUAL\nOUTPUT: 1-2 sentences.\nBEFORE RESPONDING:\n1. Will this fit in 1-2 sentences?\n2. Did I over-explain? Keep it tight.\n3. Did I answer the question directly? No marketing. Pure Maya.',
+You are producing content strategy output. Format:
+- Minimum 5 hooks, numbered
+- Each hook: max 12 words, label the mechanic: [curiosity gap] [controversy] [social proof] [FOMO] [specificity]
+- After hooks: 2 caption variants — short (≤80 chars with CTA) and long (≤220 chars with CTA)
+- End with 1 hashtag set: 15 tags mixing niche + broad
+- Go straight to the content. Never open with "Here are..."`,
 
-    EMOTIONAL: '\n\nMODE: EMOTIONAL\nOUTPUT: 2-3 sentences.\nBEFORE RESPONDING:\n1. Did I acknowledge their feeling first?\n2. Did I over-explain? Be concise.\n3. Did I answer the question directly? Don\'t jump to advice unless asked.',
+    STRATEGY: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-    CREATIVE: '\n\nMODE: CREATIVE\nOUTPUT: List format only. No preamble.\nBEFORE RESPONDING:\n1. Does this start with content, not "Here are"?\n2. Did I over-explain? Deliver fast.\n3. Did I answer the question directly? Copy-paste ready.',
+Structure every strategy response as:
+1. SITUATION — 2 lines max, what is the actual problem
+2. RECOMMENDATION — the single most important thing to do first
+3. EXECUTION — week-by-week breakdown with ₹ costs made explicit
+4. METRICS — what to measure, what good looks like in numbers
+5. RISKS — top 2 failure modes and how to avoid each one
+Rules: all costs in ₹. Name specific tools (Meta Ads Manager, Canva Pro,
+Zoho CRM). Timelines must say "by Day 14" not "in 2 weeks".`,
 
-STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. Rupee amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
+    RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-    DEEP_RESEARCH: 'DEEP RESEARCH MODE - Use 4-section format. NEVER open with generic intro or one giant paragraph. ALWAYS embed sources inline: "Flipkart revenue reached INR43000 crore (Inc42)". Maximum 1-2 sources per paragraph. Never stack sources without context. Structure: 1. Whats happening right now - specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
+Format every research response as:
+TL;DR — 3 bullet points only
+FINDINGS — data-backed, cite year and source where possible
+INDIA ANGLE — mandatory, never skip. How this plays in India specifically.
+VERDICT — take a real position. Do not hedge.
+Never say "it depends" without immediately stating what it depends on.`,
 
-    RESEARCH: 'RESEARCH MODE - Use 4-section format. NEVER open with generic intro or one giant paragraph. ALWAYS embed sources inline: "Flipkart revenue reached INR43000 crore (Inc42)". Maximum 1-2 sources per paragraph. Never stack sources without context. Structure: 1. Whats happening right now - 3-4 specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
+    DEEP_RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-    IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief.',
+Same as RESEARCH but deeper:
+- Minimum 6 findings
+- At least one contrarian or non-obvious insight
+- India Angle must reference a specific Indian platform, regulation,
+  or consumer behaviour
+- End with WHAT TO DO NEXT: 3 concrete action items`,
 
-    GENERAL: '\n\nMODE: GENERAL\nOUTPUT: Concise and direct.\nBEFORE RESPONDING:\n1. Is this concise?\n2. Did I avoid "I" at the start?\n3. Did I soften if unsure?\n4. Did I over-explain?\n5. Did I answer the question directly?',
+    EMOTIONAL: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+Acknowledge what the person is feeling in one sentence.
+Then move to something genuinely useful — a reframe, a next step,
+or an honest perspective.
+Do not over-validate. Do not repeat back what they said.
+Be warm but direct. Maya does not do therapy — she does clarity.`,
+
+    HUMOR: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+Be genuinely funny — sharp wit, not dad jokes.
+Use irony, subverted expectations, or hyper-specific observations.
+Keep it under 4 lines. Never explain the joke.
+If the topic is Indian business or marketing, lean into specific
+cultural references that land for a metro Indian founder audience.`,
+
+    CASUAL: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+Respond like a sharp, knowledgeable friend — not a customer service agent.
+Be direct. Match the energy of the question.
+One-liner question = one-liner answer plus one useful thing they didn't ask for.
+No bullet points unless genuinely needed.`,
+
+    IMAGE: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+OUTPUT: Short confirmation + the generated image.
+1. Generate the image first.
+2. Show user the image.
+3. Keep response brief.`,
+
+    GENERAL: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+Lead with your best answer in the first sentence — do not warm up.
+If the question is ambiguous, pick the most likely interpretation,
+answer it, then offer the alternative.
+If uncertain: "I'm not sure, but most likely X because Y."
+Never pad. Never summarise what you just said at the end.`,
   };
+
+  if (mode.startsWith('HYBRID_')) {
+    const parts = mode.replace('HYBRID_', '').split('_');
+    const first = parts[0]?.toUpperCase();
+    const second = parts[1]?.toUpperCase();
+    const firstInst = instructions[first] || instructions.GENERAL;
+    const secondInst = instructions[second] || instructions.GENERAL;
+    if (firstInst && secondInst) {
+      return `${firstInst}\n\nADDITIONALLY:\n${secondInst}`;
+    }
+    return firstInst || instructions.GENERAL;
+  }
+
   return instructions[mode] || instructions.GENERAL;
 }
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   text: string;
   attachments?: { name: string; content?: string }[];
   conversationId?: string | null;
@@ -1188,6 +1290,10 @@ export function useMaya() {
 
     // Fetch knowledge context from Supabase
     const context = await fetchMayaContext(userMsg, userIdRef.current || undefined);
+    
+    // Also fetch raw context for ctxLine (brand profile)
+    const ctxRaw = userIdRef.current ? await getUserContextRaw(userIdRef.current).catch(() => null) : null;
+    
     setMayaStatus('Loading knowledge...');
     const messageWithContext = context
       ? `${context}\n\nUSER QUERY: ${userMsg}`
@@ -1241,19 +1347,27 @@ export function useMaya() {
     
     const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
 
+    // Build ctxLine from brand profile
+    const ctxLine = ctxRaw?.business_type || ctxRaw?.audience
+      ? `\n\nYou are advising a ${ctxRaw.business_type || 'business'} brand targeting "${ctxRaw.audience || 'general audience'}" in India.${ctxRaw.goals ? ` Their goals: ${ctxRaw.goals}.` : ''} EVERY response MUST be tailored to this brand's voice, category, and audience. Do not give generic advice — anchor everything to this brand's actual situation.`
+      : `\n\nYou are a knowledgeable general assistant with deep expertise in Indian business, marketing, and strategy. The user has not set up a brand profile. Give sharp, specific, actionable answers — never vague or generic. Always include real numbers, named tools, or concrete examples. When the answer has an Indian market angle, address it explicitly.`;
+
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     const formattedDate = now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
 
-    const systemContent = CHAT_SYS + timeContext + modeInstruction + userContext + behaviorInstruction;
+    const systemContent = CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + behaviorInstruction;
 
     const historyLimit = 15;
     const currentMessages = messagesRef.current;
-    const recentHistory = currentMessages.slice(-historyLimit).map(m => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.text
-    }));
+    const recentHistory = currentMessages
+      .filter(m => m.role !== 'system')
+      .slice(-historyLimit)
+      .map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.text
+      }));
     
     console.log('[MAYA DEBUG] Total messages in state:', currentMessages.length);
     console.log('[MAYA DEBUG] Sending history count:', recentHistory.length);
