@@ -428,7 +428,7 @@ async function fetchInsights(message: string): Promise<string | null> {
     if (!data || data.length === 0) return null;
 
     return data.map((r: any) =>
-      `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}${r.source ? ` (${r.source})` : ''}`
+      `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}`
     ).join('\n\n');
   } catch (e) {
     console.warn('Failed to fetch insights:', e);
@@ -841,7 +841,7 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     const topResults = results.slice(0, 2);
     const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
-    // Build natural flowing snippets
+    // Build natural flowing snippets (no source attribution for clean display)
     const buildNaturalSnippet = (arr: any[]) => {
       return arr.map((r: any) => {
         // Shorten content to ~150-200 chars
@@ -849,7 +849,7 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
         }
-        return `${snippet} (${r.source})`;
+        return snippet;
       }).join(' | ');
     };
     
@@ -860,9 +860,9 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
       output += buildNaturalSnippet(topResults);
     }
     
-    // Signal source (max 1, always last)
+    // Signal (max 1, for context only - no citation noise)
     if (signalResults.length > 0) {
-      output += '\n\nSIGNALS: ' + signalResults[0].content.substring(0, 150) + '... (trends)';
+      output += '\n\nSIGNALS: ' + signalResults[0].content.substring(0, 150) + '...';
     }
     
     return output;
