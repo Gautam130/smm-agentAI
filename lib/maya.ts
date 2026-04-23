@@ -957,6 +957,7 @@ function detectIntent(msg: string) {
   let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
   let isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
+  let isDeepResearch = /deep research|deep dive|full analysis/i.test(q);
   let isImage = /\b(image|pic|photo|visual|design|art|illustration)\b|banner|poster|cover\s*image/i.test(q);
 
   if (hasNegation) {
@@ -1028,6 +1029,7 @@ function detectIntent(msg: string) {
     : isCasual ? 'CASUAL'
     : isContent ? 'CREATIVE'
     : isStrategy ? 'STRATEGY'
+    : isDeepResearch ? 'DEEP_RESEARCH'
     : isResearch ? 'RESEARCH'
     : 'GENERAL';
 
@@ -1035,7 +1037,7 @@ function detectIntent(msg: string) {
   // Use emotional heavy for depth control
   const temp = isHumorRequest ? 0.95
     : isEmotionalHeavy ? 0.92  // Keep simple when emotional heavy
-    : isCasual ? 0.92
+    : isDeepResearch ? 0.2 : isCasual ? 0.92
     : isContent ? 0.88
     : isStrategy ? 0.45
     : isResearch || depth === 'complex' ? 0.15
@@ -1072,7 +1074,7 @@ function detectIntent(msg: string) {
   }
 
   return {
-    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isHumorRequest, isShortInput, hasNegation, isImage,
+    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isDeepResearch, isHumorRequest, isShortInput, hasNegation, isImage,
     needsSearch, mode, temp, depth, queryType,
     // New scoring data
     scores,
@@ -1095,11 +1097,13 @@ function getModeInstruction(mode: string): string {
 
     CREATIVE: '\n\nMODE: CREATIVE\nOUTPUT: List format only. No preamble.\nBEFORE RESPONDING:\n1. Does this start with content, not "Here are"?\n2. Did I over-explain? Deliver fast.\n3. Did I answer the question directly? Copy-paste ready.',
 
-    STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. ₹ amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there ₹ amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
+STRATEGY: '\n\nMODE: STRATEGY\nOUTPUT: Structured. Rupee amounts + timeline + ONE action at end.\nBEFORE RESPONDING:\n1. Did I diagnose the problem first?\n2. Is there amounts and a timeline?\n3. Did I end with ONE most important action?\n4. Did I over-explain? Be decisive.',
 
-    RESEARCH: '\n\nYou are a sharp research analyst. When given a topic or question, write a brief that a smart, busy person would actually find useful. Lead with the most important thing — could be a counterintuitive finding, a "why now", a single reframing data point, or a clear stance. Don\'t follow a fixed structure. Let the logic of the topic dictate the shape. Be specific, cite sources inline, no padding, no generic observations. 15-20 sentences. End with one concrete implication.',
+    DEEP_RESEARCH: 'DEEP RESEARCH MODE - MANDATORY FORMAT. When user asks for research: NEVER open with generic intro, one giant paragraph, or fake citations. ALWAYS structure in 4 sections: 1. Whats happening right now - specific things today with implications. 2. The numbers - 5-7 data points with sources. 3. The strategic read - gap in market, what competitors do wrong. 4. What to do about it - This week, In 30 days, Longer bet. TONE: Write like strategist briefing founder. Use INR, India context always.',
 
-    IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief - they want to see the image.',
+    RESEARCH: 'You are a sharp research analyst. When given a topic, lead with most important thing. Be specific, cite sources inline. 15-20 sentences. End with one concrete implication.',
+
+    IMAGE: '\n\nMODE: IMAGE\nOUTPUT: Short confirmation + the generated image.\nBEFORE RESPONDING:\n1. Generate the image first.\n2. Show user the image.\n3. Keep response brief.',
 
     GENERAL: '\n\nMODE: GENERAL\nOUTPUT: Concise and direct.\nBEFORE RESPONDING:\n1. Is this concise?\n2. Did I avoid "I" at the start?\n3. Did I soften if unsure?\n4. Did I over-explain?\n5. Did I answer the question directly?',
   };
@@ -1277,14 +1281,14 @@ export function useMaya() {
     const apiMessages = [
       { role: 'system' as const, content: systemContent },
       ...recentHistory,
-      { role: 'user' as const, content: userContent }
+      { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use mandatory 4-section format with ==== section dividers]\n\n${userContent}` : userContent }
     ];
 
     // Increase tokens if attachments present (PDF content can be long)
     const hasAttachments = attachments.length > 0;
     const tokenLimit = hasAttachments 
       ? (intent.isContent ? 6000 : intent.isStrategy ? 6000 : intent.needsSearch ? 8000 : 5000)
-      : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
+      : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isDeepResearch ? 6000 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
 
     // Image generation mode - call Modal directly instead of chat API
     if (intent.isImage) {
@@ -1348,7 +1352,7 @@ export function useMaya() {
           messages: apiMessages,
           temperature: intent.temp,
           maxTokens: tokenLimit,
-          taskType: intent.isHumorRequest ? 'humor' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat'
+          taskType: intent.isHumorRequest ? 'humor' : intent.isDeepResearch ? 'research' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat'
         }),
         signal: abortRef.current.signal
       });
