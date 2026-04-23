@@ -428,7 +428,7 @@ async function fetchInsights(message: string): Promise<string | null> {
     if (!data || data.length === 0) return null;
 
     return data.map((r: any) =>
-      `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}`
+      `**${r.topic}**: ${r.insight}${r.data_point ? ` [${r.data_point}]` : ''}${r.source ? ` (${r.source})` : ''}`
     ).join('\n\n');
   } catch (e) {
     console.warn('Failed to fetch insights:', e);
@@ -841,7 +841,7 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     const topResults = results.slice(0, 2);
     const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
-    // Build natural flowing snippets (no source attribution for clean display)
+    // Build natural flowing snippets - strip duplicate source at end of content
     const buildNaturalSnippet = (arr: any[]) => {
       return arr.map((r: any) => {
         // Shorten content to ~150-200 chars
@@ -849,7 +849,9 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
         }
-        return snippet;
+        // Remove trailing source name if already in content (e.g., "...Economic Times")
+        snippet = snippet.replace(/\s+(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint)\s*$/i, '');
+        return `${snippet} (${r.source})`;
       }).join(' | ');
     };
     
@@ -860,9 +862,9 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
       output += buildNaturalSnippet(topResults);
     }
     
-    // Signal (max 1, for context only - no citation noise)
+    // Signal source (max 1, always last)
     if (signalResults.length > 0) {
-      output += '\n\nSIGNALS: ' + signalResults[0].content.substring(0, 150) + '...';
+      output += '\n\nSIGNALS: ' + signalResults[0].content.substring(0, 150) + '... (trends)';
     }
     
     return output;
