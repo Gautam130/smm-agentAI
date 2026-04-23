@@ -841,7 +841,7 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     const topResults = results.slice(0, 2);
     const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
-    // Build natural flowing snippets - strip duplicate source at end of content
+// Build natural flowing snippets - strip duplicate source at end of content
     const buildNaturalSnippet = (arr: any[]) => {
       return arr.map((r: any) => {
         // Shorten content to ~150-200 chars
@@ -849,9 +849,9 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
         }
-        // Remove trailing source name that appears on separate line (e.g., "...users\nForbes India\n")
-        // Handles: \n\nSourceName, \nSourceName, with possible spaces before/after
-        snippet = snippet.replace(/\s*[\r\n]+\s*(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint|DataReportal|McKinsey|KPMG|World Bank)\s*$/gi, '');
+        // Remove trailing source name that appears on separate line
+        // Matches: "...users\nForbes India" or "...users.\nForbes India" with possible spaces
+        snippet = snippet.replace(/\.?\s*[\r\n]+\s*(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint|DataReportal|McKinsey|KPMG|World Bank)\s*$/gi, '');
         return `${snippet} (${r.source})`;
       }).join(' | ');
     };
