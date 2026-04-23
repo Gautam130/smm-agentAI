@@ -89,7 +89,11 @@ ALWAYS say: "use Reels for audiences under 30, carousel posts for B2B
 
 ══════════════════════════════════════════════
 SPEAKING RULES
-═══════════════════════════════════════
+══════════════════════════════════════════════
+
+Never use markdown bold (**) in any response.
+Never use === or *** as section dividers.
+Write in plain text only. Use line breaks and spacing to separate sections — not symbols, not markdown formatting, not dividers of any kind.
 
 NUMBER FORMATTING:
 - ₹2,200 crore NOT $264M
@@ -903,18 +907,18 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   // For deep/complex queries, also do live search
   if (intent.depth === 'deep' || intent.depth === 'complex') {
     const searchData = await fetchLiveSearch(message, userContextRaw).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."`);
+    if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'competitor') {
     // Competitor: search (for comparison data)
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.`);
+    if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'glossary') {
     // Glossary: only search for niche/technical terms
     const nicheTerms = /\b(ROAS|CAC|LTV|ARPU|ERM|ABM|SOV|CPM|CPC|CTR)\b/i.test(message);
     if (nicheTerms) {
       // Niche terms = light search
       const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-      if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.`);
+      if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
     }
   }
 
@@ -1515,8 +1519,13 @@ export function useMaya() {
       }
     }
 
-    // Strip *** dividers and replace with empty lines
-    fullText = fullText.replace(/\n*\*\*\*\n*/g, '\n\n').replace(/^\*\*\*$/gm, '');
+    // Strip *** and ==== dividers, strip bold markdown
+    fullText = fullText
+      .replace(/\n*\*\*\*\n*/g, '\n\n')
+      .replace(/^\*\*\*$/gm, '')
+      .replace(/\n*====+\n*/g, '\n\n')
+      .replace(/^====+$/gm, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1');
 
     // Finalize message - only add if conversation hasn't changed
     const convIdForResponse = activeConvIdRef.current;
