@@ -896,30 +896,30 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   // Skip insights/hooks/search only for instant depth - not user context
   if (intent.depth === 'instant' || intent.isCasual) return parts.join('\n\n---\n\n');
 
-  // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch
+  // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch + campaign
   const mode = intent.mode;
   const insights = (mode !== 'HUMOR' && mode !== 'CASUAL')
     ? await fetchInsights(message).catch(() => null)
     : null;
-  const hooks = intent.needsSearch ? await fetchHooks(message).catch(() => null) : null;
+  const hooks = (intent.needsSearch || intent.isCampaign) ? await fetchHooks(message).catch(() => null) : null;
 
   // Add to parts based on what we got
   if (insights) parts.push(`INSIGHTS:\n${insights}`);
   if (hooks) parts.push(`HOOK TEMPLATES:\n${hooks}`);
 
-  // For deep/complex queries, also do live search
+  // Fetch live search based on query type
   if (intent.depth === 'deep' || intent.depth === 'complex') {
     const searchData = await fetchLiveSearch(message, userContextRaw).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'competitor') {
-    // Competitor: search (for comparison data)
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+  } else if (intent.queryType === 'market') {
+    const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'glossary') {
-    // Glossary: only search for niche/technical terms
     const nicheTerms = /\b(ROAS|CAC|LTV|ARPU|ERM|ABM|SOV|CPM|CPC|CTR)\b/i.test(message);
     if (nicheTerms) {
-      // Niche terms = light search
       const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
       if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
     }
@@ -995,6 +995,7 @@ function detectIntent(msg: string) {
   let isResearch = /research|analyse|analyze|market|intel|competitor|landscape|report|brand|who is|tell me about/i.test(q);
   let isDeepResearch = /deep research|deep dive|full analysis/i.test(q);
   let isImage = /\b(image|pic|photo|visual|design|art|illustration)\b|banner|poster|cover\s*image/i.test(q);
+  const isCampaign = /campaign|diwali|holi|eid|navratri|festival|launch|sale offer|ideas for/i.test(q);
 
   if (hasNegation) {
     if (/\b(research|analyse|analyze|info|about|tell me)\b/i.test(q)) isResearch = true;
@@ -1057,7 +1058,7 @@ function detectIntent(msg: string) {
   }
 
   // ===== SEARCH DECISION =====
-  const needsSearch = depth === 'deep' || depth === 'complex' || isContent || queryType === 'glossary' || queryType === 'market';
+  const needsSearch = depth === 'deep' || depth === 'complex' || isContent || queryType === 'glossary' || queryType === 'market' || isCampaign;
 
   const SCORE_THRESHOLD = 0.65;
   const topModes = Object.entries(scores)
@@ -1117,7 +1118,7 @@ function detectIntent(msg: string) {
   }
 
   return {
-    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isDeepResearch, isHumorRequest, isShortInput, hasNegation, isImage,
+    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isDeepResearch, isHumorRequest, isShortInput, hasNegation, isImage, isCampaign,
     needsSearch, mode, temp, depth, queryType,
     // New scoring data
     scores,
