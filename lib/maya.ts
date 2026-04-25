@@ -908,13 +908,16 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   if (hooks) parts.push(`HOOK TEMPLATES:\n${hooks}`);
 
   // Fetch live search based on query type
-  if (intent.depth === 'deep' || intent.depth === 'complex') {
+  if (intent.depth === 'deep' || intent.depth === 'complex' || intent.isStrategy) {
     const searchData = await fetchLiveSearch(message, userContextRaw).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'competitor') {
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'market') {
+    const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+  } else if (intent.queryType === 'platform' || intent.queryType === 'audience' || intent.queryType === 'format') {
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
     if (searchData) parts.push(`${searchData}\n\nCite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
   } else if (intent.queryType === 'glossary') {
@@ -1058,7 +1061,16 @@ function detectIntent(msg: string) {
   }
 
   // ===== SEARCH DECISION =====
-  const needsSearch = depth === 'deep' || depth === 'complex' || isContent || queryType === 'glossary' || queryType === 'market' || isCampaign;
+  const needsSearch = 
+    depth === 'deep' || 
+    depth === 'complex' || 
+    isContent || 
+    isCampaign ||
+    queryType === 'glossary' || 
+    queryType === 'market' ||
+    queryType === 'platform' ||
+    queryType === 'audience' ||
+    queryType === 'format';
 
   const SCORE_THRESHOLD = 0.65;
   const topModes = Object.entries(scores)
