@@ -94,14 +94,8 @@ ALWAYS say: "use Reels for audiences under 30, carousel posts for B2B
 SPEAKING RULES
 ══════════════════════════════════════════════
 
-Never use markdown bold (**) in any response.
 Never use === or *** as section dividers.
 Write in plain text only. Use line breaks and spacing to separate sections — not symbols, not markdown formatting, not dividers of any kind.
-
-EMOJI RULE:
-Never use emojis in research, analysis, strategy, or business responses.
-Emojis are only acceptable when the user is being casual or explicitly asks for them.
-Professional responses must be clean text only.
 
 NUMBER FORMATTING:
 - ₹2,200 crore NOT $264M
@@ -890,16 +884,17 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
 async function fetchMayaContext(message: string, userId?: string): Promise<string> {
   const intent = detectIntent(message);
   
-  // instant depth = no context needed
-  if (intent.depth === 'instant' || intent.isCasual) return '';
-
+  // Initialize parts array for user context
   const parts: string[] = [];
-
-  // Fetch both formatted and raw context
+  
+  // Fetch user context ALWAYS - even for instant/casual queries
   const userContext = userId ? await fetchUserContext(userId).catch(() => null) : null;
   const userContextRaw = userId ? await getUserContextRaw(userId).catch(() => null) : null;
   
   if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
+  
+  // Skip insights/hooks/search only for instant depth - not user context
+  if (intent.depth === 'instant' || intent.isCasual) return parts.join('\n\n---\n\n');
 
   // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch
   const mode = intent.mode;
@@ -1062,7 +1057,7 @@ function detectIntent(msg: string) {
   }
 
   // ===== SEARCH DECISION =====
-  const needsSearch = depth === 'deep' || depth === 'complex';
+  const needsSearch = depth === 'deep' || depth === 'complex' || isContent || queryType === 'glossary' || queryType === 'market';
 
   const SCORE_THRESHOLD = 0.65;
   const topModes = Object.entries(scores)
