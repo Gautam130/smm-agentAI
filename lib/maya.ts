@@ -95,6 +95,11 @@ Never use markdown bold (**) in any response.
 Never use === or *** as section dividers.
 Write in plain text only. Use line breaks and spacing to separate sections — not symbols, not markdown formatting, not dividers of any kind.
 
+EMOJI RULE:
+Never use emojis in research, analysis, strategy, or business responses.
+Emojis are only acceptable when the user is being casual or explicitly asks for them.
+Professional responses must be clean text only.
+
 NUMBER FORMATTING:
 - ₹2,200 crore NOT $264M
 - 4.5 lakh NOT 450,000
@@ -1160,12 +1165,18 @@ Never say "it depends" without immediately stating what it depends on.`,
 
     DEEP_RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-Same as RESEARCH but deeper:
-- Minimum 6 findings
-- At least one contrarian or non-obvious insight
-- India Angle must reference a specific Indian platform, regulation,
-  or consumer behaviour
-- End with WHAT TO DO NEXT: 3 concrete action items`,
+Use 4 sections with clean text dividers (━━━━ Section Name ━━━━):
+
+━━━━ What's happening right now ━━━━
+━━━━ The numbers ━━━━
+━━━━ The strategic read ━━━━
+━━━━ What to do ━━━━
+
+Always end with:
+Start here today: (bold) - one specific action they can take immediately.
+
+Minimum 6 findings, at least one contrarian insight, India Angle mandatory.
+Never use emojis in any research/strategy response.`,
 
     EMOTIONAL: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
@@ -1404,7 +1415,7 @@ export function useMaya() {
     const apiMessages = [
       { role: 'system' as const, content: systemContent },
       ...recentHistory,
-      { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use mandatory 4-section format with ==== section dividers]\n\n${userContent}` : userContent }
+      { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use 4-section format with clean text dividers (━━━━ Section Name ━━━━)]\n\n${userContent}` : userContent }
     ];
 
     // Increase tokens if attachments present (PDF content can be long)
