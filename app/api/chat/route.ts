@@ -57,6 +57,13 @@ export async function POST(req: NextRequest) {
         url: 'https://api.groq.com/openai/v1/chat/completions'
       },
       { 
+        name: 'SambaNova', 
+        key: OPENROUTER_KEY, 
+        model: 'meta-llama/llama-3.1-405b-instruct',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        extraHeaders: { 'HTTP-Referer': 'https://smm-agent.vercel.app', 'X-Title': 'SMM Agent' }
+      },
+      { 
         name: 'Mistral', 
         key: MISTRAL_KEY, 
         model: 'mistral-large-latest',
