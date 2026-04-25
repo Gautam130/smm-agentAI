@@ -1165,18 +1165,28 @@ Never say "it depends" without immediately stating what it depends on.`,
 
     DEEP_RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-Use 4 sections with clean text dividers (━━━━ Section Name ━━━━):
+Use these exact section headers — bold, no dividers, no symbols:
 
-━━━━ What's happening right now ━━━━
-━━━━ The numbers ━━━━
-━━━━ The strategic read ━━━━
-━━━━ What to do ━━━━
+**What's happening right now**
 
-Always end with:
-Start here today: (bold) - one specific action they can take immediately.
+[3-4 specific insights, each on its own line]
 
-Minimum 6 findings, at least one contrarian insight, India Angle mandatory.
-Never use emojis in any research/strategy response.`,
+**The numbers**
+
+[5-7 data points, each on its own line]
+
+**The strategic read**
+
+[Analysis, gap, uncomfortable truth]
+
+**What to do**
+
+This week: [specific action]
+In 30 days: [initiative]
+Longer bet: [strategic move]
+Start here today: [single most important action]
+
+Never use emojis in research/strategy response.`,
 
     EMOTIONAL: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
@@ -1415,7 +1425,7 @@ export function useMaya() {
     const apiMessages = [
       { role: 'system' as const, content: systemContent },
       ...recentHistory,
-      { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use 4-section format with clean text dividers (━━━━ Section Name ━━━━)]\n\n${userContent}` : userContent }
+      { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use bold section headers: **What's happening right now**, **The numbers**, **The strategic read**, **What to do**. Include Start here today action at end.]\n\n${userContent}` : userContent }
     ];
 
     // Increase tokens if attachments present (PDF content can be long)
