@@ -893,15 +893,15 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   
   if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
   
-  // Skip insights/hooks/search only for instant depth - not user context
-  if (intent.depth === 'instant' || intent.isCasual) return parts.join('\n\n---\n\n');
-
   // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch + campaign
   const mode = intent.mode;
-  const insights = (mode !== 'HUMOR' && mode !== 'CASUAL')
+  const insights = (mode !== 'HUMOR' && mode !== 'CASUAL' && intent.depth !== 'instant' && !intent.isCasual)
     ? await fetchInsights(message).catch(() => null)
     : null;
   const hooks = (intent.needsSearch || intent.isCampaign) ? await fetchHooks(message).catch(() => null) : null;
+
+  // Skip live search for instant depth/casual - but always fetch hooks if needed
+  if ((intent.depth === 'instant' || intent.isCasual) && !hooks && !insights) return parts.join('\n\n---\n\n');
 
   // Add to parts based on what we got
   if (insights) parts.push(`INSIGHTS:\n${insights}`);
