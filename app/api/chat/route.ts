@@ -103,7 +103,8 @@ export async function POST(req: NextRequest) {
         return response;
         
       } catch (e: any) {
-        console.warn(`${provider.name} failed:`, e.message || e);
+        const msg = e.name === 'AbortError' ? 'Timeout (30s)' : (e.message || e);
+        console.warn(`${provider.name} failed:`, msg);
         continue; // Try next provider
       }
     }
@@ -115,41 +116,53 @@ export async function POST(req: NextRequest) {
     );
 
     async function streamAIResponse(fetchUrl: string, fetchOptions: RequestInit) {
-      const response = await fetch(fetchUrl, fetchOptions);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        async start(controller) {
-          const reader = response.body?.getReader();
-          if (!reader) {
-            controller.close();
-            return;
-          }
-          
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              controller.enqueue(value);
-            }
-          } catch (e) {
-            console.error('Stream error:', e);
-          }
-          controller.close();
+      try {
+        const response = await fetch(fetchUrl, {
+          ...fetchOptions,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
         }
-      });
-      
-      return new NextResponse(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
+        
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          async start(controller) {
+            const reader = response.body?.getReader();
+            if (!reader) {
+              controller.close();
+              return;
+            }
+            
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                controller.enqueue(value);
+              }
+            } catch (e) {
+              console.error('Stream error:', e);
+            }
+            controller.close();
+          }
+        });
+        
+        return new NextResponse(stream, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          },
+        });
+      } catch (e: any) {
+        clearTimeout(timeoutId);
+        throw e;
+      }
     }
 
     // No keys configured
