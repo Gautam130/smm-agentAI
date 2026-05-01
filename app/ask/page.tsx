@@ -300,9 +300,16 @@ export default function AskMayaPage() {
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
-      if (error || !convs) {
+      if (error) {
+        console.error(`[CONVS LOAD FAILED] ${error.message} (${error.code})`);
         setLoadingConversations(false);
         return;
+      }
+
+      if (!convs || convs.length === 0) {
+        console.log('[CONVS LOAD] No conversations found');
+      } else {
+        console.log(`[CONVS LOAD OK] Loaded ${convs.length} conversations`);
       }
 
       const sortedConvs = [...convs].sort((a, b) => 
@@ -310,8 +317,8 @@ export default function AskMayaPage() {
       );
 
       setConversations(sortedConvs);
-    } catch (e) {
-      console.error('Failed to load conversations:', e);
+    } catch (e: any) {
+      console.error(`[CONVS LOAD EXCEPTION] ${e.message || e}`);
     }
     setLoadingConversations(false);
   }, [user]);
@@ -327,7 +334,7 @@ export default function AskMayaPage() {
   const loadMessages = useCallback(async (conversationId: string): Promise<ChatMessage[]> => {
     try {
       const supabase = getSupabase();
-      console.log('Loading messages for:', conversationId);
+      console.log(`[LOAD MESSAGES] Loading for conversation: ${conversationId}`);
       
       const { data, error, status } = await supabase
         .from('chat_messages')
@@ -335,15 +342,13 @@ export default function AskMayaPage() {
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
-      console.log('Messages response:', { error, status, count: data?.length });
-
       if (error) {
-        console.error('Failed to load messages:', error.message, status);
+        console.error(`[LOAD FAILED] Status ${status}: ${error.message} (${error.code})`);
         return [];
       }
 
       if (!data || data.length === 0) {
-        console.log('No messages found for conversation');
+        console.log(`[LOAD EMPTY] No messages for conversation ${conversationId}`);
         return [];
       }
 
@@ -351,12 +356,13 @@ export default function AskMayaPage() {
         id: crypto.randomUUID(),
         role: m.role as 'user' | 'assistant',
         text: m.content,
+        createdAt: m.created_at,
       }));
       
-      console.log('Loaded messages:', messages.length);
+      console.log(`[LOAD OK] Loaded ${messages.length} messages for conversation ${conversationId}`);
       return messages;
-    } catch (e) {
-      console.error('Failed to load messages:', e);
+    } catch (e: any) {
+      console.error(`[LOAD EXCEPTION] ${e.message || e}`);
       return [];
     }
   }, []);
@@ -368,6 +374,8 @@ export default function AskMayaPage() {
       const supabase = getSupabase();
       const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '');
 
+      console.log(`[CREATE CONVERSATION] Creating for user ${user.id}: "${title}"`);
+
       const { data, error } = await supabase
         .from('conversations')
         .insert({ 
@@ -377,13 +385,19 @@ export default function AskMayaPage() {
         .select('id, title, updated_at, created_at')
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error(`[CREATE FAILED] ${error.message} (${error.code})`);
+        return null;
+      }
+
+      if (data) {
+        console.log(`[CREATE OK] Conversation created: ${data.id}`);
         setConversations(prev => [data, ...prev]);
         setCurrentConversationId(data.id);
         return data.id;
       }
-    } catch (e) {
-      console.error('Failed to create conversation:', e);
+    } catch (e: any) {
+      console.error(`[CREATE EXCEPTION] ${e.message || e}`);
     }
     return null;
   }, [user]);
@@ -434,6 +448,7 @@ export default function AskMayaPage() {
       if (!count || count <= 50) return;
 
       const toDelete = count - 50;
+      console.log(`[PRUNE] Conversation ${conversationId}: ${count} messages, deleting oldest ${toDelete}`);
 
       const { data: oldMessages } = await supabase
         .from('chat_messages')
@@ -444,13 +459,18 @@ export default function AskMayaPage() {
 
       if (oldMessages && oldMessages.length > 0) {
         const idsToDelete = oldMessages.map((m: any) => m.id);
-        await supabase
+        const { error } = await supabase
           .from('chat_messages')
           .delete()
           .in('id', idsToDelete);
+        if (error) {
+          console.error(`[PRUNE FAILED] ${error.message} (${error.code})`);
+        } else {
+          console.log(`[PRUNE OK] Deleted ${idsToDelete.length} messages`);
+        }
       }
-    } catch (e) {
-      console.warn('Message pruning failed:', e);
+    } catch (e: any) {
+      console.warn(`[PRUNE EXCEPTION] ${e.message || e}`);
     }
   }, []);
 
@@ -458,24 +478,55 @@ export default function AskMayaPage() {
   const saveMessage = useCallback(async (conversationId: string, role: 'user' | 'assistant', content: string) => {
     try {
       const supabase = getSupabase();
-      await supabase
+      console.log(`[SAVE] ${role} message to conversation ${conversationId} (${content.length} chars)`);
+      
+      const { error } = await supabase
         .from('chat_messages')
         .insert({ 
           conversation_id: conversationId, 
           role, 
-          content 
+          content,
+          created_at: new Date().toISOString()
         });
+
+      if (error) {
+        console.error(`[SAVE FAILED] ${role} message: ${error.message} (${error.code})`);
+        // Retry once after 2 seconds
+        console.log(`[RETRY] Retrying save for conversation ${conversationId}`);
+        await new Promise(r => setTimeout(r, 2000));
+        const { error: retryError } = await supabase
+          .from('chat_messages')
+          .insert({ 
+            conversation_id: conversationId, 
+            role, 
+            content,
+            created_at: new Date().toISOString()
+          });
+        if (retryError) {
+          console.error(`[RETRY FAILED] ${retryError.message} (${retryError.code})`);
+          return false;
+        }
+        console.log(`[SAVE OK] ${role} message saved (retry)`);
+      } else {
+        console.log(`[SAVE OK] ${role} message saved`);
+      }
       
       // Update conversation updated_at
-      await supabase
+      const { error: updateError } = await supabase
         .from('conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', conversationId);
 
+      if (updateError) {
+        console.error(`[UPDATE FAILED] Conversation timestamp: ${updateError.message}`);
+      }
+
       // Prune old messages (keep last 50) - don't await, runs in background
       pruneMessages(conversationId);
-    } catch (e) {
-      console.error('Failed to save message:', e);
+      return true;
+    } catch (e: any) {
+      console.error(`[SAVE EXCEPTION] Failed to save ${role} message: ${e.message || e}`);
+      return false;
     }
   }, [pruneMessages]);
 
@@ -604,16 +655,21 @@ export default function AskMayaPage() {
     if (isLoading) return;
     
     const messageToSend = input.trim() || 'Please analyze these files';
+    console.log(`[SEND] Message: "${messageToSend.slice(0, 50)}..." (${messageToSend.length} chars)`);
     
     // If no current conversation, create one
     let convId = currentConversationId;
     if (!convId) {
+      console.log('[SEND] No conversation, creating new one');
       convId = await createConversation(messageToSend);
     }
     
     // Save user message to Supabase
     if (convId) {
-      await saveMessage(convId, 'user', messageToSend);
+      const saved = await saveMessage(convId, 'user', messageToSend);
+      if (!saved) {
+        console.warn('[SEND] User message failed to save, continuing anyway');
+      }
       // Update conversation title if it's the first message
       const conversation = conversations.find(c => c.id === convId);
       if (conversation && conversation.title.length === 0) {
@@ -625,8 +681,10 @@ export default function AskMayaPage() {
       }
     }
     
+    console.log(`[SEND] Sending to Maya, conversation: ${convId}`);
     // Get the response from Maya (knowledge injection is handled inside sendMessage)
     sendMessage(messageToSend, attachedFiles, convId, (conversationId, role, text) => {
+      console.log(`[SEND] Assistant response ready (${text.length} chars), saving...`);
       saveMessage(conversationId, role as 'user' | 'assistant', text);
     });
     setInput('');
