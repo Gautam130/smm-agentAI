@@ -843,23 +843,23 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     
     if (!results || results.length === 0) return null;
     
-    // Natural blending: max 2 sources, blend into flowing text
-    const topResults = results.slice(0, 2);
+    // Search results: 4 sources for research, 2 for other queries
+    const isResearchQuery = /\b(deep research|deep dive|full analysis|research on)\b/i.test(message);
+    const resultCount = isResearchQuery ? 4 : 2;
+    const topResults = results.slice(0, resultCount);
     const signalResults = results.filter((r: any) => r.tierScore <= 3);
     
 // Build natural flowing snippets - strip duplicate source at end of content
     const buildNaturalSnippet = (arr: any[]) => {
       return arr.map((r: any) => {
-        // Shorten content to ~150-200 chars
         let snippet = r.content;
-        if (snippet.length > 200) {
-          snippet = snippet.substring(0, 200).replace(/\s+\S*$/, '') + '...';
+        if (snippet.length > 400) {
+          snippet = snippet.substring(0, 400).replace(/\s+\S*$/, '') + '...';
         }
         // Remove trailing source name that appears on separate line
-        // Matches: "...users\nForbes India" or "...users.\nForbes India" with possible spaces
         snippet = snippet.replace(/\.?\s*[\r\n]+\s*(Economic Times|Inc42|Statista|Forbes India|YourStory|Livemint|Moneycontrol|LinkedIn|Fortune|Inc|Mint|DataReportal|McKinsey|KPMG|World Bank)\s*$/gi, '');
         return `${snippet} (${r.source})`;
-      }).join(' | ');
+      }).join('\n');
     };
     
     let output = 'MARKET DATA:\n';
@@ -910,21 +910,21 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   // Fetch live search based on query type
   if (intent.depth === 'deep' || intent.depth === 'complex' || intent.isStrategy) {
     const searchData = await fetchLiveSearch(message, userContextRaw).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nBlend sources naturally. Cite inline: "filings show X, while industry data suggests Y."\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline as (Source) within sentences. Example: "revenue grew to ₹4,431 crore in FY22 (Inc42)". Never place sources as standalone links. Every citation must be part of the sentence it supports.`);
   } else if (intent.queryType === 'competitor') {
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nUse for comparison. Cite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline as (Source). Example: "revenue grew to ₹4,431 crore (Inc42)". Never place sources as standalone links.`);
   } else if (intent.queryType === 'market') {
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nCite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline as (Source).`);
   } else if (intent.queryType === 'platform' || intent.queryType === 'audience' || intent.queryType === 'format') {
     const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-    if (searchData) parts.push(`${searchData}\n\nCite sources inline.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+    if (searchData) parts.push(`${searchData}\n\nCite sources inline as (Source).`);
   } else if (intent.queryType === 'glossary') {
     const nicheTerms = /\b(ROAS|CAC|LTV|ARPU|ERM|ABM|SOV|CPM|CPC|CTR)\b/i.test(message);
     if (nicheTerms) {
       const searchData = await fetchLiveSearch(message, userContextRaw || undefined).catch(() => null);
-      if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source if available.\n\nCITATION FORMAT — NON-NEGOTIABLE: Cite sources inline inside the sentence as (Source, Year) — for example: "revenue grew to ₹4,431 crore in FY22 (Inc42, 2022)". NEVER place source names as standalone links after a sentence. NEVER use floating reference labels. Every citation must be grammatically part of the sentence it supports.`);
+      if (searchData) parts.push(`${searchData}\n\nDefine clearly. Cite source inline as (Source) if available.`);
     }
   }
 
@@ -1176,25 +1176,27 @@ Never say "it depends" without immediately stating what it depends on.`,
 
     DEEP_RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
+CRITICAL: Write a DETAILED, THOROUGH response. Minimum 800 words. Each section must have real depth — not bullet summaries.
+
 Use these exact section headers — bold, no dividers, no symbols:
 
 **What's happening right now**
 
-[3-4 specific insights, each on its own line]
+[4-5 specific insights with detailed analysis and data points]
 
 **The numbers**
 
-[5-7 data points, each on its own line]
+[6-8 data points with specific figures, growth rates, market size — each on its own line]
 
 **The strategic read**
 
-[Analysis, gap, uncomfortable truth]
+[Deep analysis: competitive gap, uncomfortable truth, market opportunity — write 3-4 paragraphs]
 
 **What to do**
 
-This week: [specific action]
-In 30 days: [initiative]
-Longer bet: [strategic move]
+This week: [specific action with exact steps]
+In 30 days: [initiative with timeline and resources]
+Longer bet: [strategic move with risk assessment]
 Start here today: [single most important action]
 
 WHAT TO DO SECTION RULE:
@@ -1454,8 +1456,8 @@ export function useMaya() {
     // Increase tokens if attachments present (PDF content can be long)
     const hasAttachments = attachments.length > 0;
     const tokenLimit = hasAttachments 
-      ? (intent.isContent ? 6000 : intent.isStrategy ? 6000 : intent.needsSearch ? 8000 : 5000)
-      : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isDeepResearch ? 6000 : intent.isContent ? 3000 : intent.isStrategy ? 4000 : intent.needsSearch ? 5000 : 2500);
+      ? (intent.isContent ? 8000 : intent.isStrategy ? 8000 : intent.needsSearch ? 8000 : 5000)
+      : (intent.isHumorRequest || intent.isCasual ? 600 : intent.isDeepResearch ? 8000 : intent.isContent ? 3000 : intent.isStrategy ? 6000 : intent.needsSearch ? 5000 : 2500);
 
     // Image generation mode - call Modal directly instead of chat API
     if (intent.isImage) {

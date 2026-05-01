@@ -9,8 +9,8 @@ export async function POST(req: NextRequest) {
     const effectiveTaskType = taskType !== 'general' ? taskType : task;
 
     const smartMaxTokens = 
-      effectiveTaskType === 'research' ? 6000 :
-      effectiveTaskType === 'strategy' ? 6000 :
+      effectiveTaskType === 'research' ? 8000 :
+      effectiveTaskType === 'strategy' ? 8000 :
       effectiveTaskType === 'calendar' ? 6000 :
       effectiveTaskType === 'influencer' ? 5000 :
       effectiveTaskType === 'content' ? 4000 :
