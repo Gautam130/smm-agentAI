@@ -63,63 +63,90 @@ function CitationBadge({ source, url }: { source: string; url?: string }) {
 function CitationBlock({ text }: { text: string }) {
   if (!text || text.trim() === '') return null;
 
-  const paragraphs = text.split('\n');
-  const lines: React.ReactNode[] = [];
-
   // TODO: Replace regex parsing with structured
   // citation metadata from Maya API response
-  const citationRegex = /^(.+?)\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
-  const standaloneRegex = /^\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
+  const citationRegex = /\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*/g;
+  const standaloneRegex = /^\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
 
-  let pendingStandalone: React.ReactNode | null = null;
+  // Step 1: Process text — replace inline citations with tokens, buffer standalone ones
+  const paras = text.split('\n');
+  const processedLines: string[] = [];
+  let lastNonEmptyIndex = -1;
+  let pendingCites: string[] = [];
 
-  for (let i = 0; i < paragraphs.length; i++) {
-    const para = paragraphs[i];
-
-    if (!para.trim()) {
-      lines.push(<br key={i} />);
+  for (let i = 0; i < paras.length; i++) {
+    const p = paras[i].trim();
+    if (!p) {
+      processedLines.push('');
       continue;
     }
 
-    // Check for standalone citation on its own line
-    const standaloneMatch = para.match(standaloneRegex);
-    if (standaloneMatch) {
-      pendingStandalone = <CitationBadge key={`standalone-${i}`} source={standaloneMatch[1].trim()} />;
+    const isStandalone = standaloneRegex.test(p);
+    if (isStandalone) {
+      const m = p.match(standaloneRegex);
+      pendingCites.push(m![1].trim());
       continue;
     }
 
-    // Check for inline citation at end of line
-    const citationMatch = para.match(citationRegex);
-    if (citationMatch) {
-      const [, lineText, source] = citationMatch;
-      const trimmedText = lineText.trim();
-      lines.push(
-        <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
-          {trimmedText ? <ReactMarkdown>{trimmedText}</ReactMarkdown> : null}
-          {pendingStandalone}
-          <CitationBadge source={source.trim()} />
-        </span>
-      );
-      pendingStandalone = null;
-      continue;
+    let output = p;
+
+    // Append pending standalone citations to previous non-empty line
+    if (pendingCites.length > 0 && lastNonEmptyIndex >= 0) {
+      const badgeTokens = pendingCites.map(c => ` [BADGE:${c}]`).join('');
+      processedLines[lastNonEmptyIndex] = processedLines[lastNonEmptyIndex] + badgeTokens;
+      pendingCites = [];
     }
 
-    // No citation — render normal paragraph
-    lines.push(
-      <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
-        {pendingStandalone}
-        <ReactMarkdown>{para}</ReactMarkdown>
+    // Replace inline citations with tokens
+    output = output.replace(citationRegex, (_match, source) => {
+      return ` [BADGE:${source.trim()}]`;
+    });
+
+    processedLines.push(output);
+    lastNonEmptyIndex = processedLines.length - 1;
+  }
+
+  // Handle trailing standalone citations
+  if (pendingCites.length > 0 && lastNonEmptyIndex >= 0) {
+    const badgeTokens = pendingCites.map(c => ` [BADGE:${c}]`).join('');
+    processedLines[lastNonEmptyIndex] = processedLines[lastNonEmptyIndex] + badgeTokens;
+  }
+
+  // Step 2: Render each line, converting [BADGE:X] tokens to CitationBadge components
+  const badgeTokenRegex = /\[BADGE:([^\]]+)\]/g;
+
+  const renderLine = (line: string, key: number) => {
+    if (!line.trim()) return <br key={key} />;
+
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+    let partKey = 0;
+
+    while ((match = badgeTokenRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        const textBefore = line.slice(lastIndex, match.index);
+        if (textBefore) {
+          parts.push(<ReactMarkdown key={partKey++}>{textBefore}</ReactMarkdown>);
+        }
+      }
+      parts.push(<CitationBadge key={partKey++} source={match[1]} />);
+      lastIndex = match.index + match[0].length;
+    }
+
+    const remaining = line.slice(lastIndex);
+    if (remaining) {
+      parts.push(<ReactMarkdown key={partKey++}>{remaining}</ReactMarkdown>);
+    }
+
+    return (
+      <span key={key} style={{ display: 'block', marginBottom: '8px' }}>
+        {parts}
       </span>
     );
-    pendingStandalone = null;
-  }
+  };
 
-  // Handle trailing standalone citation (no text after it)
-  if (pendingStandalone) {
-    lines.push(<span key="trailing" style={{ display: 'block', marginBottom: '8px' }}>{pendingStandalone}</span>);
-  }
-
-  return <>{lines}</>;
+  return <>{processedLines.map(renderLine)}</>;
 }
 
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
