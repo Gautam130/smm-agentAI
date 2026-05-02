@@ -128,6 +128,7 @@ HALLUCINATION PREVENTION:
 - Separate products/features clearly
 - Cite inline at end of sentence
 - Never conflate different sources
+- NEVER put words in the user's mouth. NEVER reference something the user didn't actually say. NEVER invent quotes or reactions. Only respond to what was literally typed.
 
 ═══════════════════════════════════════
 SOURCE DECISION SYSTEM
@@ -453,6 +454,7 @@ interface UserContext {
   audience?: string;
   goals?: string;
   brand_name?: string;
+  last_seen?: string;
 }
 
 // Patterns that clearly indicate user context
@@ -519,7 +521,7 @@ async function fetchUserContext(userId: string): Promise<string | null> {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('user_context')
-      .select('business_type, audience, goals, brand_name')
+      .select('business_type, audience, goals, brand_name, last_seen')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -537,12 +539,12 @@ async function fetchUserContext(userId: string): Promise<string | null> {
   }
 }
 
-async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string; goals?: string } | null> {
+async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string; goals?: string; last_seen?: string } | null> {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('user_context')
-      .select('business_type, audience, goals')
+      .select('business_type, audience, goals, last_seen')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -583,10 +585,27 @@ async function updateUserContext(userId: string, message: string): Promise<void>
         audience: updated.audience,
         goals: updated.goals,
         brand_name: updated.brand_name,
+        last_seen: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
   } catch (e) {
     console.warn('Failed to update user context:', e);
+  }
+}
+
+async function updateLastSeen(userId: string): Promise<void> {
+  if (!userId) return;
+  try {
+    const supabase = getSupabase();
+    await supabase
+      .from('user_context')
+      .upsert({
+        user_id: userId,
+        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+  } catch (e) {
+    console.warn('Failed to update last_seen:', e);
   }
 }
 
@@ -1422,6 +1441,41 @@ export function useMaya() {
         content: m.text
       }));
     
+    const historyBeforeThisMessage = recentHistory.slice(0, -1);
+    const isFirstMessage = historyBeforeThisMessage.length === 0 && (intent.isCasual || intent.mode === 'CASUAL' || intent.mode === 'HUMOR' || intent.mode === 'GENERAL');
+
+    let sessionContext = '';
+    if (isFirstMessage && ctxRaw?.last_seen) {
+      const now = new Date();
+      const lastSeen = new Date(ctxRaw.last_seen);
+      const gapMs = now.getTime() - lastSeen.getTime();
+      const gapHours = gapMs / (1000 * 60 * 60);
+      const gapDays = gapHours / 24;
+
+      if (gapHours < 1) {
+        sessionContext = `\n\nSESSION CONTEXT: Same session (last active < 1 hour ago). User likely still at their desk. Keep greeting brief, no "welcome back" energy.`;
+      } else if (gapHours < 24) {
+        sessionContext = `\n\nSESSION CONTEXT: Returning same day (last active ${Math.floor(gapHours)}h ago). They were here earlier today. Casual acknowledgment is fine but don't make it a big deal.`;
+      } else if (gapDays < 7) {
+        sessionContext = `\n\nSESSION CONTEXT: Returning after break (last active ${Math.floor(gapDays)}d ago). They haven't been here in a few days. Warm re-engagement tone.`;
+      } else {
+        sessionContext = `\n\nSESSION CONTEXT: Returning after long gap (last active ${Math.floor(gapDays)}d ago). Been a while since they visited. Acknowledge the gap naturally, show genuine curiosity about what's new with their brand.`;
+      }
+    } else if (isFirstMessage && !ctxRaw?.last_seen) {
+      sessionContext = `\n\nSESSION CONTEXT: Brand new user — first time ever. Zero prior interactions. Be warm, curious, and helpful. Do not reference any past conversations because there are none.`;
+    }
+
+    let freshConversationRule = '';
+    if (isFirstMessage) {
+      freshConversationRule = `\n\nFRESH CONVERSATION RULES (this is message #1):${sessionContext}
+- Greet warmly according to the SESSION CONTEXT above
+- You MAY use their brand/business context to give relevant suggestions
+- You may NOT act like you've spoken before unless SESSION CONTEXT says "returning"
+- You may NOT say "welcome back" unless gap > 24 hours
+- Zero assumed familiarity for new users
+- Let THEM set the tone of this conversation`;
+    }
+    
     console.log('[MAYA DEBUG] Total messages in state:', currentMessages.length);
     console.log('[MAYA DEBUG] Sending history count:', recentHistory.length);
     console.log('[MAYA DEBUG] History preview:', recentHistory.slice(-3).map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
@@ -1448,7 +1502,7 @@ export function useMaya() {
     }
 
     const apiMessages = [
-      { role: 'system' as const, content: systemContent },
+      { role: 'system' as const, content: systemContent + freshConversationRule },
       ...recentHistory,
       { role: 'user' as const, content: intent.isDeepResearch ? `[DEEP RESEARCH REQUEST - Use bold section headers: **What's happening right now**, **The numbers**, **The strategic read**, **What to do**. Include Start here today action at end.]\n\n${userContent}` : userContent }
     ];
@@ -1521,7 +1575,8 @@ export function useMaya() {
           messages: apiMessages,
           temperature: intent.temp,
           maxTokens: tokenLimit,
-          taskType: intent.isHumorRequest ? 'humor' : intent.isDeepResearch ? 'research' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat'
+          taskType: intent.isHumorRequest ? 'humor' : intent.isDeepResearch ? 'research' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat',
+          isFirstMessage
         }),
         signal: abortRef.current.signal
       });
@@ -1597,6 +1652,10 @@ export function useMaya() {
       messagesRef.current = updated;
       return updated;
     });
+
+    if (isFirstMessage && userIdRef.current) {
+      updateLastSeen(userIdRef.current);
+    }
   }, []);
 
   const clearChat = useCallback(() => {
