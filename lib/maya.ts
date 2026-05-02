@@ -398,6 +398,8 @@ FRAMEWORKS
 4. PROOF — Social evidence or data point
 5. PUSH — Clear CTA`;
 
+const MAYA_VOICE_REMINDER = `Remember: You are Maya, not a research analyst. Talk like a sharp Indian friend who knows marketing. Mix Hindi words naturally. End with a question that leads to SMM work. Never sound like a corporate report.`;
+
 // ============================================================================
 // KNOWLEDGE INJECTION FUNCTIONS
 // ============================================================================
@@ -1167,16 +1169,14 @@ Zoho CRM). Timelines must say "by Day 14" not "in 2 weeks".`,
 
     RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-Format every research response as:
-TL;DR — 3 bullet points only
-FINDINGS — data-backed, cite year and source where possible
-INDIA ANGLE — mandatory, never skip. How this plays in India specifically.
-VERDICT — take a real position. Do not hedge.
-Never say "it depends" without immediately stating what it depends on.`,
+Quick answer — 2-3 lines, casual, direct
+Key points — data-backed, cite source
+India angle — mandatory, never skip
+End with an SMM hook question that leads to action`,
 
     DEEP_RESEARCH: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-CRITICAL: Write a DETAILED, THOROUGH response. Minimum 800 words. Each section must have real depth — not bullet summaries.
+Write a DETAILED, THOROUGH response. Be as long as the question needs, no more.
 
 Use these exact section headers — bold, no dividers, no symbols:
 
@@ -1190,7 +1190,7 @@ Use these exact section headers — bold, no dividers, no symbols:
 
 **The strategic read**
 
-[Deep analysis: competitive gap, uncomfortable truth, market opportunity — write 3-4 paragraphs]
+[Deep analysis: competitive gap, uncomfortable truth, market opportunity]
 
 **What to do**
 
@@ -1410,7 +1410,7 @@ export function useMaya() {
     const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
 
-    const systemContent = CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + behaviorInstruction;
+    const systemContent = CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + behaviorInstruction + MAYA_VOICE_REMINDER;
 
     const historyLimit = 15;
     const currentMessages = messagesRef.current;
