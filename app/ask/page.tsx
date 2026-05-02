@@ -60,15 +60,50 @@ function CitationBadge({ source, url }: { source: string; url?: string }) {
   return <span style={baseStyle}>{source}</span>;
 }
 
+function isLikelySourceName(text: string): boolean {
+  if (!text || text.trim() === '') return false;
+  const t = text.trim();
+
+  if (t.length > 40) return false;
+
+  const words = t.split(/\s+/);
+  if (words.length > 5 || words.length === 0) return false;
+
+  // Each word must start with uppercase OR be a common connector word
+  const connectors = new Set(['of', 'and', 'the', 'in', 'for', 'to', 'at', 'by', 'on', 'or', 'nor', 'but']);
+  for (const w of words) {
+    if (!w) return false;
+    if (connectors.has(w.toLowerCase())) continue;
+    if (!/^[A-Z]/.test(w)) return false;
+  }
+
+  // No punctuation at end
+  if (/[.,;:!?]$/.test(t)) return false;
+
+  // Not a pure number
+  if (/^\d+$/.test(t)) return false;
+
+  // Not a common non-source phrase
+  const lower = t.toLowerCase();
+  const skipPatterns = [
+    /^the /, /^a /, /^an /, /^this /, /^that /, /^these /, /^those /,
+    /^for example/, /^in conclusion/, /^in summary/, /^for instance/,
+    /^note that/, /^see also/, /^read more/,
+  ];
+  if (skipPatterns.some(p => p.test(lower))) return false;
+
+  return true;
+}
+
 function CitationBlock({ text }: { text: string }) {
   if (!text || text.trim() === '') return null;
 
   // TODO: Replace regex parsing with structured
   // citation metadata from Maya API response
   const citationRegex = /\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*/g;
-  const standaloneRegex = /^\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
 
-  // Step 1: Process text — replace inline citations with tokens, buffer standalone ones
+  // Step 1: Process text — replace parenthetical citations with tokens,
+  // detect standalone source lines (no parens) and buffer them
   const paras = text.split('\n');
   const processedLines: string[] = [];
   let lastNonEmptyIndex = -1;
@@ -81,23 +116,50 @@ function CitationBlock({ text }: { text: string }) {
       continue;
     }
 
-    const isStandalone = standaloneRegex.test(p);
-    if (isStandalone) {
-      const m = p.match(standaloneRegex);
-      pendingCites.push(m![1].trim());
+    // Check for parenthetical citation at end of line
+    const parenMatch = p.match(/^(.+?)\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/);
+    if (parenMatch) {
+      const [, lineText, source] = parenMatch;
+      // First, flush any pending cites to previous line
+      if (pendingCites.length > 0 && lastNonEmptyIndex >= 0) {
+        const badgeTokens = pendingCites.map(c => ` [BADGE:${c}]`).join('');
+        processedLines[lastNonEmptyIndex] = processedLines[lastNonEmptyIndex] + badgeTokens;
+        pendingCites = [];
+      }
+      const trimmedText = lineText.trim();
+      // Process any remaining inline parenthetical citations
+      const withTokens = trimmedText.replace(citationRegex, (_match, src) => {
+        return ` [BADGE:${src.trim()}]`;
+      });
+      processedLines.push(withTokens + ` [BADGE:${source.trim()}]`);
+      lastNonEmptyIndex = processedLines.length - 1;
       continue;
     }
 
+    // Check for standalone parenthetical citation on its own line: "(Inc42)"
+    const standaloneParenMatch = p.match(/^\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/);
+    if (standaloneParenMatch) {
+      pendingCites.push(standaloneParenMatch[1].trim());
+      continue;
+    }
+
+    // Check for standalone line that is ONLY a citation (no parens)
+    // e.g. "Counterpoint Research" on its own line
+    if (isLikelySourceName(p) && lastNonEmptyIndex >= 0) {
+      pendingCites.push(p);
+      continue;
+    }
+
+    // Regular line — flush pending cites to previous line, then process inline
     let output = p;
 
-    // Append pending standalone citations to previous non-empty line
     if (pendingCites.length > 0 && lastNonEmptyIndex >= 0) {
       const badgeTokens = pendingCites.map(c => ` [BADGE:${c}]`).join('');
       processedLines[lastNonEmptyIndex] = processedLines[lastNonEmptyIndex] + badgeTokens;
       pendingCites = [];
     }
 
-    // Replace inline citations with tokens
+    // Replace any remaining inline parenthetical citations
     output = output.replace(citationRegex, (_match, source) => {
       return ` [BADGE:${source.trim()}]`;
     });
@@ -106,7 +168,7 @@ function CitationBlock({ text }: { text: string }) {
     lastNonEmptyIndex = processedLines.length - 1;
   }
 
-  // Handle trailing standalone citations
+  // Handle trailing standalone citations (attach to last non-empty line)
   if (pendingCites.length > 0 && lastNonEmptyIndex >= 0) {
     const badgeTokens = pendingCites.map(c => ` [BADGE:${c}]`).join('');
     processedLines[lastNonEmptyIndex] = processedLines[lastNonEmptyIndex] + badgeTokens;
@@ -122,6 +184,9 @@ function CitationBlock({ text }: { text: string }) {
     let lastIndex = 0;
     let match;
     let partKey = 0;
+
+    // Reset regex state
+    badgeTokenRegex.lastIndex = 0;
 
     while ((match = badgeTokenRegex.exec(line)) !== null) {
       if (match.index > lastIndex) {
