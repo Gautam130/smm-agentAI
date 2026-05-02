@@ -64,36 +64,62 @@ function CitationBlock({ text }: { text: string }) {
   if (!text || text.trim() === '') return null;
 
   const paragraphs = text.split('\n');
+  const lines: React.ReactNode[] = [];
 
-  return (
-    <>
-      {paragraphs.map((para, i) => {
-        if (!para.trim()) return <br key={i} />;
+  // TODO: Replace regex parsing with structured
+  // citation metadata from Maya API response
+  const citationRegex = /^(.+?)\s*\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
+  const standaloneRegex = /^\(\s*([A-Z][A-Za-z0-9\s&.]+?)\s*\)\.?\s*$/;
 
-        // TODO: Replace regex parsing with structured
-        // citation metadata from Maya API response
-        const citationMatch = para.match(/^(.*?)\s*\(\s*([A-Z][A-Za-z0-9\s&]+?)\s*\)\.?\s*$/);
+  let pendingStandalone: React.ReactNode | null = null;
 
-        if (citationMatch) {
-          const [, lineText, source] = citationMatch;
-          const citation: Citation = { source: source.trim() };
-          const trimmedText = lineText.trim();
-          return (
-            <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
-              {trimmedText ? <ReactMarkdown>{trimmedText}</ReactMarkdown> : null}
-              <CitationBadge source={citation.source} url={citation.url} />
-            </span>
-          );
-        }
+  for (let i = 0; i < paragraphs.length; i++) {
+    const para = paragraphs[i];
 
-        return (
-          <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
-            <ReactMarkdown>{para}</ReactMarkdown>
-          </span>
-        );
-      })}
-    </>
-  );
+    if (!para.trim()) {
+      lines.push(<br key={i} />);
+      continue;
+    }
+
+    // Check for standalone citation on its own line
+    const standaloneMatch = para.match(standaloneRegex);
+    if (standaloneMatch) {
+      pendingStandalone = <CitationBadge key={`standalone-${i}`} source={standaloneMatch[1].trim()} />;
+      continue;
+    }
+
+    // Check for inline citation at end of line
+    const citationMatch = para.match(citationRegex);
+    if (citationMatch) {
+      const [, lineText, source] = citationMatch;
+      const trimmedText = lineText.trim();
+      lines.push(
+        <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
+          {trimmedText ? <ReactMarkdown>{trimmedText}</ReactMarkdown> : null}
+          {pendingStandalone}
+          <CitationBadge source={source.trim()} />
+        </span>
+      );
+      pendingStandalone = null;
+      continue;
+    }
+
+    // No citation — render normal paragraph
+    lines.push(
+      <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
+        {pendingStandalone}
+        <ReactMarkdown>{para}</ReactMarkdown>
+      </span>
+    );
+    pendingStandalone = null;
+  }
+
+  // Handle trailing standalone citation (no text after it)
+  if (pendingStandalone) {
+    lines.push(<span key="trailing" style={{ display: 'block', marginBottom: '8px' }}>{pendingStandalone}</span>);
+  }
+
+  return <>{lines}</>;
 }
 
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
