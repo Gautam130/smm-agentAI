@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 type TabType = 'comments' | 'dm' | 'crisis' | 'community';
 
@@ -20,53 +21,23 @@ export default function EngagePage() {
   const [comBrand, setComBrand] = useState('');
   const [comType, setComType] = useState('Strategy to identify & nurture top fans');
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const { response: result, isLoading: loading, sendMessage, clearHistory } = useModuleMaya({ enableHistory: true });
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
+  const runComments = () => sendMessage([
+    { role: 'user', content: `Generate reply templates for ${brand}. Comment type: ${commentType}. Brand tone: ${tone}. Include multiple variations.` }
+  ], { task: 'content', temperature: 0.7 });
 
-  const runComments = () => generate(`Generate reply templates for ${brand}. Comment type: ${commentType}. Brand tone: ${tone}. Include multiple variations.`);
-  const runDM = () => generate(`Generate DM flow. Purpose: ${dmPurpose}. What you sell: ${dmProduct}. Include the full sequence.`);
-  const runCrisis = () => generate(`Generate crisis response for situation: ${crisisSituation}. Platform: ${crisisPlatform}. Handle with care.`);
-  const runCommunity = () => generate(`Generate community management strategy for ${comBrand}. What you need: ${comType}.`);
+  const runDM = () => sendMessage([
+    { role: 'user', content: `Generate DM flow. Purpose: ${dmPurpose}. What you sell: ${dmProduct}. Include the full sequence.` }
+  ], { task: 'content', temperature: 0.7 });
+
+  const runCrisis = () => sendMessage([
+    { role: 'user', content: `Generate crisis response for situation: ${crisisSituation}. Platform: ${crisisPlatform}. Handle with care.` }
+  ], { task: 'strategy', temperature: 0.4 });
+
+  const runCommunity = () => sendMessage([
+    { role: 'user', content: `Generate community management strategy for ${comBrand}. What you need: ${comType}.` }
+  ], { task: 'strategy', temperature: 0.5 });
 
   const tabs = [
     { id: 'comments', label: 'Comment replies' },
@@ -81,7 +52,7 @@ export default function EngagePage() {
       
       <div className="tabs mb-4">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`tab-btn ${activeTab === tab.id ? 'active-pur' : ''}`}>
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); clearHistory(); }} className={`tab-btn ${activeTab === tab.id ? 'active-pur' : ''}`}>
             {tab.label}
           </button>
         ))}

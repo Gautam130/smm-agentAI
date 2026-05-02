@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 type TabType = 'concept' | 'audio' | 'newsjack';
 
@@ -19,52 +20,19 @@ export default function MemePage() {
   const [mjBrand, setMjBrand] = useState('');
   const [mjTone, setMjTone] = useState('Witty & clever');
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
+  const runConcept = () => sendMessage([
+    { role: 'user', content: `Generate meme concepts for ${brand}. Style: ${memeStyle}. Topic: ${topic}. Include 5 different meme formats with captions.` }
+  ], { task: 'content', temperature: 0.8 });
 
-  const runConcept = () => generate(`Generate meme concepts for ${brand}. Style: ${memeStyle}. Topic: ${topic}. Include 5 different meme formats with captions.`);
-  const runAudio = () => generate(`Suggest trending audio strategy for ${niche} on ${maPlatform}. Content type: ${contentType}. Include which trending audios to use and how to adapt them.`);
-  const runNewsjack = () => generate(`Create newsjacking content for trending topic: ${trendingTopic}. Brand: ${mjBrand}. Tone: ${mjTone}. Include multiple post variations.`);
+  const runAudio = () => sendMessage([
+    { role: 'user', content: `Suggest trending audio strategy for ${niche} on ${maPlatform}. Content type: ${contentType}. Include which trending audios to use and how to adapt them.` }
+  ], { task: 'content', temperature: 0.7 });
+
+  const runNewsjack = () => sendMessage([
+    { role: 'user', content: `Create newsjacking content for trending topic: ${trendingTopic}. Brand: ${mjBrand}. Tone: ${mjTone}. Include multiple post variations.` }
+  ], { task: 'content', temperature: 0.75 });
 
   const tabs = [
     { id: 'concept', label: 'Meme concept' },
@@ -80,7 +48,7 @@ export default function MemePage() {
       
       <div className="stabs">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); sendMessage([], { task: 'chat' }); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
               {tab.label}
             </button>
           ))}
@@ -176,7 +144,7 @@ export default function MemePage() {
             <div className="output-label text-purple">
               <span className="dot-purple"></span>
               Meme Concepts
-              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>

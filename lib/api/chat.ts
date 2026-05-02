@@ -50,9 +50,13 @@ export async function* streamChat(
           if (data === '[DONE]') return;
           try {
             const parsed = JSON.parse(data);
-            if (parsed.content) yield parsed.content;
-          } catch {
-            // Ignore parse errors
+            const content = parsed.choices?.[0]?.delta?.content || parsed.content;
+            if (content) yield content;
+            if (parsed.error) throw new Error(parsed.error);
+          } catch (e) {
+            if (e instanceof Error && e.message !== 'No response body') {
+              // malformed JSON is fine, rethrow real errors
+            }
           }
         }
       }

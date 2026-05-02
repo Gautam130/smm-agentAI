@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 type TabType = 'reel' | 'carousel' | 'thumbnail' | 'story';
 
@@ -25,53 +26,23 @@ export default function VisualPage() {
   const [vsPersonality, setVsPersonality] = useState('Fun & casual');
   const [vsMessage, setVsMessage] = useState('');
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
+  const runReel = () => sendMessage([
+    { role: 'user', content: `Generate a shot list for Reel. Product: ${vrTopic}. Duration: ${vrDuration}. Vibe: ${vrVibe}. Key message: ${vrMessage}.` }
+  ], { task: 'content', temperature: 0.7 });
 
-  const runReel = () => generate(`Generate a shot list for Reel. Product: ${vrTopic}. Duration: ${vrDuration}. Vibe: ${vrVibe}. Key message: ${vrMessage}.`);
-  const runCarousel = () => generate(`Generate carousel design brief. Topic: ${vcTopic}. Slides: ${vcSlides}. Style: ${vcStyle}. Colors: ${vcColors}.`);
-  const runThumbnail = () => generate(`Generate thumbnail concept. Topic: ${vtTopic}. Platform: ${vtPlatform}. Style: ${vtStyle}.`);
-  const runStory = () => generate(`Generate story template. Purpose: ${vsPurpose}. Personality: ${vsPersonality}. Message: ${vsMessage}.`);
+  const runCarousel = () => sendMessage([
+    { role: 'user', content: `Generate carousel design brief. Topic: ${vcTopic}. Slides: ${vcSlides}. Style: ${vcStyle}. Colors: ${vcColors}.` }
+  ], { task: 'content', temperature: 0.7 });
+
+  const runThumbnail = () => sendMessage([
+    { role: 'user', content: `Generate thumbnail concept. Topic: ${vtTopic}. Platform: ${vtPlatform}. Style: ${vtStyle}.` }
+  ], { task: 'content', temperature: 0.75 });
+
+  const runStory = () => sendMessage([
+    { role: 'user', content: `Generate story template. Purpose: ${vsPurpose}. Personality: ${vsPersonality}. Message: ${vsMessage}.` }
+  ], { task: 'content', temperature: 0.7 });
 
   const tabs = [
     { id: 'reel', label: 'Reel shot list' },
@@ -88,7 +59,7 @@ export default function VisualPage() {
       
       <div className="stabs">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); sendMessage([], { task: 'chat' }); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
               {tab.label}
             </button>
           ))}
@@ -231,7 +202,7 @@ export default function VisualPage() {
             <div className="output-label text-purple">
               <span className="dot-purple"></span>
               Generated Brief
-              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
               <button className="save-output-btn">Save</button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 type TabType = 'copy' | 'strategy' | 'audience';
 
@@ -19,52 +20,19 @@ export default function AdsPage() {
   const [targetDemographic, setTargetDemographic] = useState('');
   const [interests, setInterests] = useState('');
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
+  const { response: result, isLoading: loading, sendMessage, clearHistory } = useModuleMaya({ enableHistory: true });
 
-  const generate = async (prompt: string) => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
+  const runCopy = () => sendMessage([
+    { role: 'user', content: `Generate ad copy for ${adType}. Product: ${product}. Offer: ${offer}. CTA: ${cta}. Include multiple variations.` }
+  ], { task: 'content', temperature: 0.75 });
 
-  const runCopy = () => generate(`Generate ad copy for ${adType}. Product: ${product}. Offer: ${offer}. CTA: ${cta}. Include multiple variations.`);
-  const runStrategy = () => generate(`Create a complete ad campaign strategy. Goal: ${campaignGoal}. Budget: ₹${budget}. Duration: ${duration} days. Include targeting, bidding strategy, and creative recommendations.`);
-  const runAudience = () => generate(`Suggest target audience segments for ${targetDemographic}. Interests: ${interests}. Include lookalike audiences and retargeting strategies.`);
+  const runStrategy = () => sendMessage([
+    { role: 'user', content: `Create a complete ad campaign strategy. Goal: ${campaignGoal}. Budget: ₹${budget}. Duration: ${duration} days. Include targeting, bidding strategy, and creative recommendations.` }
+  ], { task: 'strategy', temperature: 0.5 });
+
+  const runAudience = () => sendMessage([
+    { role: 'user', content: `Suggest target audience segments for ${targetDemographic}. Interests: ${interests}. Include lookalike audiences and retargeting strategies.` }
+  ], { task: 'strategy', temperature: 0.5 });
 
   const tabs = [
     { id: 'copy', label: 'Ad Copy' },
@@ -76,7 +44,7 @@ export default function AdsPage() {
     <>
       <div className="stabs">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setResult(''); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); clearHistory(); }} className={`stab ${activeTab === tab.id ? 'active-purple' : ''}`}>
             {tab.label}
           </button>
         ))}
@@ -179,7 +147,7 @@ export default function AdsPage() {
             <div className="output-label text-purple">
               <span className="dot-purple"></span>
               Results
-              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              <button className="clear-btn" onClick={clearHistory} title="Clear">✕</button>
             </div>
             <div className="output-actions">
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>

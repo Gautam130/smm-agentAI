@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLocalStorage } from '@/lib/hooks/useLocalStorage';
-import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 interface ABTest {
   id: string;
@@ -49,7 +49,7 @@ export default function ABTestingPage() {
   const [variantB, setVariantB] = useState('');
   const [testType, setTestType] = useState<ABTest['type']>('hook');
 
-  const { response, isLoading, sendMessage } = useStreamingChat();
+  const { response, isLoading, sendMessage } = useModuleMaya();
 
   const createTest = () => {
     if (!newName || !variantA || !variantB) return;
@@ -83,18 +83,14 @@ export default function ABTestingPage() {
     setTests(tests.filter(t => t.id !== id));
   };
 
-  const generateHypothesis = async () => {
-    const prompt = `Generate 5 A/B test hypotheses for Instagram content. For each include:
+  const generateHypothesis = () => sendMessage([
+    { role: 'user', content: `Generate 5 A/B test hypotheses for Instagram content. For each include:
 - What to test (hook, CTA, timing, etc.)
 - Variant A and B descriptions
 - Why this matters
 
-Format as a simple list.`;
-    
-    await sendMessage([
-      { role: 'user', content: prompt }
-    ], { task: 'content' });
-  };
+Format as a simple list.` }
+  ], { task: 'strategy', temperature: 0.7 });
 
   const templates = [
     { type: 'hook', a: 'Question hook', b: 'Statement hook' },
@@ -119,6 +115,9 @@ Format as a simple list.`;
         </button>
         <button onClick={() => setShowTemplates(!showTemplates)} className="run-btn btn-purple">
           📋 Templates
+        </button>
+        <button onClick={generateHypothesis} disabled={isLoading} className="run-btn btn-green">
+          {isLoading ? 'Generating...' : '💡 AI Ideas'}
         </button>
       </div>
 

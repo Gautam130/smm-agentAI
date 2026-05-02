@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
 
 const festivals = [
   { name: 'Diwali', emoji: '🪔' },
@@ -18,48 +19,12 @@ export default function FestivePage() {
   const [brand, setBrand] = useState('');
   const [campaignType, setCampaignType] = useState('Full 7-day content series');
   const [offer, setOffer] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState('');
 
-  const generate = async () => {
-    if (!brand.trim()) return;
-    setLoading(true);
-    setResult('');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: `Create a ${selectedFest} festive campaign for ${brand}. Type: ${campaignType}. Offer: ${offer}. Include post ideas, captions, and timing.` }] })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (!res.body) throw new Error('No response');
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                text += parsed.choices[0].delta.content;
-              }
-            } catch {}
-          }
-        }
-      }
-      setResult(text || 'No response');
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
-    }
-    setLoading(false);
-  };
+  const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+
+  const generate = () => sendMessage([
+    { role: 'user', content: `Create a ${selectedFest} festive campaign for ${brand}. Type: ${campaignType}. Offer: ${offer}. Include post ideas, captions, and timing.` }
+  ], { task: 'strategy', temperature: 0.7 });
 
   return (
     <>
@@ -105,7 +70,7 @@ export default function FestivePage() {
             <div className="output-label text-yellow">
               <span className="dot-yellow"></span>
               Festive Campaign
-              <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
+              <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
