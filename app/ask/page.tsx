@@ -255,6 +255,7 @@ export default function AskMayaPage() {
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const plusBtnRef = useRef<HTMLButtonElement>(null);
+  const autoSelectRef = useRef(false);
 
   // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -329,6 +330,44 @@ export default function AskMayaPage() {
       loadConversations();
     }
   }, [user, loadConversations]);
+
+  // Auto-load conversation from ?conversation=<id> query param
+  useEffect(() => {
+    if (!user || autoSelectRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const convId = params.get('conversation');
+    if (!convId) return;
+
+    autoSelectRef.current = true;
+
+    const autoSelect = async () => {
+      await new Promise(r => setTimeout(r, 500));
+      const exists = conversations.find(c => c.id === convId);
+      if (exists) {
+        handleSelectConversation(convId);
+      } else {
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from('conversations')
+          .select('id, title, updated_at, created_at')
+          .eq('id', convId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (data && !error) {
+          setConversations(prev => {
+            const found = prev.find(c => c.id === convId);
+            if (found) return prev;
+            return [data, ...prev];
+          });
+          handleSelectConversation(convId);
+        }
+      }
+    };
+
+    autoSelect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, conversations]);
 
   // Load messages for a conversation
   const loadMessages = useCallback(async (conversationId: string): Promise<ChatMessage[]> => {
