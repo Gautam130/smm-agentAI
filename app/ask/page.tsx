@@ -27,108 +27,86 @@ const suggestions = [
   'Diwali campaign 50k budget',
 ];
 
+type Citation = {
+  source: string;
+  url?: string;
+};
+
+function CitationBadge({ source, url }: { source: string; url?: string }) {
+  const baseStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '1px 6px',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    border: '0.5px solid rgba(255,255,255,0.1)',
+    borderRadius: '4px',
+    fontSize: '10px',
+    color: 'var(--text-muted)',
+    marginLeft: '6px',
+    verticalAlign: 'middle',
+    whiteSpace: 'nowrap',
+    textDecoration: 'none',
+    cursor: url ? 'pointer' : 'default',
+  };
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" style={baseStyle}>
+        {source}
+      </a>
+    );
+  }
+
+  return <span style={baseStyle}>{source}</span>;
+}
+
+function CitationBlock({ text }: { text: string }) {
+  if (!text || text.trim() === '') return null;
+
+  const paragraphs = text.split('\n');
+
+  return (
+    <>
+      {paragraphs.map((para, i) => {
+        if (!para.trim()) return <br key={i} />;
+
+        // TODO: Replace regex parsing with structured
+        // citation metadata from Maya API response
+        const citationMatch = para.match(/^(.*?)\s*\(\s*([A-Z][A-Za-z0-9\s&]+?)\s*\)\.?\s*$/);
+
+        if (citationMatch) {
+          const [, lineText, source] = citationMatch;
+          const citation: Citation = { source: source.trim() };
+          const trimmedText = lineText.trim();
+          return (
+            <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
+              {trimmedText ? <ReactMarkdown>{trimmedText}</ReactMarkdown> : null}
+              <CitationBadge source={citation.source} url={citation.url} />
+            </span>
+          );
+        }
+
+        return (
+          <span key={i} style={{ display: 'block', marginBottom: '8px' }}>
+            <ReactMarkdown>{para}</ReactMarkdown>
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 const StreamingMessage = memo(function StreamingMessage({ text }: { text: string }) {
-  const hasCitation = text.includes('(') && text.includes(')');
-  
   return (
     <div className="maya-message">
       <div className="maya-avatar">M</div>
       <div className="maya-text">
-        {hasCitation ? (
-          <CitationBlock text={text} />
-        ) : (
-          <span>{text}</span>
-        )}
+        <CitationBlock text={text} />
         <span className="cursor-blink">▋</span>
       </div>
     </div>
   );
 });
-
-function CitationBadge({ source }: { source: string }) {
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      padding: '2px 8px',
-      backgroundColor: '#6B7280',
-      borderRadius: '12px',
-      fontSize: '11px',
-      color: '#fff',
-      fontWeight: 500,
-      verticalAlign: 'middle',
-      marginLeft: '4px',
-    }}>
-      {source}
-    </span>
-  );
-}
-
-function CitationBlock({ text }: { text: string }) {
-  if (!text || text.trim() === '') {
-    return null;
-  }
-  
-  // Normalize: join lines that have sources on next line
-  let processed = text.replace(/([a-zA-Z0-9])\s*\n\s*([A-Za-z0-9])/g, '$1 $2');
-  
-  // Replace {cite:Source} with badge only (no source name text)
-  processed = processed.replace(/\{cite:\s*([^}]+)\}/gi, (_, source) => {
-    return ` [BADGE:${source.trim()}]`;
-  });
-  
-  // Replace (Source) with badge only - allow spaces and common chars in source names
-  // Only match if it looks like a source name (starts with capital, contains no digits alone)
-  processed = processed.replace(/\s*\(([A-Z][A-Za-z\s&]+?)\)\s*/g, (_, source) => {
-    const trimmed = source.trim();
-    // Skip if it's likely a number or parenthetical
-    if (/^\d+[,\d]*$/.test(trimmed)) return `(${trimmed})`;
-    return ` [BADGE:${trimmed}]`;
-  });
-
-  // Handle source names on their own line followed by period
-  // Pattern: newline, source name starting with capital, newline, period
-  processed = processed.replace(/\n([A-Z][A-Za-z\s&]+?)\n\./g, (_, source) => {
-    return ` [BADGE:${source.trim()}]`;
-  });
-
-  // Handle source names at end of text followed by just a period (no newline needed)
-  // Pattern: space, source name, period at end of text
-  processed = processed.replace(/([A-Z][A-Za-z\s&]+?)\.\s*$/gm, (_, source) => {
-    return ` [BADGE:${source.trim()}]`;
-  });
-
-  // Remove standalone domain names on their own line
-  processed = processed.replace(/\n([A-Za-z0-9_\-\.]+\.(com|org|co|in|net|io|ai|dev|info|biz))\s*\n/gi, '\n');
-
-  // Render badges
-  const badgeRegex = /\[BADGE:([^\]]+)\]/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-
-  while ((match = badgeRegex.exec(processed)) !== null) {
-    if (match.index > lastIndex) {
-      const textPart = processed.slice(lastIndex, match.index).trim();
-      if (textPart) {
-        parts.push(<ReactMarkdown key={key++}>{textPart}</ReactMarkdown>);
-      }
-    }
-    const sourceName = match[1].trim();
-    if (sourceName && sourceName.length > 0) {
-      parts.push(<CitationBadge key={key++} source={sourceName} />);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  const remainingText = processed.slice(lastIndex).trim();
-  if (remainingText) {
-    parts.push(<ReactMarkdown key={key++}>{remainingText}</ReactMarkdown>);
-  }
-
-  return <>{parts}</>;
-}
 
 const CompletedMessage = memo(function CompletedMessage({ message }: { message: ChatMessage }) {
   const getTime = () => {
