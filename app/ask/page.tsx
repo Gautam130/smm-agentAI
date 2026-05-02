@@ -177,6 +177,9 @@ function CitationBlock({ text }: { text: string }) {
   // Step 2: Render each line, converting [BADGE:X] tokens to CitationBadge components
   const badgeTokenRegex = /\[BADGE:([^\]]+)\]/g;
 
+  // Prevent ReactMarkdown from wrapping text in <p> blocks — must stay inline
+  const InlineMarkdown = ({ children, ...props }: { children?: React.ReactNode } & React.HTMLAttributes<HTMLSpanElement>) => <>{children}</>;
+
   const renderLine = (line: string, key: number) => {
     if (!line.trim()) return <br key={key} />;
 
@@ -192,7 +195,7 @@ function CitationBlock({ text }: { text: string }) {
       if (match.index > lastIndex) {
         const textBefore = line.slice(lastIndex, match.index);
         if (textBefore) {
-          parts.push(<ReactMarkdown key={partKey++}>{textBefore}</ReactMarkdown>);
+          parts.push(<ReactMarkdown key={partKey++} components={{ p: InlineMarkdown }}>{textBefore}</ReactMarkdown>);
         }
       }
       parts.push(<CitationBadge key={partKey++} source={match[1]} />);
@@ -201,7 +204,7 @@ function CitationBlock({ text }: { text: string }) {
 
     const remaining = line.slice(lastIndex);
     if (remaining) {
-      parts.push(<ReactMarkdown key={partKey++}>{remaining}</ReactMarkdown>);
+      parts.push(<ReactMarkdown key={partKey++} components={{ p: InlineMarkdown }}>{remaining}</ReactMarkdown>);
     }
 
     return (
