@@ -95,8 +95,37 @@ function isLikelySourceName(text: string): boolean {
   return true;
 }
 
+function fixNumberedListRestarts(text: string): string {
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let highestNumber = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const numberedMatch = line.match(/^(\d+)\.\s/);
+
+    if (numberedMatch) {
+      const num = parseInt(numberedMatch[1], 10);
+
+      if (num === 1 && highestNumber > 0) {
+        if (result.length > 0 && result[result.length - 1].trim() !== '') {
+          result.push('');
+        }
+      }
+
+      highestNumber = Math.max(highestNumber, num);
+    }
+
+    result.push(line);
+  }
+
+  return result.join('\n');
+}
+
 function CitationBlock({ text }: { text: string }) {
   if (!text || text.trim() === '') return null;
+
+  const cleanedText = fixNumberedListRestarts(text);
 
   // TODO: Replace regex parsing with structured
   // citation metadata from Maya API response
@@ -104,7 +133,7 @@ function CitationBlock({ text }: { text: string }) {
 
   // Step 1: Process text — replace parenthetical citations with tokens,
   // detect standalone source lines (no parens) and buffer them
-  const paras = text.split('\n');
+  const paras = cleanedText.split('\n');
   const processedLines: string[] = [];
   let lastNonEmptyIndex = -1;
   let pendingCites: string[] = [];
