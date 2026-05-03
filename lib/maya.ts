@@ -1416,17 +1416,54 @@ export function useMaya() {
     // Start chat with context
     const modeInstruction = getModeInstruction(intent.mode);
     
-    // Get user name from settings
+    // Read all relevant settings from localStorage
     let userName = '';
+    let platform = '';
+    let tone = '';
+    let framework = '';
+    let expertPrompt = '';
+    let deepThink = false;
+    let outputRefinement = false;
+    let qualityMode = 'balanced';
+
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('smm_settings');
       if (saved) {
         const settings = JSON.parse(saved);
         userName = settings.userName || '';
+        platform = settings.platform || '';
+        tone = settings.tone || '';
+        framework = settings.framework || 'none';
+        expertPrompt = settings.expertPrompt || '';
+        deepThink = !!settings.deepThink;
+        outputRefinement = !!settings.outputRefinement;
+        qualityMode = settings.qualityMode || 'balanced';
       }
     }
-    
-    const userContext = userName ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.` : '';
+
+    const userContext = userName
+      ? `\n\nIMPORTANT: The user's name is ${userName}. Use their name ONLY 1-2 times max per conversation - not in every response. Be subtle.`
+      : '';
+
+    const settingsContext = (() => {
+      const parts: string[] = [];
+      if (platform) {
+        parts.push(`User's primary platform is ${platform}. Tailor all content advice, posting times, format recommendations, and strategy specifically for ${platform}.`);
+      }
+      if (tone) {
+        parts.push(`User prefers ${tone} tone. Match this in all responses — content suggestions, captions, and strategic advice must reflect this tone.`);
+      }
+      if (framework && framework !== 'none') {
+        parts.push(`Apply the ${framework} framework when creating content strategies and suggestions.`);
+      }
+      if (outputRefinement) {
+        parts.push(`After generating your response, internally critique it once and refine before outputting. Check: Is this India-specific? Is it actionable? Is it in Maya's voice?`);
+      }
+      if (deepThink) {
+        parts.push(`Think step by step before answering. Show your reasoning process.`);
+      }
+      return parts.length > 0 ? `\n\nUSER SETTINGS:\n${parts.join('\n')}` : '';
+    })();
 
     // Build ctxLine from brand profile
     const ctxLine = ctxRaw?.business_type || ctxRaw?.audience
@@ -1438,7 +1475,7 @@ export function useMaya() {
     const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
 
-    const systemContent = CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + behaviorInstruction + MAYA_VOICE_REMINDER;
+    const systemContent = (expertPrompt ? expertPrompt + '\n---\n' : '') + CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + settingsContext + behaviorInstruction + MAYA_VOICE_REMINDER;
 
     const historyLimit = 15;
     const currentMessages = messagesRef.current;
@@ -1576,13 +1613,18 @@ export function useMaya() {
     abortRef.current = new AbortController();
     let fullText = '';
 
+    // Map qualityMode to temperature; deepThink adds +0.1; cap at 1.0
+    const qualityTempMap: Record<string, number> = { speed: 0.5, balanced: 0.7, quality: 0.9 };
+    const baseTemp = qualityTempMap[qualityMode] ?? intent.temp;
+    const effectiveTemp = Math.min(1.0, baseTemp + (deepThink ? 0.1 : 0));
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          temperature: intent.temp,
+          temperature: effectiveTemp,
           maxTokens: tokenLimit,
           taskType: intent.isHumorRequest ? 'humor' : intent.isDeepResearch ? 'research' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat',
           isFirstMessage
