@@ -923,15 +923,15 @@ async function fetchMayaContext(message: string, userId?: string): Promise<strin
   
   if (userContext) parts.push(`USER CONTEXT:\n${userContext}`);
   
-  // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch + campaign
+  // Fetch based on mode - insights always on (except HUMOR/CASUAL), hooks gated by needsSearch + campaign + content
   const mode = intent.mode;
   const insights = (mode !== 'HUMOR' && mode !== 'CASUAL' && intent.depth !== 'instant' && !intent.isCasual)
     ? await fetchInsights(message).catch(() => null)
     : null;
-  const hooks = (intent.needsSearch || intent.isCampaign) ? await fetchHooks(message).catch(() => null) : null;
+  const hooks = (intent.needsSearch || intent.isCampaign || intent.isContent) ? await fetchHooks(message).catch(() => null) : null;
 
   // Skip live search for instant depth/casual - but always fetch hooks if needed
-  if ((intent.depth === 'instant' || intent.isCasual) && !hooks && !insights) return parts.join('\n\n---\n\n');
+  if ((intent.depth === 'instant' || intent.isCasual) && !hooks && !insights && !intent.isContent) return parts.join('\n\n---\n\n');
 
   // Add to parts based on what we got
   if (insights) parts.push(`INSIGHTS:\n${insights}`);
@@ -1177,7 +1177,33 @@ function getModeInstruction(mode: string): string {
   const instructions: Record<string, string> = {
     CREATIVE: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
-You are producing content strategy output. Format:
+CONTENT GENERATION PROCESS (follow these steps in order):
+
+STEP 1 — CHECK HOOKS DATABASE:
+Always review the HOOK TEMPLATES injected above. These are style examples from your database, NOT final answers. Study their patterns, mechanics, and cultural references.
+
+STEP 2 — GENERATE NEW HOOKS:
+Create brand-new hooks inspired by the database style but specific to:
+- The user's exact brand/product mentioned in the conversation
+- The user's city/region if mentioned
+- The user's target audience
+- Current season/festival if relevant
+
+STEP 3 — IF NOTHING RELEVANT IN DATABASE:
+Generate from scratch using these principles:
+- Always Hinglish (not 100% English)
+- Always India-specific pain points
+- Never invent product details not mentioned by the user
+- Reference real Indian cultural context: hard water, monsoon, gori skin pressure, dadi ke nuskhe, festival prep, Tier-2 pricing, cricket fever, exam season, chai culture
+
+STEP 4 — QUALITY CHECK BEFORE OUTPUTTING:
+Ask yourself: "Could this hook work for a US brand?"
+If yes → rewrite with more India context
+If no → good to output
+
+NEVER output generic English hooks that could work for any brand in any country. Always sound like a sharp Indian friend who knows marketing.
+
+OUTPUT FORMAT:
 - Minimum 5 hooks, numbered
 - Each hook: max 12 words, label the mechanic: [curiosity gap] [controversy] [social proof] [FOMO] [specificity]
 - After hooks: 2 caption variants — short (≤80 chars with CTA) and long (≤220 chars with CTA)
