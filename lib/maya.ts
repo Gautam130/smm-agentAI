@@ -409,7 +409,7 @@ FRAMEWORKS
 4. PROOF — Social evidence or data point
 5. PUSH — Clear CTA`;
 
-const MAYA_VOICE_REMINDER = `Remember: You are Maya, not a research analyst. Talk like a sharp Indian friend who knows marketing. Mix Hindi words naturally. End with a question that leads to SMM work. Never sound like a corporate report.`;
+const MAYA_VOICE_REMINDER = `Remember: You are Maya, not a research analyst. Talk like a sharp Indian friend who knows marketing. On greetings, use natural Hinglish — "Kya scene hai", "kya chal raha hai", "bol bhai" — not English-only greetings with a token "namaste". Mix Hindi words naturally throughout. End with a question that leads to SMM work. Never sound like a corporate report.`;
 
 // ============================================================================
 // KNOWLEDGE INJECTION FUNCTIONS
@@ -1502,8 +1502,6 @@ export function useMaya() {
     const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const timeContext = `\n\nCURRENT DATE & TIME (India Standard Time):\n${formattedDate}, ${formattedTime}\n\n- Use this as the ONLY source of truth for any current date or time questions.\n- For historical questions (e.g. about Akbar, wars, past events), rely on your general knowledge.\n- Never guess or make up dates or times.`;
 
-    const systemContent = (expertPrompt ? expertPrompt + '\n---\n' : '') + CHAT_SYS + timeContext + modeInstruction + ctxLine + userContext + settingsContext + behaviorInstruction + MAYA_VOICE_REMINDER;
-
     const historyLimit = 15;
     const currentMessages = messagesRef.current;
     const recentHistory = currentMessages
@@ -1516,6 +1514,13 @@ export function useMaya() {
     
     const historyBeforeThisMessage = recentHistory.slice(0, -1);
     const isFirstMessage = historyBeforeThisMessage.length === 0 && (intent.isCasual || intent.mode === 'CASUAL' || intent.mode === 'HUMOR' || intent.mode === 'GENERAL');
+
+    // On first message, override ctxLine to be knowledge-only (no referencing audience)
+    const isFirstCtxOverride = isFirstMessage && (ctxRaw?.business_type || ctxRaw?.audience)
+      ? `\n\nBRAND CONTEXT (KNOWLEDGE ONLY): You have background info about a "${ctxRaw.business_type || 'business'}" brand targeting "${ctxRaw.audience || 'general audience'}" — but the user has NOT confirmed these details in this conversation. Do NOT reference these specifics as if they are the user's actual brand. Keep this as background knowledge. If they mention their brand, then apply the context. Otherwise greet fresh and let them share details naturally.`
+      : '';
+
+    const systemContent = (expertPrompt ? expertPrompt + '\n---\n' : '') + CHAT_SYS + timeContext + modeInstruction + ctxLine + isFirstCtxOverride + userContext + settingsContext + behaviorInstruction + MAYA_VOICE_REMINDER;
 
     let sessionContext = '';
     if (isFirstMessage && ctxRaw?.last_seen) {
@@ -1541,7 +1546,7 @@ export function useMaya() {
     let freshConversationRule = '';
     if (isFirstMessage) {
       freshConversationRule = `\n\nFRESH CONVERSATION RULES (this is message #1):${sessionContext}
-- Greet warmly according to the SESSION CONTEXT above
+- Greet warmly in natural Hinglish — "Kya scene hai", "kya chal raha hai", "bol", "kya bolti public" — NOT English with a token "namaste"
 - You MAY use their brand/business context to give relevant suggestions
 - You may NOT act like you've spoken before unless SESSION CONTEXT says "returning"
 - You may NOT say "welcome back" unless gap > 24 hours
