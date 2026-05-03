@@ -1537,7 +1537,10 @@ export function useMaya() {
             docx: 'Word Document',
             txt: 'Text File',
             md: 'Markdown',
-            text: 'Text File'
+            text: 'Text File',
+            csv: 'CSV Data',
+            xlsx: 'Excel Spreadsheet',
+            xls: 'Excel Spreadsheet'
           };
           const docType = typeMap[ext] || 'Document';
           return `=== ATTACHED DOCUMENT ===\nFilename: ${a.name}\nType: ${docType}\n\n${a.content}\n\n=== END DOCUMENT ===\n\nUse this document as context for your response. Reference it naturally.`;

@@ -944,28 +944,35 @@ export default function AskMayaPage() {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large — max 10MB supported');
+      return;
+    }
+
     const fileSize = (file.size / 1024).toFixed(1) + ' KB';
     if (attachedFiles.some(f => f.name === file.name && f.size === fileSize)) {
       alert('File already attached');
       return;
     }
-    
+
     if (attachedFiles.length >= 2) {
       alert('Maximum 2 files allowed');
       return;
     }
-    
+
     let fileContent = '';
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isDocx = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc');
     const isImage = file.type.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|bmp)$/i.test(file.name);
-    
+    const isCSV = file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain';
+    const isExcel = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls') || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.type === 'application/vnd.ms-excel';
+
     if (isImage) {
       try {
         fileContent = `[Analyzing image: ${file.name}...`;
         const Tesseract = await import('tesseract.js');
-        
+
         const result = await Tesseract.recognize(file, 'eng+hin', {
           logger: (m) => {
             if (m.status === 'recognizing text') {
@@ -974,7 +981,7 @@ export default function AskMayaPage() {
             }
           }
         });
-        
+
         setOcrProgress(null);
         const extractedText = result.data.text.trim();
         if (extractedText) {
@@ -990,15 +997,15 @@ export default function AskMayaPage() {
       try {
         const pdfjs = await import('pdfjs-dist');
         const arrayBuffer = await file.arrayBuffer();
-        
+
         if (!pdfjs.GlobalWorkerOptions.workerSrc) {
           pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
         }
-        
+
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         let fullText = '';
-        
+
         const maxPages = Math.min(pdf.numPages, 10);
         for (let i = 1; i <= maxPages; i++) {
           const page = await pdf.getPage(i);
@@ -1011,7 +1018,7 @@ export default function AskMayaPage() {
             fullText += pageText + '\n\n';
           }
         }
-        
+
         if (fullText.trim()) {
           fileContent = fullText.substring(0, 15000);
         } else {
@@ -1034,6 +1041,37 @@ export default function AskMayaPage() {
       } catch (err: any) {
         console.error('DOCX parse error:', err);
         fileContent = `[Word document - ${file.name} - Parse error: ${err.message}]`;
+      }
+    } else if (isExcel) {
+      try {
+        const XLSX = await import('xlsx');
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const csvData = XLSX.utils.sheet_to_csv(firstSheet);
+        const rows = csvData.split('\n');
+        const limitedRows = rows.slice(0, 500);
+        const limitedCSV = limitedRows.join('\n');
+        if (limitedCSV.trim()) {
+          fileContent = `=== EXCEL DATA ===\n${file.name}\nSheet: ${workbook.SheetNames[0]} (first 500 rows)\n\n${limitedCSV.substring(0, 15000)}\n=== END EXCEL DATA ===`;
+        } else {
+          fileContent = `[Excel file - ${file.name} - No data found]`;
+        }
+      } catch (err: any) {
+        console.error('Excel parse error:', err);
+        fileContent = `[Excel file - ${file.name} - Parse error: ${err.message}]`;
+      }
+    } else if (isCSV) {
+      try {
+        const text = await file.text();
+        if (text.trim()) {
+          fileContent = `=== CSV DATA ===\n${file.name}\n\n${text.substring(0, 15000)}\n=== END CSV DATA ===`;
+        } else {
+          fileContent = `[CSV file - ${file.name} - Empty file]`;
+        }
+      } catch (err: any) {
+        console.error('CSV read error:', err);
+        fileContent = `[CSV file - ${file.name} - Read error: ${err.message}]`;
       }
     } else if (file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.txt')) {
       try {
@@ -1426,7 +1464,7 @@ export default function AskMayaPage() {
                 {showAttachMenu && (
                   <div className="attach-dropdown" style={{ position: 'absolute', bottom: '100%', left: 0, marginBottom: '8px' }}>
                     <label className="attach-option">
-                      <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md" />
+                      <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls" />
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                       </svg>
