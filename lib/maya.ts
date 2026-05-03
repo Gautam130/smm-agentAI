@@ -568,6 +568,21 @@ async function getUserContextRaw(userId: string): Promise<{ business_type?: stri
 async function updateUserContext(userId: string, message: string): Promise<void> {
   if (!userId) return;
   
+  // Only extract context when user signals first-person ownership
+  // Prevents saving hypothetical/example brand details to user_context
+  const ownershipSignals = [
+    /\b(my|mine|our|ours)\s+(brand|business|company|startup|client|product|service|store|app|website|page)\b/i,
+    /\b(i|we|mera|meri|mere|hamara|hamari|hamare)\s+(work|run|own|manage|handle|build|started|launched|karta|karti|karti hoon|karta hoon|karta hai|karte hain|chahta|chahti|soch raha|soch rahi)\b/i,
+    /\b(for my|for our|for us|mere liye|hamare liye|mere brand|hamare brand)\b/i,
+    /\b(i (run|have|own|started|launched|built|created|manage|handle|work)\s+(a\s+)?(brand|business|company|startup|client|agency|product|store|app|service))\b/i,
+    /\b(my (target|ideal|primary)\s+(audience|customer|user|buyer|market))\b/i,
+    /\b(we('re| are)\s+(a\s+)?(D2C|SaaS|ecommerce|fashion|skincare|healthcare|food|tech))\b/i,
+    /\b(mera brand|meri company|hamari startup|hamara product)\b/i,
+  ];
+
+  const hasOwnership = ownershipSignals.some(p => p.test(message));
+  if (!hasOwnership) return;
+  
   const extracted = extractUserContext(message);
   if (!extracted) return;
   
