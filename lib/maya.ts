@@ -549,6 +549,32 @@ async function fetchUserContext(userId: string): Promise<string | null> {
   }
 }
 
+function normalizeForComparison(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSimilarQuery(current: string, previous: string): boolean {
+  const a = normalizeForComparison(current);
+  const b = normalizeForComparison(previous);
+
+  if (a.length === 0 || b.length === 0) return false;
+
+  if (a.includes(b) || b.includes(a)) return true;
+
+  const wordsA = new Set(a.split(' '));
+  const wordsB = new Set(b.split(' '));
+
+  const intersection = new Set([...wordsA].filter(w => wordsB.has(w)));
+  const union = new Set([...wordsA, ...wordsB]);
+
+  const overlap = union.size > 0 ? intersection.size / union.size : 0;
+  return overlap >= 0.6;
+}
+
 async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string; goals?: string; last_seen?: string } | null> {
   try {
     const supabase = getSupabase();
@@ -1535,7 +1561,22 @@ export function useMaya() {
       ? `\n\nBRAND CONTEXT (KNOWLEDGE ONLY): You have background info about a "${ctxRaw.business_type || 'business'}" brand targeting "${ctxRaw.audience || 'general audience'}" — but the user has NOT confirmed these details in this conversation. Do NOT reference these specifics as if they are the user's actual brand. Keep this as background knowledge. If they mention their brand, then apply the context. Otherwise greet fresh and let them share details naturally.`
       : '';
 
-    const systemContent = (expertPrompt ? expertPrompt + '\n---\n' : '') + CHAT_SYS + timeContext + modeInstruction + ctxLine + isFirstCtxOverride + userContext + settingsContext + behaviorInstruction + MAYA_VOICE_REMINDER;
+    // Detect repeated query in recent history
+    let repeatDetection = '';
+    const currentUserMsg = messageWithContext.trim();
+    const prevUserMessages = historyBeforeThisMessage.filter(m => m.role === 'user');
+    for (let i = prevUserMessages.length - 1; i >= 0; i--) {
+      if (isSimilarQuery(currentUserMsg, prevUserMessages[i].content.trim())) {
+        const prevAnswer = i + 1 < recentHistory.length && recentHistory[i + 1]?.role === 'assistant'
+          ? recentHistory[i + 1].content.substring(0, 200)
+          : '';
+        const prevAnswerSummary = prevAnswer ? prevAnswer.replace(/\n/g, ' ').substring(0, 150) : '';
+        repeatDetection = `\n\nREPEAT QUERY DETECTED: The user is asking a very similar question to one they asked earlier. Their previous answer was: "${prevAnswerSummary}". Do NOT repeat the same response. Instead: acknowledge it naturally in Hinglish, ask what was missing from the previous answer, OR provide a completely different angle. Example: "Yaar yeh toh pehle bhi discuss kiya tha — [one-line summary of previous answer]. Kya alag chahiye is baar?"`;
+        break;
+      }
+    }
+
+    const systemContent = (expertPrompt ? expertPrompt + '\n---\n' : '') + CHAT_SYS + timeContext + modeInstruction + ctxLine + isFirstCtxOverride + userContext + settingsContext + repeatDetection + behaviorInstruction + MAYA_VOICE_REMINDER;
 
     let sessionContext = '';
     if (isFirstMessage && ctxRaw?.last_seen) {
