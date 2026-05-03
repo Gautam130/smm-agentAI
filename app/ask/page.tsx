@@ -1048,10 +1048,9 @@ export default function AskMayaPage() {
         const arrayBuffer = await file.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const csvData = XLSX.utils.sheet_to_csv(firstSheet);
-        const rows = csvData.split('\n');
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, blankrows: false, defval: '' }) as string[][];
         const limitedRows = rows.slice(0, 500);
-        const limitedCSV = limitedRows.join('\n');
+        const limitedCSV = limitedRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
         if (limitedCSV.trim()) {
           fileContent = `=== EXCEL DATA ===\n${file.name}\nSheet: ${workbook.SheetNames[0]} (first 500 rows)\n\n${limitedCSV.substring(0, 15000)}\n=== END EXCEL DATA ===`;
         } else {
