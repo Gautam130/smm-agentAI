@@ -572,7 +572,7 @@ function isSimilarQuery(current: string, previous: string): boolean {
   const union = new Set([...wordsA, ...wordsB]);
 
   const overlap = union.size > 0 ? intersection.size / union.size : 0;
-  return overlap >= 0.6;
+  return overlap >= 0.75;
 }
 
 async function getUserContextRaw(userId: string): Promise<{ business_type?: string; audience?: string; goals?: string; last_seen?: string } | null> {
