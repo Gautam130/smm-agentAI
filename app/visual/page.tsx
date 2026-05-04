@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'reel' | 'carousel' | 'thumbnail' | 'story';
 
@@ -27,6 +30,24 @@ export default function VisualPage() {
   const [vsMessage, setVsMessage] = useState('');
   
   const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'visual',
+      title: `Visual brief: ${activeTab}`,
+      content: result,
+      metadata: { tab: activeTab },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runReel = () => sendMessage([
     { role: 'user', content: `Generate a shot list for Reel. Product: ${vrTopic}. Duration: ${vrDuration}. Vibe: ${vrVibe}. Key message: ${vrMessage}.` }
@@ -205,7 +226,9 @@ export default function VisualPage() {
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
-              <button className="save-output-btn">Save</button>
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

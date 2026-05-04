@@ -199,9 +199,31 @@ EMOTIONAL (stressed, frustrated, excited, sad):
 - Do NOT follow up with work questions. Just be a friend for that message.
 - If user says mood is bad → acknowledge genuinely first. No advice unless asked.
 
+EMOTIONAL POSITIVE (excited, celebrating, happy):
+- Match their energy immediately
+- Celebrate WITH them first
+- Do NOT immediately give advice or next steps
+- Just be genuinely happy for them for this message
+- Example: "Arre yaar congratulations! Yeh toh kamaal kar diya tune!"
+
+EMOTIONAL GIVING UP (fed up, pointless, over it, kya fayda):
+- Acknowledge the exhaustion first
+- Do NOT give a productivity lecture
+- Do NOT say "just keep going"
+- One small concrete thing they can do right now
+- Be real: "Haan yaar, kabhi kabhi sab overwhelming lagta hai"
+
 QUESTION (life, general, random):
 - Answer fully from your knowledge. Don't invent facts.
 - Don't redirect to marketing unless they asked about it.
+
+GENERAL (movies, food, life, random topics):
+- Answer fully from your knowledge
+- Do NOT inject marketing unless they ask
+- Be a well-rounded person, not a marketing bot
+- Hinglish if they're writing Hinglish
+- Short if they're being casual
+- Only pivot to SMM when user signals it
 
 QUESTIONS ABOUT YOU (who built you, about Maya):
 - Never say "I'm an AI." Never reveal tech stack (Mistral, Groq, etc).
@@ -220,6 +242,16 @@ STRATEGY (campaign/plan/growth/launch):
 
 CORRECTION (user says you got something wrong):
 - "Sorry, got that wrong!" Fix it. Move on. Never over-apologize.
+
+CAREER (job, salary, resume, interview, switch):
+- Use their actual background if known from context
+- Give NCR/India specific advice always
+- Name real companies and ₹ LPA salary ranges
+- Be honest — if role needs coding, say so clearly
+- If they can get role without coding, say that too
+- Never give generic advice that ignores their situation
+- Reference their actual experience and skills
+- Suggest specific next steps they can do this week
 
 ═══════════════════════════════════════
 VOICE — NON-NEGOTIABLE
@@ -1032,7 +1064,8 @@ function detectIntent(msg: string) {
     research: 0,
     emotional: 0,
     humor: 0,
-    image: 0
+    image: 0,
+    career: 0
   };
 
   const negationPatterns = [
@@ -1047,8 +1080,11 @@ function detectIntent(msg: string) {
   if (/strategy|plan|audit|growth|competitor|improve|fix|scale|positioning/i.test(q)) scores.strategy += 0.5;
   if (/research|analyze|compare|benchmark|market|intel|tell me about|who is/i.test(q)) scores.research += 0.5;
   if (/sad|stressed|tired|frustrated|messing up|burnout|worried|anxious|exhausted/i.test(q)) scores.emotional += 0.7;
+  if (/\b(excited|thrilled|amazing|wonderful|happy|celebrating|got the job|she said yes|promotion|achievement|nailed it|cleared|selected|got offer|passed)\b/i.test(q)) scores.emotional += 0.4;
+  if (/\b(can't do this|giving up|pointless|what's the point|nothing works|fed up|over it|done with|kya fayda|chod deta hoon|chod do|haar gaya|thak gaya)\b/i.test(q)) scores.emotional += 0.7;
   if (/lol|funny|joke|laugh|masti|comedy|rofl|hasi/i.test(q)) scores.humor += 0.6;
   if (/image|pic|photo|generate.*visual|create.*image|make.*image|design|art|illustration|cover.*image|banner|poster/i.test(q)) scores.image += 0.5;
+  if (/\b(job|career|salary|resume|interview|hire|lpa|package|switch|role|apply|linkedin|naukri|fresher|experience|joining|placement|offer|ctc|hike|promotion|appraisal)\b/i.test(q)) scores.career = (scores.career || 0) + 0.5;
   
   // Short input detection
   if (wordCount <= 5 && !scores.content && !scores.strategy && !scores.research) scores.casual += 0.5;
@@ -1062,12 +1098,15 @@ function detectIntent(msg: string) {
   const isLowConfidence = topScore < 0.3;
 
   // Emotional flag (for depth control)
-  const hasEmotional = scores.emotional > 0.4;
+  const hasEmotional = scores.emotional >= 0.4;
   const isEmotionalHeavy = scores.emotional > 0.6;
+  const isEmotionalPositive = /\b(excited|thrilled|happy|celebrating|got the job|she said yes|promotion|achievement|nailed it|cleared|selected)\b/i.test(q);
+  const isGivingUp = /\b(can't do this|giving up|pointless|what's the point|nothing works|fed up|kya fayda|chod deta hoon|haar gaya)\b/i.test(q);
 
   // Legacy compatibility - convert back to binary for existing code
   const isCasual = scores.casual > 0.3 || isShortInput;
   const isEmotionalLegacy = scores.emotional > 0.3;
+  const isCareer = (scores.career || 0) > 0.3;
 
   let isContent = /write|create|generate|draft|caption|hook|reel|post|story|dm|script|carousel|thread|hashtag/i.test(q);
   let isStrategy = /strategy|audit|diagnose|growth|competitor|improve|fix|scale|positioning|gap|plan/i.test(q);
@@ -1156,6 +1195,7 @@ function detectIntent(msg: string) {
   const mode = isImage ? 'IMAGE'
     : isHumorRequest ? 'HUMOR'
     : hasEmotional ? 'EMOTIONAL'
+    : isCareer ? 'CAREER'
     : topModes.length >= 2
       ? `HYBRID_${topModes.slice(0, 2).map(([k]) => k.toUpperCase()).join('_')}`
     : isCasual ? 'CASUAL'
@@ -1170,6 +1210,7 @@ function detectIntent(msg: string) {
   const temp = isHumorRequest ? 0.80
     : isEmotionalHeavy ? 0.75  // Keep simple when emotional heavy
     : isDeepResearch ? 0.2 : isCasual ? 0.78
+    : isCareer ? 0.7
     : isContent ? 0.72
     : isStrategy ? 0.45
     : isResearch || depth === 'complex' ? 0.15
@@ -1206,7 +1247,7 @@ function detectIntent(msg: string) {
   }
 
   return {
-    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isDeepResearch, isHumorRequest, isShortInput, hasNegation, isImage, isCampaign,
+    isCasual, isEmotional: isEmotionalLegacy, isContent, isStrategy, isResearch, isDeepResearch, isHumorRequest, isShortInput, hasNegation, isImage, isCampaign, isCareer,
     needsSearch, mode, temp, depth, queryType,
     // New scoring data
     scores,
@@ -1214,6 +1255,8 @@ function detectIntent(msg: string) {
     topIntent,
     hasEmotional,
     isEmotionalHeavy,
+    isEmotionalPositive,
+    isGivingUp,
     isLowConfidence,
     behaviorGuards
   };
@@ -1321,6 +1364,10 @@ or an honest perspective.
 Do not over-validate. Do not repeat back what they said.
 Be warm but direct. Maya does not do therapy — she does clarity.`,
 
+    CAREER: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
+
+You are a sharp Indian career mentor. You know the NCR/Bangalore/Mumbai job market, Indian startup ecosystem, and what hiring managers actually want. Give direct honest advice. No fluff. Reference user's actual background if known from conversation or user_context. Always use India salary ranges in ₹ LPA. Name specific companies, roles, platforms: LinkedIn, Naukri, Instahyre, AngelList India, Wellfound, Internshala. Never give generic 'learn Python' advice unless coding is genuinely required for their target role. If they can get the role without coding — say that.`,
+
     HUMOR: `Stay in Maya's voice and personality at all times. The following defines OUTPUT STRUCTURE only — not tone. Maya's character from CHAT_SYS always takes priority.
 
 Be genuinely funny — sharp wit, not dad jokes.
@@ -1349,7 +1396,11 @@ Lead with your best answer in the first sentence — do not warm up.
 If the question is ambiguous, pick the most likely interpretation,
 answer it, then offer the alternative.
 If uncertain: "I'm not sure, but most likely X because Y."
-Never pad. Never summarise what you just said at the end.`,
+Never pad. Never summarise what you just said at the end.
+Answer the question directly and fully.
+Do NOT redirect to marketing or social media unless the user explicitly connects it themselves.
+If they ask about movies → talk about movies. If they ask about food → talk about food.
+If they ask about relationships → be a friend. Only connect to SMM if it flows naturally from THEIR message, not forced by you. No "speaking of which, for your brand..." pivots.`,
   };
 
   if (mode.startsWith('HYBRID_')) {
@@ -1722,7 +1773,9 @@ export function useMaya() {
           temperature: effectiveTemp,
           maxTokens: tokenLimit,
           taskType: intent.isHumorRequest ? 'humor' : intent.isDeepResearch ? 'research' : intent.isContent ? 'content' : intent.isStrategy ? 'strategy' : intent.isResearch ? 'research' : 'chat',
-          isFirstMessage
+          isFirstMessage,
+          isEmotionalPositive: intent.isEmotionalPositive,
+          isGivingUp: intent.isGivingUp
         }),
         signal: abortRef.current.signal
       });

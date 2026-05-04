@@ -2,12 +2,33 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function BulkPage() {
   const [topic, setTopic] = useState('');
   const [count, setCount] = useState(5);
 
   const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'bulk',
+      title: `${count} posts: ${topic.substring(0, 50)}...`,
+      content: result,
+      metadata: { count, topic: topic.substring(0, 100) },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const generate = () => sendMessage([
     { role: 'user', content: `Generate ${count} social media post ideas for: ${topic}. Include captions, hooks, and post types.` }
@@ -54,6 +75,9 @@ export default function BulkPage() {
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy All</button>
             </div>
           </div>

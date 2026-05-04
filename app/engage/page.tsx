@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'comments' | 'dm' | 'crisis' | 'community';
 
@@ -22,6 +25,24 @@ export default function EngagePage() {
   const [comType, setComType] = useState('Strategy to identify & nurture top fans');
   
   const { response: result, isLoading: loading, sendMessage, clearHistory } = useModuleMaya({ enableHistory: true });
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'engage',
+      title: `Engage ${activeTab}: ${brand || dmProduct || crisisSituation || comBrand}`,
+      content: result,
+      metadata: { tab: activeTab },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runComments = () => sendMessage([
     { role: 'user', content: `Generate reply templates for ${brand}. Comment type: ${commentType}. Brand tone: ${tone}. Include multiple variations.` }
@@ -165,7 +186,12 @@ export default function EngagePage() {
               {activeTab === 'crisis' && 'Crisis Response'}
               {activeTab === 'community' && 'Community Strategy'}
             </div>
-            <button className="action-btn" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+          <div className="output-actions">
+            <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+              {saved ? 'Saved ✓' : 'Save'}
+            </button>
+            <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
+          </div>
           </div>
           <div className="output-box">
             {result}

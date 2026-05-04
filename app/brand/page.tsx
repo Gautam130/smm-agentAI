@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'identity' | 'guidelines' | 'assets';
 
@@ -19,6 +22,24 @@ export default function BrandPage() {
   const [donts, setDonts] = useState('');
   
   const { response: result, isLoading: loading, sendMessage, clearHistory } = useModuleMaya({ enableHistory: true });
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'brand',
+      title: `Brand ${activeTab}: ${brandName || colors || activeTab}`,
+      content: result,
+      metadata: { tab: activeTab, brandName },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runIdentity = () => sendMessage([
     { role: 'user', content: `Create a brand identity for ${brandName}. Tagline: ${tagline}. Values: ${values}. Voice: ${voice}.` }
@@ -117,6 +138,9 @@ export default function BrandPage() {
               <button className="clear-btn" onClick={clearHistory} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

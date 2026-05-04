@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
 import { useSearch } from '@/lib/hooks/useSearch';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type ReportType = 'performance' | 'competitor' | 'audience' | 'content';
 
@@ -14,6 +17,26 @@ export default function ReportPage() {
   
   const { response, isLoading, sendMessage } = useStreamingChat();
   const { data: searchData, execute: doSearch, isLoading: searchLoading } = useSearch();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !response || saved) return;
+    const res = await saveOutput({
+      module: 'report',
+      title: `Report ${reportType}: ${brand}`,
+      content: response,
+      metadata: { reportType, platform, period, brand },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
+
+  const exportPdf = () => window.print();
 
   const generateReport = async () => {
     if (!brand) return;
@@ -132,7 +155,10 @@ Include:
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'research' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
-              <button className="action-btn">Export PDF</button>
+              <button className="save-output-btn" onClick={exportPdf}>Export PDF</button>
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
             </div>
           </div>

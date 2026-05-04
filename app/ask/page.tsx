@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Conversation {
   id: string;
@@ -224,7 +225,7 @@ function CitationBlock({ text }: { text: string }) {
       if (match.index > lastIndex) {
         const textBefore = line.slice(lastIndex, match.index);
         if (textBefore) {
-          parts.push(<ReactMarkdown key={partKey++} components={{ p: InlineMarkdown }}>{textBefore}</ReactMarkdown>);
+          parts.push(<ReactMarkdown key={partKey++} rehypePlugins={[rehypeSanitize]} components={{ p: InlineMarkdown }}>{textBefore}</ReactMarkdown>);
         }
       }
       parts.push(<CitationBadge key={partKey++} source={match[1]} />);
@@ -233,7 +234,7 @@ function CitationBlock({ text }: { text: string }) {
 
     const remaining = line.slice(lastIndex);
     if (remaining) {
-      parts.push(<ReactMarkdown key={partKey++} components={{ p: InlineMarkdown }}>{remaining}</ReactMarkdown>);
+      parts.push(<ReactMarkdown key={partKey++} rehypePlugins={[rehypeSanitize]} components={{ p: InlineMarkdown }}>{remaining}</ReactMarkdown>);
     }
 
     return (
@@ -277,7 +278,7 @@ const CompletedMessage = memo(function CompletedMessage({ message }: { message: 
               ))}
             </div>
           )}
-          <ReactMarkdown>{message.text}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{message.text}</ReactMarkdown>
           <div className="chat-time">{getTime()}</div>
         </div>
       </div>

@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { search } from '@/lib/api/search';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'monitor' | 'newsjack' | 'sentiment';
 
@@ -26,6 +29,24 @@ export default function ListenPage() {
 
   const { response, isLoading, sendMessage } = useStreamingChat();
   const { data: searchData, execute: doSearch, isLoading: searchLoading } = useSearch();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !response || saved) return;
+    const res = await saveOutput({
+      module: 'listen',
+      title: `Listen ${activeTab}: ${brand || njBrand || sentBrand}`,
+      content: response,
+      metadata: { tab: activeTab },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runMonitor = async () => {
     if (!brand) return;
@@ -252,7 +273,12 @@ Provide:
               {activeTab === 'newsjack' && "Newsjacking Opportunities"}
               {activeTab === 'sentiment' && 'Sentiment Report'}
             </div>
-            <button className="action-btn" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
+            <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
+              <button className="action-btn" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
+            </div>
           </div>
           <div className="output-box">
             {response}

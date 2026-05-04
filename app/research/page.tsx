@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'market' | 'competitor' | 'audience' | 'trends';
 
@@ -21,6 +24,24 @@ export default function ResearchPage() {
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'research',
+      title: `Research ${activeTab}: ${industry || competitor || audienceInterest || trendsNiche}`,
+      content: result,
+      metadata: { tab: activeTab },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const generate = async (prompt: string) => {
     if (!prompt.trim()) return;
@@ -174,6 +195,9 @@ export default function ResearchPage() {
               <button className="clear-btn" onClick={() => setResult('')} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

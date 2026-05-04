@@ -250,6 +250,30 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
     navigator.clipboard.writeText(dm);
   };
 
+  const exportCSV = () => {
+    const headers = ['Handle', 'Name', 'Followers', 'City', 'Platform', 'Score', 'Style', 'Why Fit', 'Red Flags', 'Contact', 'DM Template'];
+    const rows = searchResults.map(p => [
+      p.handle, p.name, p.followers, p.city, p.platform, `${p.score}/10`, p.style, p.whyFit, p.flags, p.contact, `"${p.dm.replace(/"/g, '""')}"`
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `influencers-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyForNotion = () => {
+    const header = '| Handle | Name | Followers | City | Score | Style | Why Fit | Contact | DM |\n';
+    const divider = '|--------|------|-----------|------|-------|-------|---------|---------|----|\n';
+    const rows = searchResults.map(p =>
+      `| ${p.handle} | ${p.name} | ${p.followers} | ${p.city} | ${p.score}/10 | ${p.style} | ${p.whyFit} | ${p.contact} | ${p.dm} |`
+    ).join('\n');
+    navigator.clipboard.writeText(header + divider + rows);
+  };
+
   const getInitials = (handle: string) => {
     const h = handle.replace('@', '').substring(0, 2).toUpperCase();
     return h;
@@ -455,8 +479,8 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
       {searchResults.length > 0 && (
         <div style={{ marginTop: '20px' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <button className="run-btn" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>📥 Export CSV</button>
-            <button className="run-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text)', border: '1px solid var(--border)' }}>📋 Copy for Notion</button>
+            <button onClick={exportCSV} className="run-btn" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>📥 Export CSV</button>
+            <button onClick={copyForNotion} className="run-btn" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text)', border: '1px solid var(--border)' }}>📋 Copy for Notion</button>
           </div>
           
           <div className="notice" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: '12px', padding: '12px' }}>

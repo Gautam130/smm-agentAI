@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useStreamingChat } from '@/lib/hooks/useStreamingChat';
 import { getFestivalsForMonth, getPostingDays, MONTH_NAMES, DAY_NAMES, type Festival } from '@/lib/data/festivals';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function CalendarPage() {
   const [brand, setBrand] = useState('');
@@ -16,6 +19,35 @@ export default function CalendarPage() {
   const [events, setEvents] = useState('');
   
   const { response, isLoading, sendMessage } = useStreamingChat();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !response || saved) return;
+    const res = await saveOutput({
+      module: 'calendar',
+      title: `Calendar: ${brand} — ${month} ${year}`,
+      content: response,
+      metadata: { brand, month, year, frequency },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
+
+  const downloadTxt = () => {
+    const content = `CONTENT CALENDAR — ${brand}\n${month} ${year}\nFrequency: ${frequency}\n${'='.repeat(50)}\n\n${response}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `calendar-${brand.replace(/\s+/g, '-').toLowerCase()}-${month.toLowerCase()}-${year}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const monthIndex = MONTH_NAMES.indexOf(month);
   const festivals = getFestivalsForMonth(monthIndex);
@@ -193,8 +225,10 @@ Make it actionable and specific to Indian audience.`;
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'calendar' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
-              <button className="excel-export-btn">📄 Excel</button>
-              <button className="save-output-btn">Save</button>
+              <button className="save-output-btn" onClick={downloadTxt}>📄 Export</button>
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(response)}>Copy</button>
             </div>
           </div>

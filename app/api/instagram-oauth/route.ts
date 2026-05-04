@@ -15,9 +15,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login?instagram_error=No authorization code received', request.url));
   }
 
-  const IG_APP_ID = process.env.INSTAGRAM_APP_ID || '2098784637634308';
-  const IG_APP_SECRET = process.env.INSTAGRAM_APP_SECRET || '3f6eafd068d23a7e62cf713d6a3fefe8';
-  const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI || 'https://smm-agent-ai.vercel.app/api/instagram-oauth';
+  const IG_APP_ID = process.env.INSTAGRAM_APP_ID;
+  const IG_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
+  const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
+
+  if (!IG_APP_ID || !IG_APP_SECRET || !REDIRECT_URI) {
+    console.error('[ig-oauth] Missing Instagram OAuth environment variables');
+    return NextResponse.redirect(new URL('/login?instagram_error=Instagram OAuth not configured', request.url));
+  }
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 

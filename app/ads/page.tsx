@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'copy' | 'strategy' | 'audience';
 
@@ -21,6 +24,24 @@ export default function AdsPage() {
   const [interests, setInterests] = useState('');
   
   const { response: result, isLoading: loading, sendMessage, clearHistory } = useModuleMaya({ enableHistory: true });
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'ads',
+      title: `Ad ${activeTab}: ${product || campaignGoal || targetDemographic || activeTab}`,
+      content: result,
+      metadata: { tab: activeTab, adType, campaignGoal, targetDemographic },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runCopy = () => sendMessage([
     { role: 'user', content: `Generate ad copy for ${adType}. Product: ${product}. Offer: ${offer}. CTA: ${cta}. Include multiple variations.` }
@@ -150,6 +171,9 @@ export default function AdsPage() {
               <button className="clear-btn" onClick={clearHistory} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

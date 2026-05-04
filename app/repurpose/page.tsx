@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 export default function RepurposePage() {
   const [content, setContent] = useState('');
@@ -9,6 +12,24 @@ export default function RepurposePage() {
   const [tone, setTone] = useState('Keep original tone');
 
   const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'repurpose',
+      title: `Repurposed: ${content.substring(0, 40)}...`,
+      content: result,
+      metadata: { formats, tone },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const generate = () => sendMessage([
     { role: 'user', content: `Repurpose the following content into ${formats}. Tone: ${tone}. Original content: ${content}` }
@@ -61,6 +82,9 @@ export default function RepurposePage() {
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

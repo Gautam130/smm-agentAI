@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'concept' | 'audio' | 'newsjack';
 
@@ -21,6 +24,24 @@ export default function MemePage() {
   const [mjTone, setMjTone] = useState('Witty & clever');
   
   const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'meme',
+      title: `Meme ${activeTab}: ${brand || niche || mjBrand || activeTab}`,
+      content: result,
+      metadata: { tab: activeTab },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const runConcept = () => sendMessage([
     { role: 'user', content: `Generate meme concepts for ${brand}. Style: ${memeStyle}. Topic: ${topic}. Include 5 different meme formats with captions.` }
@@ -147,6 +168,9 @@ export default function MemePage() {
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useModuleMaya } from '@/lib/hooks/useModuleMaya';
+import { saveOutput } from '@/lib/save';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 const festivals = [
   { name: 'Diwali', emoji: '🪔' },
@@ -21,6 +24,24 @@ export default function FestivePage() {
   const [offer, setOffer] = useState('');
 
   const { response: result, isLoading: loading, sendMessage } = useModuleMaya();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!user || !result || saved) return;
+    const res = await saveOutput({
+      module: 'festive',
+      title: `Festive ${selectedFest}: ${brand}`,
+      content: result,
+      metadata: { festival: selectedFest, campaignType, brand },
+      userId: user.id,
+    });
+    if (res.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+  };
 
   const generate = () => sendMessage([
     { role: 'user', content: `Create a ${selectedFest} festive campaign for ${brand}. Type: ${campaignType}. Offer: ${offer}. Include post ideas, captions, and timing.` }
@@ -73,6 +94,9 @@ export default function FestivePage() {
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'chat' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
+              <button className="save-output-btn" onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved ✓' : 'Save'}
+              </button>
               <button className="copy-output" onClick={() => navigator.clipboard.writeText(result)}>Copy</button>
             </div>
           </div>
