@@ -1026,17 +1026,15 @@ export default function AskMayaPage() {
     } else if (isPDF) {
       try {
         const pdfjs = await import('pdfjs-dist');
+
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
         const arrayBuffer = await file.arrayBuffer();
-
-        if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-          pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
-        }
-
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         let fullText = '';
 
-        const maxPages = Math.min(pdf.numPages, 10);
+        const maxPages = Math.min(pdf.numPages, 20);
         for (let i = 1; i <= maxPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
@@ -1050,13 +1048,53 @@ export default function AskMayaPage() {
         }
 
         if (fullText.trim()) {
-          fileContent = fullText.substring(0, 15000);
+          fileContent = `=== PDF CONTENT ===\n${file.name}\n\n${fullText.substring(0, 15000)}\n=== END PDF ===`;
         } else {
-          fileContent = `[PDF file - ${file.name} - No text content found in PDF]`;
+          setOcrProgress('Scanned PDF detected — rendering pages for OCR...');
+          const Tesseract = await import('tesseract.js');
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('No canvas context');
+
+          const ocrPages: string[] = [];
+          const ocrMaxPages = Math.min(pdf.numPages, 5);
+
+          for (let i = 1; i <= ocrMaxPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 2 });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({ canvas, viewport }).promise;
+
+            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) continue;
+
+            const imageFile = new File([blob], `page-${i}.png`, { type: 'image/png' });
+            const result = await Tesseract.recognize(imageFile, 'eng+hin', {
+              logger: (m) => {
+                if (m.status === 'recognizing text') {
+                  const pct = Math.round(m.progress * 100);
+                  setOcrProgress(`OCR page ${i}/${ocrMaxPages}: ${pct}%`);
+                }
+              }
+            });
+
+            if (result.data.text.trim()) {
+              ocrPages.push(`--- Page ${i} ---\n${result.data.text.trim()}`);
+            }
+          }
+
+          setOcrProgress(null);
+          if (ocrPages.length > 0) {
+            fileContent = `=== PDF OCR (SCANNED) ===\n${file.name}\n\n${ocrPages.join('\n\n').substring(0, 15000)}\n=== END PDF OCR ===`;
+          } else {
+            fileContent = `[PDF: ${file.name} — scanned with no readable text]`;
+          }
         }
       } catch (err: any) {
         console.error('PDF parse error:', err);
-        fileContent = `[PDF file - ${file.name} - Parse error: ${err.message}]`;
+        fileContent = `[PDF: ${file.name} — error: ${err.message}]`;
       }
     } else if (isDocx) {
       try {
