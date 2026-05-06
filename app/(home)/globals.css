@@ -248,14 +248,14 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-primary, #fff);
   margin-bottom: 6px;
 }
 
 .home-template-desc {
   font-family: var(--font-sans);
   font-size: 12px;
-  color: #555;
+  color: var(--text-muted, #555);
   line-height: 1.5;
 }
 
@@ -294,14 +294,14 @@ body {
 .home-work-title {
   font-family: var(--font-sans);
   font-size: 15px;
-  color: #fff;
+  color: var(--text-primary, #fff);
   transition: color 0.2s;
 }
 
 .home-work-meta {
   font-family: var(--font-sans);
   font-size: 12px;
-  color: #444;
+  color: var(--text-muted, #444);
 }
 
 /* Quick Prompts */
@@ -316,7 +316,7 @@ body {
 .home-prompt-btn {
   font-family: var(--font-sans);
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted, #888);
   background: transparent;
   border: 1px solid var(--border-subtle);
   border-radius: 20px;

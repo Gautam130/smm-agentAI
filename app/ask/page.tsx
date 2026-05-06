@@ -1159,13 +1159,11 @@ export default function AskMayaPage() {
   };
 
   return (
-    <div className="ask-layout" style={{ height: '100vh', display: 'flex', overflow: 'hidden' }}>
+    <div className="ask-layout">
       {/* Sidebar */}
       <div className={`ask-sidebar ${sidebarOpen ? 'open' : 'closed'}`} style={{
         width: sidebarOpen ? '280px' : '0px',
         minWidth: sidebarOpen ? '280px' : '0px',
-        height: '100vh',
-        borderRight: sidebarOpen ? '1px solid var(--border-glass)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         transition: 'width 0.2s ease, min-width 0.2s ease',
@@ -1174,34 +1172,8 @@ export default function AskMayaPage() {
         {sidebarOpen && (
           <>
             {/* Sidebar Header */}
-            <div style={{ padding: '12px', borderBottom: '1px solid #1E1E20' }}>
-              <button 
-                onClick={handleNewChat}
-                style={{
-                  width: '100%',
-                  height: '32px',
-                  padding: '0 12px',
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '4px',
-                  color: 'rgba(255,255,255,0.5)',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-                }}
-              >
+            <div className="sidebar-header">
+              <button className="new-chat-btn" onClick={handleNewChat}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1213,33 +1185,15 @@ export default function AskMayaPage() {
             {/* Conversations List */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
               {loadingConversations ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
-                  Loading...
-                </div>
+                <div className="sidebar-empty">Loading...</div>
               ) : conversations.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
-                  No conversations yet
-                </div>
+                <div className="sidebar-empty">No conversations yet</div>
               ) : (
                 conversations.map((conv) => (
                   <div
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv.id)}
                     className={`conv-item ${currentConversationId === conv.id ? 'active' : ''}`}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      background: hoveredConversationId === conv.id ? 'rgba(255,255,255,0.06)' : 'transparent',
-                      border: 'none',
-                      borderRadius: '6px',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      marginBottom: '2px',
-                      transition: 'background 0.15s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
                     onMouseEnter={() => setHoveredConversationId(conv.id)}
                     onMouseLeave={() => setHoveredConversationId(null)}
                   >
@@ -1254,10 +1208,10 @@ export default function AskMayaPage() {
                           autoFocus
                           style={{
                             width: '100%',
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.3)',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-subtle)',
                             borderRadius: '4px',
-                            color: 'rgba(255,255,255,0.8)',
+                            color: 'var(--text-primary)',
                             fontSize: '13px',
                             padding: '4px 8px',
                             outline: 'none',
@@ -1266,20 +1220,10 @@ export default function AskMayaPage() {
                         />
                       ) : (
                         <>
-                          <div style={{ 
-                            color: 'rgba(255,255,255,0.5)', 
-                            fontSize: '13px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
+                          <div className="conv-item-text">
                             {conv.title || 'New conversation'}
                           </div>
-                          <div style={{ 
-                            color: 'rgba(255,255,255,0.25)', 
-                            fontSize: '11px',
-                            marginTop: '2px',
-                          }}>
+                          <div className="conv-item-meta">
                             {getRelativeTime(conv.updated_at)}
                           </div>
                         </>
@@ -1289,20 +1233,7 @@ export default function AskMayaPage() {
                       <>
                         <button
                           onClick={(e) => { e.stopPropagation(); startEditingTitle(conv); }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'rgba(255,255,255,0.4)',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'color 0.15s',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                          className="conv-item-delete-btn"
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -1311,20 +1242,7 @@ export default function AskMayaPage() {
                         </button>
                         <button
                           onClick={(e) => handleDeleteConversation(e, conv.id)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'rgba(255,255,255,0.4)',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'color 0.15s',
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+                          className="conv-item-delete-btn"
                         >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6"></polyline>
@@ -1339,19 +1257,13 @@ export default function AskMayaPage() {
             </div>
 
             {/* User info */}
-            <div style={{ 
-              padding: '12px 16px', 
-              borderTop: '1px solid #1E1E20',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}>
+            <div className="sidebar-footer">
               <div style={{
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
-                background: '#ffffff',
-                color: '#000',
+                background: 'var(--text-inverse)',
+                color: 'var(--bg-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1361,13 +1273,7 @@ export default function AskMayaPage() {
                 {user?.email?.[0]?.toUpperCase() || 'U'}
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{ 
-                  color: 'rgba(255,255,255,0.3)', 
-                  fontSize: '11px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
+                <div className="conv-item-meta">
                   {user?.email || 'User'}
                 </div>
               </div>
@@ -1381,7 +1287,6 @@ export default function AskMayaPage() {
         {/* Top Bar */}
         <div className="ask-topbar" style={{
           padding: '12px 16px',
-          borderBottom: '1px solid var(--border-glass)',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
@@ -1389,20 +1294,7 @@ export default function AskMayaPage() {
           {/* Sidebar Toggle */}
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#666',
-              cursor: 'pointer',
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '4px',
-              transition: 'color 0.15s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+            className="topbar-toggle"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -1411,17 +1303,17 @@ export default function AskMayaPage() {
             </svg>
           </button>
 
-          <a href="/" style={{ color: '#666', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <a href="/" className="topbar-link">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </a>
-          <span style={{ fontSize: '15px', fontWeight: 600, color: '#fff' }}>Ask Maya</span>
+          <span className="topbar-title">Ask Maya</span>
         </div>
 
         {/* Suggestions - only show when no messages */}
         <div className="flex-shrink-0 px-4" style={{ display: messages.length === 0 ? 'block' : 'none' }}>
-          <div style={{ color: '#444', fontSize: '11px', textAlign: 'center', padding: '8px 0' }}>
+          <div className="topbar-hint">
             Maya remembers this conversation within this session
           </div>
           
@@ -1570,69 +1462,24 @@ export default function AskMayaPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div className="delete-modal" style={{
-            background: '#111113',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '16px',
-            padding: '24px',
-            maxWidth: '360px',
-            width: '90%',
-          }}>
-            <div style={{
-              color: '#fff',
-              fontSize: '16px',
-              fontWeight: 500,
-              marginBottom: '8px',
-            }}>
+        <div className="delete-modal-overlay">
+          <div className="delete-modal">
+            <div className="delete-modal-title">
               Delete conversation?
             </div>
-            <div style={{
-              color: 'rgba(255,255,255,0.4)',
-              fontSize: '13px',
-              marginBottom: '24px',
-            }}>
+            <div className="delete-modal-desc">
               This cannot be undone.
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="delete-modal-actions">
               <button
                 onClick={cancelDeleteConversation}
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'rgba(255,255,255,0.7)',
-                  borderRadius: '8px',
-                  padding: '8px 20px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                }}
+                className="delete-modal-btn cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteConversation}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'rgba(255,255,255,0.8)',
-                  borderRadius: '8px',
-                  padding: '8px 20px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                }}
+                className="delete-modal-btn confirm"
               >
                 Delete
               </button>
@@ -1640,16 +1487,6 @@ export default function AskMayaPage() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .conv-item:hover {
-          background: rgba(255,255,255,0.06) !important;
-        }
-        
-        .conv-item.active {
-          background: rgba(255,255,255,0.06) !important;
-        }
-      `}</style>
     </div>
   );
 }
