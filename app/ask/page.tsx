@@ -1159,14 +1159,13 @@ export default function AskMayaPage() {
   };
 
   return (
-    <div className="ask-layout" style={{ background: '#000000', height: '100vh', display: 'flex', overflow: 'hidden' }}>
+    <div className="ask-layout" style={{ height: '100vh', display: 'flex', overflow: 'hidden' }}>
       {/* Sidebar */}
       <div className={`ask-sidebar ${sidebarOpen ? 'open' : 'closed'}`} style={{
         width: sidebarOpen ? '280px' : '0px',
         minWidth: sidebarOpen ? '280px' : '0px',
         height: '100vh',
-        background: '#000000',
-        borderRight: sidebarOpen ? '1px solid #1E1E20' : 'none',
+        borderRight: sidebarOpen ? '1px solid var(--border-glass)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         transition: 'width 0.2s ease, min-width 0.2s ease',
@@ -1380,13 +1379,12 @@ export default function AskMayaPage() {
       {/* Main Content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Top Bar */}
-        <div style={{
+        <div className="ask-topbar" style={{
           padding: '12px 16px',
-          borderBottom: '1px solid #1E1E20',
+          borderBottom: '1px solid var(--border-glass)',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          background: '#000000',
         }}>
           {/* Sidebar Toggle */}
           <button 

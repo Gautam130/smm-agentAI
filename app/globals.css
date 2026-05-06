@@ -440,6 +440,55 @@
   color: #111111 !important;
 }
 
+/* Maya / Ask Page */
+.ask-layout {
+  background: var(--bg-deep);
+}
+
+.ask-sidebar {
+  background: var(--bg-deep);
+}
+
+.ask-topbar {
+  background: var(--bg-deep);
+}
+
+[data-theme="light"] .ask-layout {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .ask-sidebar {
+  background: #f5f5f5 !important;
+  border-right-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .ask-topbar {
+  background: #ffffff !important;
+  border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .conv-item {
+  background: transparent !important;
+  color: #333333 !important;
+}
+
+[data-theme="light"] .conv-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .conv-item.active {
+  background: rgba(0, 255, 204, 0.15) !important;
+}
+
+[data-theme="light"] .delete-modal {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .file-upload-overlay {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
