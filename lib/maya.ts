@@ -1478,8 +1478,14 @@ export function useMaya() {
     
     let displayMsg = userMsg;
     if (attachments.length > 0) {
-      const fileNames = attachments.map(a => a.name).join(', ');
-      displayMsg = `${userMsg}\n\n[Attached files: ${fileNames}]`;
+      const fileParts: string[] = [];
+      attachments.forEach(a => {
+        fileParts.push(a.name);
+        if (a.content) {
+          displayMsg += `\n\n${a.content}`;
+        }
+      });
+      displayMsg += `\n\n[Attached files: ${fileParts.join(', ')}]`;
     }
     
     const userMsgObj: ChatMessage = { id: crypto.randomUUID(), role: 'user', text: displayMsg, attachments, conversationId: convId ?? null };
