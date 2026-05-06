@@ -1050,47 +1050,7 @@ export default function AskMayaPage() {
         if (fullText.trim()) {
           fileContent = `=== PDF CONTENT ===\n${file.name}\n\n${fullText.substring(0, 15000)}\n=== END PDF ===`;
         } else {
-          setOcrProgress('Scanned PDF detected — rendering pages for OCR...');
-          const Tesseract = await import('tesseract.js');
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('No canvas context');
-
-          const ocrPages: string[] = [];
-          const ocrMaxPages = Math.min(pdf.numPages, 5);
-
-          for (let i = 1; i <= ocrMaxPages; i++) {
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 2 });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            await page.render({ canvas, viewport }).promise;
-
-            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-            if (!blob) continue;
-
-            const imageFile = new File([blob], `page-${i}.png`, { type: 'image/png' });
-            const result = await Tesseract.recognize(imageFile, 'eng+hin', {
-              logger: (m) => {
-                if (m.status === 'recognizing text') {
-                  const pct = Math.round(m.progress * 100);
-                  setOcrProgress(`OCR page ${i}/${ocrMaxPages}: ${pct}%`);
-                }
-              }
-            });
-
-            if (result.data.text.trim()) {
-              ocrPages.push(`--- Page ${i} ---\n${result.data.text.trim()}`);
-            }
-          }
-
-          setOcrProgress(null);
-          if (ocrPages.length > 0) {
-            fileContent = `=== PDF OCR (SCANNED) ===\n${file.name}\n\n${ocrPages.join('\n\n').substring(0, 15000)}\n=== END PDF OCR ===`;
-          } else {
-            fileContent = `[PDF: ${file.name} — scanned with no readable text]`;
-          }
+          fileContent = `[PDF: ${file.name} — no text layer found]`;
         }
       } catch (err: any) {
         console.error('PDF parse error:', err);
