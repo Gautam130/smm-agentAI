@@ -42,12 +42,9 @@ export default function RootLayout({
       <body style={{
         height: '100vh',
         overflowY: 'auto',
-        background: 'var(--bg-deep)',
-        color: 'var(--text-primary)',
         fontFamily: "'Inter', sans-serif",
         margin: 0,
         padding: 0,
-        transition: 'background 0.3s ease, color 0.3s ease',
       }}>
         <AuthProvider>
           {children}

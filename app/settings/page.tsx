@@ -72,6 +72,7 @@ export default function SettingsPage() {
     setDarkMode(val);
     saveSettings({ darkMode: val });
     if (typeof window !== 'undefined') {
+      document.body.style.background = val ? '#080808' : '#ffffff';
       if (val) {
         document.documentElement.removeAttribute('data-theme');
       } else {
