@@ -120,6 +120,14 @@
   background: var(--bg-tertiary) !important;
 }
 
+[data-theme="light"] .meta-textarea {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .meta-textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
 [data-theme="light"] .chat-input-row {
   background: var(--bg-primary) !important;
   border-top-color: var(--border-subtle) !important;
@@ -1325,9 +1333,9 @@ select option {
 }
 
 .bubble-user {
-  background: #2a2a2a;
+  background: var(--bg-elevated);
   border: none;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 13px;
   max-width: 60%;
   border-radius: 18px;
@@ -1335,7 +1343,7 @@ select option {
 }
 
 .bubble-user:hover {
-  background: #333333;
+  background: var(--bg-tertiary);
 }
 
 .chat-time {
@@ -1666,7 +1674,7 @@ select option {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  background: #2a2a2a;
+  background: var(--bg-secondary);
   border-radius: 28px;
   padding: 14px 18px;
   display: flex;
@@ -1687,7 +1695,7 @@ select option {
   resize: none;
   font-size: 16px;
   line-height: 1.4;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: var(--font);
   max-height: 200px;
   overflow-y: hidden;
@@ -1695,7 +1703,7 @@ select option {
 }
 
 .meta-textarea::placeholder {
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .meta-input-bottom {
@@ -1710,8 +1718,8 @@ select option {
   height: 36px;
   border-radius: 50%;
   background: transparent;
-  border: 1px solid #555555;
-  color: #ffffff;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1721,7 +1729,7 @@ select option {
 }
 
 .meta-plus-btn:hover {
-  border-color: #888888;
+  border-color: var(--text-muted);
 }
 
 .meta-plus-btn:disabled {
@@ -1741,8 +1749,8 @@ select option {
   height: 36px;
   border-radius: 50%;
   background: transparent;
-  border: 1px solid #555555;
-  color: #ffffff;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1752,7 +1760,7 @@ select option {
 }
 
 .meta-voice-btn:hover {
-  border-color: #888888;
+  border-color: var(--text-muted);
 }
 
 .meta-voice-btn.listening {
@@ -1769,16 +1777,16 @@ select option {
 .meta-instant-btn {
   padding: 8px 16px;
   border-radius: 20px;
-  background: #3a3a3a;
-  border: 1px solid #444444;
-  color: #ffffff;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 150ms ease;
 }
 
 .meta-instant-btn:hover {
-  background: #444444;
+  background: var(--bg-elevated);
 }
 
 .meta-send-btn {
@@ -1801,7 +1809,7 @@ select option {
 }
 
 .meta-send-btn:disabled {
-  background: #444444;
+  background: var(--bg-tertiary);
   cursor: not-allowed;
 }
 
@@ -1816,7 +1824,7 @@ select option {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #3a3a3a;
+  background: var(--bg-tertiary);
   border-radius: 8px;
   padding: 6px 8px;
 }
@@ -1832,17 +1840,17 @@ select option {
   width: 32px;
   height: 32px;
   border-radius: 4px;
-  background: #4a4a4a;
+  background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .meta-attachment .meta-file-name {
   font-size: 12px;
-  color: #ccc;
+  color: var(--text-secondary);
   max-width: 80px;
   white-space: nowrap;
   overflow: hidden;
@@ -1852,10 +1860,14 @@ select option {
 .meta-attachment .meta-remove-btn {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 14px;
   padding: 2px;
+}
+
+.meta-attachment .meta-remove-btn:hover {
+  color: var(--red);
 }
 
 @keyframes fadeSlideIn {
