@@ -19,15 +19,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var s = localStorage.getItem('smm_settings');
+                  if (s) {
+                    var settings = JSON.parse(s);
+                    if (settings.darkMode === false) {
+                      document.documentElement.setAttribute('data-theme', 'light');
+                    }
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body style={{
         height: '100vh',
         overflowY: 'auto',
-        background: '#000000',
-        color: '#ffffff',
+        background: 'var(--bg-deep)',
+        color: 'var(--text-primary)',
         fontFamily: "'Inter', sans-serif",
         margin: 0,
         padding: 0,
+        transition: 'background 0.3s ease, color 0.3s ease',
       }}>
         <AuthProvider>
           {children}

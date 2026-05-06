@@ -68,6 +68,18 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDarkMode = (val: boolean) => {
+    setDarkMode(val);
+    saveSettings({ darkMode: val });
+    if (typeof window !== 'undefined') {
+      if (val) {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }
+  };
+
   const handleOutputRefinement = (val: boolean) => {
     setOutputRefinement(val);
     saveSettings({ outputRefinement: val });
@@ -246,7 +258,7 @@ export default function SettingsPage() {
             <div style={{ fontSize: '10px', color: '#71717a' }}>Switch between dark and light theme</div>
           </div>
           <label style={toggleStyle}>
-            <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} style={toggleInputStyle} />
+            <input type="checkbox" checked={darkMode} onChange={(e) => handleDarkMode(e.target.checked)} style={toggleInputStyle} />
             <span style={toggleSliderStyle(darkMode)}></span>
             <span style={toggleThumbStyle(darkMode)}></span>
           </label>
