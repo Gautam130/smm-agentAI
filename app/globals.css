@@ -77,6 +77,367 @@
 :root[data-theme="light"] {
   --bg-deep: #ffffff;
   --bg-onyx: #ffffff;
+  --bg-card: rgba(0, 0, 0, 0.04);
+  --bg-glass: rgba(0, 0, 0, 0.03);
+  --bg-glass-hover: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .bento-card {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .q-card {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .output-box {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .chat-wrap {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .bubble-ai {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .bubble-user {
+  background: #e8e8e8 !important;
+  color: #111111 !important;
+}
+
+[data-theme="light"] .home-hero {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .module-tile {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .tabs {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .notice {
+  border-color: transparent !important;
+}
+
+[data-theme="light"] .festival-pills .festival-pill {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .panel-header {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .chat-suggestions {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .meta-input-container {
+  background: #e8e8e8 !important;
+}
+
+[data-theme="light"] .chat-input-row {
+  background: #ffffff !important;
+  border-top-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .suggestion-btn {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .file-context {
+  background: rgba(0, 255, 204, 0.1) !important;
+  border-color: rgba(0, 255, 204, 0.2) !important;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] select option {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+[data-theme="light"] .sidebar {
+  background: #f5f5f5 !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .nav-item {
+  color: #333333 !important;
+}
+
+[data-theme="light"] .nav-item:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .nav-item.active {
+  background: rgba(0, 255, 204, 0.15) !important;
+}
+
+[data-theme="light"] .nav-group-header:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .client-card {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .status-badge {
+  opacity: 0.9;
+}
+
+[data-theme="light"] .nbadge {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .tb-left .tb-title {
+  color: #111111 !important;
+}
+
+[data-theme="light"] .hero-eyebrow {
+  background: rgba(0, 255, 204, 0.15) !important;
+}
+
+[data-theme="light"] .stab {
+  color: #666666 !important;
+}
+
+[data-theme="light"] .stab:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .module-title {
+  color: #111111 !important;
+}
+
+[data-theme="light"] .maya-text {
+  color: #222222 !important;
+}
+
+[data-theme="light"] .avatar-ai {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .avatar-user {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="light"] .chat-time {
+  color: #888888 !important;
+}
+
+[data-theme="light"] .action-btn {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  background: transparent !important;
+}
+
+[data-theme="light"] .copy-output {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .excel-export-btn {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .fest-chip {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .attachment-chip {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .attachment-icon {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .meta-attachment {
+  background: #e0e0e0 !important;
+}
+
+[data-theme="light"] .run-btn:disabled {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .delete-btn {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Settings Page */
+.settings-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+}
+
+.settings-card-accent {
+  background: var(--accent-dim);
+}
+
+.settings-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.settings-card-title-accent {
+  color: var(--accent);
+}
+
+.settings-card-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.settings-label {
+  color: var(--text-muted);
+}
+
+.settings-input,
+.settings-select,
+.settings-textarea {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+}
+
+.settings-select option {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+.settings-save-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #00ffcc, #a855f7);
+  color: #080808;
+  cursor: pointer;
+}
+
+.settings-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-save-btn-primary {
+  padding: 8px 16px;
+  background: #00ffcc;
+  color: #080808;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto;
+}
+
+.settings-save-btn-secondary {
+  padding: 8px 16px;
+  background: #52525b;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.settings-row-no-border {
+  border-bottom: none;
+}
+
+.settings-row-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-row-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.settings-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.settings-saved-msg {
+  font-size: 10px;
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+[data-theme="light"] .settings-card {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] .settings-card-accent {
+  background: rgba(0, 255, 204, 0.08) !important;
+  border-color: rgba(0, 255, 204, 0.3) !important;
+}
+
+[data-theme="light"] .settings-input,
+[data-theme="light"] .settings-select,
+[data-theme="light"] .settings-textarea {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #111111 !important;
+}
+
+[data-theme="light"] .settings-select option {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+[data-theme="light"] .settings-row {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .settings-row-title {
+  color: #111111 !important;
 }
 
 * {

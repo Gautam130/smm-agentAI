@@ -154,11 +154,47 @@ export default function SettingsPage() {
   });
 
   const cardStyle: React.CSSProperties = {
-    background: '#111111',
-    border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '12px',
     padding: '18px',
     marginBottom: '14px',
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '10px',
+    fontSize: '14px',
+  };
+
+  const selectStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '10px',
+    fontSize: '14px',
+  };
+
+  const smallInputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px',
+    borderRadius: '8px',
+    fontSize: '13px',
+  };
+
+  const textareaStyle: React.CSSProperties = {
+    width: '100%',
+    height: '80px',
+    padding: '10px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    resize: 'vertical',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '11px',
+    marginBottom: '6px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   };
 
   return (
@@ -167,26 +203,28 @@ export default function SettingsPage() {
 
       {/* Maya Setup - First time user */}
       {!setupComplete && (
-        <div style={{ ...cardStyle, border: '1px solid rgba(0,255,204,0.3)', background: 'rgba(0,255,204,0.03)' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>👋 Welcome! Set up Maya</div>
-          <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '16px' }}>Personalize your AI assistant</div>
+        <div style={{ ...cardStyle, border: '1px solid rgba(0,255,204,0.3)' }} className="settings-card settings-card-accent">
+          <div className="settings-card-title settings-card-title-accent">👋 Welcome! Set up Maya</div>
+          <div className="settings-card-subtitle">Personalize your AI assistant</div>
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>What should Maya call you?</label>
+            <label style={labelStyle} className="settings-label">What should Maya call you?</label>
             <input 
               value={userName}
               onChange={(e) => handleUserName(e.target.value)}
               placeholder="e.g. Gautam"
-              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+              style={inputStyle}
+              className="settings-input"
             />
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Your primary platform</label>
+            <label style={labelStyle} className="settings-label">Your primary platform</label>
             <select 
               value={platform}
               onChange={(e) => handlePlatform(e.target.value)}
-              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+              style={selectStyle}
+              className="settings-select"
             >
               <option value="">Select platform...</option>
               <option value="Instagram">Instagram</option>
@@ -198,11 +236,12 @@ export default function SettingsPage() {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '11px', color: '#71717a', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Default tone</label>
+            <label style={labelStyle} className="settings-label">Default tone</label>
             <select 
               value={tone}
               onChange={(e) => handleTone(e.target.value)}
-              style={{ width: '100%', padding: '12px', borderRadius: '10px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px' }}
+              style={selectStyle}
+              className="settings-select"
             >
               <option value="">Select tone...</option>
               <option value="Conversational & fun">Conversational & fun</option>
@@ -216,7 +255,7 @@ export default function SettingsPage() {
           <button 
             onClick={completeSetup}
             disabled={!userName}
-            style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00ffcc, #a855f7)', border: 'none', borderRadius: '12px', color: '#080808', fontSize: '14px', fontWeight: 600, cursor: userName ? 'pointer' : 'not-allowed', opacity: userName ? 1 : 0.5 }}
+            className="settings-save-btn"
           >
             Save & Continue →
           </button>
@@ -224,14 +263,14 @@ export default function SettingsPage() {
       )}
 
       {/* Agent Settings */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>⚙️ Agent Settings</div>
-        <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '10px' }}>Customize agent behavior</div>
+      <div style={cardStyle} className="settings-card">
+        <div className="settings-card-title">⚙️ Agent Settings</div>
+        <div className="settings-card-subtitle">Customize agent behavior</div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="settings-row">
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 600 }}>Output Refinement</div>
-            <div style={{ fontSize: '10px', color: '#71717a' }}>Auto-critique and improve outputs</div>
+            <div className="settings-row-title">Output Refinement</div>
+            <div className="settings-row-desc">Auto-critique and improve outputs</div>
           </div>
           <label style={toggleStyle}>
             <input type="checkbox" checked={outputRefinement} onChange={(e) => handleOutputRefinement(e.target.checked)} style={toggleInputStyle} />
@@ -240,10 +279,10 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
+        <div className="settings-row settings-row-no-border">
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 600 }}>Deep Think Mode</div>
-            <div style={{ fontSize: '10px', color: '#71717a' }}>Chain-of-thought reasoning</div>
+            <div className="settings-row-title">Deep Think Mode</div>
+            <div className="settings-row-desc">Chain-of-thought reasoning</div>
           </div>
           <label style={toggleStyle}>
             <input type="checkbox" checked={deepThink} onChange={(e) => handleDeepThink(e.target.checked)} style={toggleInputStyle} />
@@ -252,16 +291,16 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        <div style={{ fontSize: '10px', color: '#71717a', marginTop: '8px' }}>⌨️ Keyboard: Ctrl+Enter to submit · Escape to clear</div>
+        <div className="settings-hint">⌨️ Keyboard: Ctrl+Enter to submit · Escape to clear</div>
       </div>
 
       {/* Appearance */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '8px' }}>🎨 Appearance</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0' }}>
+      <div style={cardStyle} className="settings-card">
+        <div className="settings-card-title">🎨 Appearance</div>
+        <div className="settings-row settings-row-no-border">
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 600 }}>Dark Mode</div>
-            <div style={{ fontSize: '10px', color: '#71717a' }}>Switch between dark and light theme</div>
+            <div className="settings-row-title">Dark Mode</div>
+            <div className="settings-row-desc">Switch between dark and light theme</div>
           </div>
           <label style={toggleStyle}>
             <input type="checkbox" checked={darkMode} onChange={(e) => handleDarkMode(e.target.checked)} style={toggleInputStyle} />
@@ -272,13 +311,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Quality Mode */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>⚖️ Quality Mode</div>
-        <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '10px' }}>Balance between creativity and consistency</div>
+      <div style={cardStyle} className="settings-card">
+        <div className="settings-card-title">⚖️ Quality Mode</div>
+        <div className="settings-card-subtitle">Balance between creativity and consistency</div>
         <select 
           value={qualityMode} 
           onChange={(e) => setQualityMode(e.target.value)}
-          style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff', fontSize: '13px' }}
+          style={smallInputStyle}
+          className="settings-select"
         >
           <option value="balanced">Balanced (Recommended)</option>
           <option value="consistent">Consistent (Same results every time)</option>
@@ -287,47 +327,49 @@ export default function SettingsPage() {
       </div>
 
       {/* Proprietary Frameworks */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>🎯 Proprietary Frameworks</div>
-        <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '10px' }}>Apply our proprietary methodologies</div>
+      <div style={cardStyle} className="settings-card">
+        <div className="settings-card-title">🎯 Proprietary Frameworks</div>
+        <div className="settings-card-subtitle">Apply our proprietary methodologies</div>
         <select 
           value={framework} 
           onChange={(e) => setFramework(e.target.value)}
-          style={{ width: '100%', padding: '10px', borderRadius: '8px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff', fontSize: '13px' }}
+          style={smallInputStyle}
+          className="settings-select"
         >
           <option value="none">None (Use default)</option>
           <option value="5-HOOK FORMULA">The 5-Hook Formula</option>
           <option value="FESTIVAL RUSH PLAYBOOK">Festival Rush Playbook</option>
           <option value="TIER-2 PENETRATION">Tier-2 City Penetration</option>
         </select>
-        <div style={{ fontSize: '10px', color: '#71717a', marginTop: '6px' }}>Framework applies to all content generation</div>
+        <div className="settings-hint">Framework applies to all content generation</div>
       </div>
 
       {/* Expert Mode */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#00ffcc', marginBottom: '4px' }}>🔧 Expert Mode (Advanced)</div>
-        <div style={{ fontSize: '11px', color: '#71717a', marginBottom: '10px' }}>Write your own system prompt</div>
+      <div style={cardStyle} className="settings-card">
+        <div className="settings-card-title">🔧 Expert Mode (Advanced)</div>
+        <div className="settings-card-subtitle">Write your own system prompt</div>
         <textarea 
           value={expertPrompt}
           onChange={(e) => setExpertPrompt(e.target.value)}
           placeholder="Enter custom system prompt..."
-          style={{ width: '100%', height: '80px', padding: '10px', borderRadius: '8px', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff', fontSize: '12px', resize: 'vertical' }}
+          style={textareaStyle}
+          className="settings-textarea"
         />
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button 
             onClick={() => setPromptSaved('Saved successfully!')}
-            style={{ padding: '8px 16px', background: '#00ffcc', color: '#080808', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            className="settings-save-btn settings-save-btn-primary"
           >
             Save as Active
           </button>
           <button 
             onClick={() => { setExpertPrompt(''); setPromptSaved(''); }}
-            style={{ padding: '8px 16px', background: '#52525b', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+            className="settings-save-btn settings-save-btn-secondary"
           >
             Clear
           </button>
         </div>
-        {promptSaved && <div style={{ fontSize: '10px', color: '#00ffcc', marginTop: '6px' }}>{promptSaved}</div>}
+        {promptSaved && <div className="settings-saved-msg">{promptSaved}</div>}
       </div>
     </>
   );
