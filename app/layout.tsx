@@ -38,6 +38,10 @@ export default function RootLayout({
             `,
           }}
         />
+        <style>{`
+          [data-theme="light"] body { background-color: #ffffff !important; }
+          [data-theme="light"] .shell, [data-theme="light"] .home-main { background-color: #ffffff !important; }
+        `}</style>
       </head>
       <body style={{
         height: '100vh',
@@ -45,6 +49,8 @@ export default function RootLayout({
         fontFamily: "'Inter', sans-serif",
         margin: 0,
         padding: 0,
+        background: 'var(--bg-deep, #080808)',
+        color: 'var(--text-primary, #ffffff)',
       }}>
         <AuthProvider>
           {children}

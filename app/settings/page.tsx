@@ -72,7 +72,12 @@ export default function SettingsPage() {
     setDarkMode(val);
     saveSettings({ darkMode: val });
     if (typeof window !== 'undefined') {
-      document.body.style.background = val ? '#080808' : '#ffffff';
+      const bg = val ? '#080808' : '#ffffff';
+      document.body.style.background = bg;
+      document.documentElement.style.background = bg;
+      document.querySelectorAll('.shell, .content-area').forEach(el => {
+        (el as HTMLElement).style.background = bg;
+      });
       if (val) {
         document.documentElement.removeAttribute('data-theme');
       } else {
