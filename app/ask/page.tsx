@@ -1037,24 +1037,30 @@ export default function AskMayaPage() {
         const maxPages = Math.min(pdf.numPages, 20);
         for (let i = 1; i <= maxPages; i++) {
           const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .filter((s: string) => s.trim())
-            .join(' ');
-          if (pageText.trim()) {
-            fullText += pageText + '\n\n';
+          try {
+            const textContent = await page.getTextContent();
+            if (!textContent?.items?.length) continue;
+            
+            const pageText = textContent.items
+              .map((item: any) => typeof item.str === 'string' ? item.str : '')
+              .filter((s: string) => s.trim())
+              .join(' ');
+            if (pageText.trim()) {
+              fullText += pageText + '\n\n';
+            }
+          } catch (pageErr) {
+            console.warn(`Failed to extract text from page ${i}:`, pageErr);
           }
         }
 
         if (fullText.trim()) {
           fileContent = `=== PDF CONTENT ===\n${file.name}\n\n${fullText.substring(0, 15000)}\n=== END PDF ===`;
         } else {
-          fileContent = `[PDF: ${file.name} — no text layer found]`;
+          fileContent = `[PDF: ${file.name} — scanned/image-only, no text layer]`;
         }
       } catch (err: any) {
         console.error('PDF parse error:', err);
-        fileContent = `[PDF: ${file.name} — error: ${err.message}]`;
+        fileContent = `[PDF: ${file.name} — could not parse]`;
       }
     } else if (isDocx) {
       try {
