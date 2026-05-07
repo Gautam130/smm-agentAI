@@ -1481,9 +1481,6 @@ export function useMaya() {
       const fileParts: string[] = [];
       attachments.forEach(a => {
         fileParts.push(a.name);
-        if (a.content) {
-          displayMsg += `\n\n${a.content}`;
-        }
       });
       displayMsg += `\n\n[Attached files: ${fileParts.join(', ')}]`;
     }
