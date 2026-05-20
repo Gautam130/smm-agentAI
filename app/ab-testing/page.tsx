@@ -16,28 +16,7 @@ interface ABTest {
   createdAt: string;
 }
 
-const initialTests: ABTest[] = [
-  {
-    id: '1',
-    name: 'Hook Test - Question vs Statement',
-    variantA: 'What if you could...',
-    variantB: 'Here\'s the secret...',
-    type: 'hook',
-    status: 'completed',
-    winner: 'A',
-    results: { a: 45, b: 32 },
-    createdAt: '2026-04-01'
-  },
-  {
-    id: '2',
-    name: 'CTA Button - Shop Now vs Learn More',
-    variantA: 'Shop Now',
-    variantB: 'Learn More',
-    type: 'cta',
-    status: 'running',
-    createdAt: '2026-04-10'
-  }
-];
+const initialTests: ABTest[] = [];
 
 export default function ABTestingPage() {
   const [tests, setTests] = useLocalStorage<ABTest[]>('smm_ab_tests', initialTests);

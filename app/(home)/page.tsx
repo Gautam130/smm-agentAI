@@ -5,14 +5,14 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 const templateCards = [
-  { icon: '✍️', title: 'Content', desc: 'Captions, hooks, threads' },
-  { icon: '📅', title: 'Calendar', desc: 'Full month content plan' },
-  { icon: '🤝', title: 'Influencers', desc: 'Find, pitch, track' },
-  { icon: '📊', title: 'Strategy', desc: 'Audit, trends, growth' },
-  { icon: '⚡', title: 'Bulk Generate', desc: '10 posts in one shot' },
-  { icon: '🌐', title: 'Listening', desc: 'Monitor, newsjack' },
-  { icon: '💬', title: 'Engagement', desc: 'Replies, DMs, crisis' },
-  { icon: '🔬', title: 'Diagnosis', desc: 'Why did this flop?' },
+  { icon: '✍️', title: 'Content', href: '/content', desc: 'Captions, hooks, threads' },
+  { icon: '📅', title: 'Calendar', href: '/calendar', desc: 'Full month content plan' },
+  { icon: '🤝', title: 'Influencers', href: '/influencer', desc: 'Find, pitch, track' },
+  { icon: '📊', title: 'Strategy', href: '/strategy', desc: 'Audit, trends, growth' },
+  { icon: '⚡', title: 'Bulk Generate', href: '/bulk', desc: '10 posts in one shot' },
+  { icon: '🌐', title: 'Listening', href: '/listen', desc: 'Monitor, newsjack' },
+  { icon: '💬', title: 'Engagement', href: '/engage', desc: 'Replies, DMs, crisis' },
+  { icon: '🔬', title: 'Diagnosis', href: '/diagnose', desc: 'Why did this flop?' },
 ];
 
 const recentWork = [
@@ -210,7 +210,7 @@ export default function HomePage() {
         <div className="home-section-title">Quick Actions</div>
         <div className="home-templates-grid">
           {templateCards.map((card, i) => (
-            <a key={i} href={`/${card.title.toLowerCase().replace(' ', '-')}`} className="home-template-card">
+            <a key={i} href={card.href} className="home-template-card">
               <div className="home-template-icon">{card.icon}</div>
               <div className="home-template-title">{card.title}</div>
               <div className="home-template-desc">{card.desc}</div>

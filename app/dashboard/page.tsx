@@ -53,7 +53,7 @@ Provide:
       </div>
 
       <div className="notice n-amber mb-4">
-        ⚠️ <strong>Note:</strong> This dashboard provides <strong>industry benchmarks and insights</strong> based on live research. Connect your Instagram/analytics API for real-time data.
+        ⚠️ <strong>Note:</strong> Live analytics API integration is coming soon. The AI will provide insights based on web research for now. Connect your Instagram/analytics API for real-time data.
       </div>
 
       <div className="g2 mb-4">
@@ -85,73 +85,32 @@ Provide:
       </div>
 
       {activeTab === 'overview' && (
-        <div className="g2">
-          <div className="kpi-card">
-            <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Instagram Avg. Engagement</div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>1.5% - 3.5%</div>
-            <div style={{ fontSize: '12px', color: '#fbbf24' }}>Industry standard</div>
-          </div>
-          <div className="kpi-card">
-            <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Good Follower Growth</div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>5-10% / month</div>
-            <div style={{ fontSize: '12px', color: '#4ade80' }}>Healthy rate</div>
-          </div>
-          <div className="kpi-card">
-            <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Best Posting Time (IST)</div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>7-9 PM</div>
-            <div style={{ fontSize: '12px', color: '#a855f7' }}>Tue, Thu, Sat</div>
-          </div>
-          <div className="kpi-card">
-            <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Reels vs Static</div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>3-5x more</div>
-            <div style={{ fontSize: '12px', color: '#00ffcc' }}>Engagement boost</div>
-          </div>
+        <div className="dashboard-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}>📊</div>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Live Analytics Coming Soon</h3>
+          <p style={{ fontSize: '13px', color: '#71717a', maxWidth: '400px', margin: '0 auto' }}>
+            Connect your Instagram, LinkedIn, or YouTube account to see real-time engagement metrics, follower growth, and content performance.
+          </p>
         </div>
       )}
 
       {activeTab === 'content' && (
-        <div className="dashboard-card">
-          <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px' }}>Content Type Performance</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {[
-              { type: 'Reels', percent: '75%', color: '#00ffcc' },
-              { type: 'Carousels', percent: '50%', color: '#a855f7' },
-              { type: 'Static Posts', percent: '25%', color: '#4ade80' },
-              { type: 'Stories', percent: '20%', color: '#fbbf24' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#a1a1aa', width: '100px' }}>{item.type}</span>
-                <div style={{ flex: 1, height: '8px', background: '#111111', borderRadius: '4px', margin: '0 12px' }}>
-                  <div style={{ width: item.percent, height: '100%', background: item.color, borderRadius: '4px' }}></div>
-                </div>
-                <span style={{ fontSize: '13px', color: item.color, width: '50px', textAlign: 'right' }}>{item.percent}</span>
-              </div>
-            ))}
-          </div>
+        <div className="dashboard-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}>📈</div>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Content Performance Analytics</h3>
+          <p style={{ fontSize: '13px', color: '#71717a', maxWidth: '400px', margin: '0 auto' }}>
+            Once connected, this tab will show your best-performing content types, engagement breakdown by format, and optimization recommendations.
+          </p>
         </div>
       )}
 
       {activeTab === 'audience' && (
-        <div className="dashboard-card">
-          <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px' }}>Indian Audience Insights</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px' }}>
-              <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Top Cities</div>
-              <div style={{ fontSize: '13px', color: '#fff' }}>Delhi NCR, Mumbai, Bangalore, Hyderabad, Pune</div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px' }}>
-              <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Age Groups</div>
-              <div style={{ fontSize: '13px', color: '#fff' }}>18-24 (35%), 25-34 (45%), 35-44 (15%)</div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px' }}>
-              <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Peak Hours (IST)</div>
-              <div style={{ fontSize: '13px', color: '#fff' }}>7-9 AM, 12-2 PM, 7-10 PM</div>
-            </div>
-            <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px' }}>
-              <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>Content Preferences</div>
-              <div style={{ fontSize: '13px', color: '#fff' }}>Educational, Behind-the-scenes, User-generated</div>
-            </div>
-          </div>
+        <div className="dashboard-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '40px', marginBottom: '16px' }}>👥</div>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Audience Insights</h3>
+          <p style={{ fontSize: '13px', color: '#71717a', maxWidth: '400px', margin: '0 auto' }}>
+            Demographics, location data, peak activity times, and content preferences will appear here when your analytics accounts are linked.
+          </p>
         </div>
       )}
 

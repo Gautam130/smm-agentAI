@@ -13,7 +13,7 @@ interface InfluencerProfile {
   followers: string;
   city: string;
   platform: string;
-  score: number;
+  score: number | null;
   style: string;
   whyFit: string;
   flags: string;
@@ -85,14 +85,14 @@ export default function InfluencerPage() {
       return match ? match[1].trim() : '';
     };
 
-    const gs = (txt: string): number => {
+    const gs = (txt: string): number | null => {
       let m = txt.match(/OVERALL:[\s\t]*(\d+(?:\.\d+)?)\/10/i);
       if (m) return Math.min(10, Math.max(1, parseFloat(m[1])));
       m = txt.match(/BRAND FIT SCORE:[\s\t]*(\d+(?:\.\d+)?)/i);
       if (m) return Math.min(10, Math.max(1, parseFloat(m[1])));
       m = txt.match(/(?:score|overall)[^0-9]*(\d+(?:\.\d+)?)\/10/i);
       if (m) return Math.min(10, Math.max(1, parseFloat(m[1])));
-      return 7;
+      return null;
     };
 
     const gfresh = (txt: string): 'fresh' | 'moderate' | 'stale' => {
@@ -137,13 +137,13 @@ export default function InfluencerPage() {
           followers: followersMatch ? followersMatch[1] + ' followers' : 'Verify on platform',
           city: 'India',
           platform,
-          score: Math.floor(Math.random() * 3) + 7,
+          score: null,
           style: 'Lifestyle',
           whyFit: 'Found in search results',
           flags: 'None',
           contact: 'Check bio',
           dm: `Hey ${handleStr.replace('@', '')}! Love your content. Would love to collab. DM us!`,
-          freshness: 'moderate'
+          freshness: 'moderate' as const
         });
       });
     }
@@ -216,13 +216,13 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
     } else if (searchHandles.length > 0) {
       // Even if LLM didn't respond, create cards from search handles
       console.log('[DEBUG] Creating cards from search handles directly');
-      const directProfiles = searchHandles.map((handle, i) => ({
+      const directProfiles: InfluencerProfile[] = searchHandles.map((handle, i) => ({
         handle: handle.startsWith('@') ? handle : '@' + handle,
         name: handle.replace('@', ''),
         followers: 'Verify on platform',
         city: 'India',
         platform: 'Instagram',
-        score: 7 + (i % 3),
+        score: null,
         style: 'Lifestyle',
         whyFit: 'Found in search',
         flags: 'None',
@@ -464,7 +464,7 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
                       <div><strong>Name:</strong> {inf.name}</div>
                       <div><strong>Followers:</strong> {inf.followers}</div>
                       <div><strong>City:</strong> {inf.city}</div>
-                      <div><strong>Score:</strong> {inf.score}/10</div>
+                      <div><strong>Score:</strong> {inf.score !== null ? `${inf.score}/10` : 'Pending Verification'}</div>
                     </div>
                     <div style={{ marginTop: '8px' }}><strong>Why Fit:</strong> {inf.whyFit}</div>
                     <div style={{ marginTop: '8px' }}><strong>DM:</strong> {inf.dm}</div>
@@ -543,9 +543,13 @@ ${searchResultsData.results.slice(0, 10).map((r: any) => `${r.title}: ${r.snippe
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ flex: 1, height: '6px', background: '#27272a', borderRadius: '3px' }}>
-                    <div style={{ width: `${profile.score * 10}%`, height: '100%', background: 'var(--accent)', borderRadius: '3px' }}></div>
+                    {profile.score !== null && (
+                      <div style={{ width: `${profile.score * 10}%`, height: '100%', background: 'var(--accent)', borderRadius: '3px' }}></div>
+                    )}
                   </div>
-                  <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>{profile.score}/10</span>
+                  <span style={{ fontSize: '12px', color: profile.score !== null ? 'var(--accent)' : '#71717a', fontWeight: 600 }}>
+                    {profile.score !== null ? `${profile.score}/10` : 'Pending Verification'}
+                  </span>
                 </div>
 
                 <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '8px' }}>

@@ -155,7 +155,7 @@ Include:
               <button className="clear-btn" onClick={() => sendMessage([], { task: 'research' })} title="Clear">✕</button>
             </div>
             <div className="output-actions">
-              <button className="save-output-btn" onClick={exportPdf}>Export PDF</button>
+              <button className="save-output-btn" onClick={exportPdf}>Print / Save PDF</button>
               <button className="save-output-btn" onClick={handleSave} disabled={saved}>
                 {saved ? 'Saved ✓' : 'Save'}
               </button>
