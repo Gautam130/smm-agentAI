@@ -270,7 +270,8 @@ START immediately with VARIATION 1. No intro sentence.`;
 
     setHooksStage('generating');
 
-    const brandCtx = formatBrandContext(getBrandContextFromSettings());
+    const brandSettings = getBrandContextFromSettings();
+    const brandCtx = formatBrandContext(brandSettings);
     const recentHooks = getRecentHooks(hookTopic || hookNiche, 3);
     const hookHistoryNote = recentHooks.length > 0
       ? `\n\n=== RECENT HOOKS (avoid repeating these) ===\n${recentHooks.flatMap(e => e.hooks).slice(0, 10).map(h => `• ${h.substring(0, 100)}`).join('\n')}\nGenerate hooks with DIFFERENT angles, techniques, and phrasing than these recent ones.\n`
@@ -334,9 +335,8 @@ START immediately with HOOK 1. No intro.`;
       const result = await streamFromAPI([{ role: 'user', content: prompt }], 0.85, 'hooks');
       setHooksResult(result);
       setHooksStage('done');
-      const brandCtx = getBrandContextFromSettings();
       const hookLines = result.split('\n').filter(l => l.startsWith('HOOK ') && l.includes('—')).slice(0, 10);
-      saveHooks(hookTopic || hookNiche, hookFormat, brandCtx?.name || '', hookLines);
+      saveHooks(hookTopic || hookNiche, hookFormat, brandSettings?.name || '', hookLines);
     } catch (e: any) {
       setHooksResult(`Error: ${e.message}`);
       setHooksStage('done');
