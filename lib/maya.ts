@@ -887,7 +887,7 @@ async function fetchLiveSearch(message: string, userContext?: { business_type?: 
     } else {
       // Fresh search with 5 second timeout
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timeout = setTimeout(() => controller.abort(), 15000);
       
       try {
         const res = await fetch('/api/search', {
@@ -1481,11 +1481,27 @@ export function useMaya() {
     setIsLoading(true);
     setMayaStatus('Understanding your question...');
 
-    // Fetch knowledge context from Supabase
-    const context = await fetchMayaContext(userMsg, userIdRef.current || undefined);
+    // Fetch knowledge context from Supabase with timeout
+    let context = '';
+    try {
+      const ctxTimeout = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('Context loading timed out')), 30000)
+      );
+      context = await Promise.race([
+        fetchMayaContext(userMsg, userIdRef.current || undefined),
+        ctxTimeout
+      ]);
+    } catch (e) {
+      console.warn('Context fetch failed:', e);
+    }
     
     // Also fetch raw context for ctxLine (brand profile)
-    const ctxRaw = userIdRef.current ? await getUserContextRaw(userIdRef.current).catch(() => null) : null;
+    let ctxRaw: any = null;
+    try {
+      ctxRaw = userIdRef.current ? await getUserContextRaw(userIdRef.current) : null;
+    } catch (e) {
+      console.warn('Raw context fetch failed:', e);
+    }
     
     setMayaStatus('Loading knowledge...');
     const messageWithContext = context
@@ -1770,8 +1786,12 @@ export function useMaya() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errorText}`);
+        let errorMsg = 'Failed to get response. Try again.';
+        try {
+          const errBody = JSON.parse(await res.text());
+          if (errBody.error) errorMsg = errBody.error;
+        } catch {}
+        throw new Error(errorMsg);
       }
 
       if (!res.body) throw new Error('No response body');
@@ -1803,10 +1823,29 @@ export function useMaya() {
         }
       }
     } catch(e: any) {
-      if (e.name !== 'AbortError') {
-        fullText = e.message || 'Something went wrong. Try again.';
+      if (e.name === 'AbortError') return;
+      const msg = e.message || '';
+      if (msg.includes('timed out') || e.name === 'TimeoutError') {
+        fullText = 'Request timed out. Try splitting your question into smaller parts.';
+      } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('NetworkError')) {
+        fullText = 'Network error. Check your connection and try again.';
+      } else if (msg.includes('Failed to get response')) {
+        fullText = msg;
+      } else {
+        fullText = msg || 'Something went wrong. Try again.';
       }
     }
+
+    const convIdForResponse = activeConvIdRef.current;
+
+    setStreamingText('');
+    setIsLoading(false);
+    loadingRef.current = false;
+
+    if (convIdForResponse === undefined) return;
+
+    // Don't add empty messages
+    if (!fullText.trim()) return;
 
     // Strip *** and ==== dividers, strip bold markdown
     fullText = fullText
@@ -1816,19 +1855,10 @@ export function useMaya() {
       .replace(/^====+$/gm, '')
       .replace(/\*\*(.*?)\*\*/g, '$1');
 
-    // Finalize message - only add if conversation hasn't changed
-    const convIdForResponse = activeConvIdRef.current;
-
-    setStreamingText('');
-    setIsLoading(false);
-    loadingRef.current = false;
-
-    if (convIdForResponse === undefined) return;
-
     setMessages(prev => {
       const lastMsg = prev[prev.length - 1];
       if (lastMsg?.conversationId !== convIdForResponse) return prev;
-      const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: fullText || 'No response received.', conversationId: convIdForResponse };
+      const newMsg = { id: crypto.randomUUID(), role: 'assistant' as const, text: fullText, conversationId: convIdForResponse };
       
       // Save assistant message to Supabase immediately
       if (onCompleteRef.current && convIdForResponse) {

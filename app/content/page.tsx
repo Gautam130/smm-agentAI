@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 import { getSupabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { getBrandContextFromSettings, formatBrandContext } from '@/lib/brand';
+import { saveHooks, getRecentHooks, clearHookHistory } from '@/lib/hookHistory';
 
 type TabType = 'write' | 'hooks' | 'hashtags' | 'thread';
 type Stage = 'idle' | 'searching' | 'generating' | 'done';
@@ -151,6 +153,8 @@ export default function ContentPage() {
 
     const variationsCount = variations === '1 version' ? 1 : variations === '2 versions (A/B test)' ? 2 : 3;
 
+    const brandCtx = formatBrandContext(getBrandContextFromSettings());
+
     const prompt = `You are India's best social media copywriter.
 Generate ${variationsCount === 1 ? '1 version' : `${variationsCount} versions`} of ${format} for ${platform}.
 
@@ -158,6 +162,7 @@ TOPIC: ${topic}
 NICHE: ${niche || 'D2C India'}
 AUDIENCE: ${audience || 'Indian consumers 18-35'}
 TONE: ${tone}
+${brandCtx ? `\n${brandCtx}\n` : ''}
 ${hashtagData}
 
 HOOK TECHNIQUE — pick ONE different technique per variation:
@@ -265,13 +270,21 @@ START immediately with VARIATION 1. No intro sentence.`;
 
     setHooksStage('generating');
 
+    const brandCtx = formatBrandContext(getBrandContextFromSettings());
+    const recentHooks = getRecentHooks(hookTopic || hookNiche, 3);
+    const hookHistoryNote = recentHooks.length > 0
+      ? `\n\n=== RECENT HOOKS (avoid repeating these) ===\n${recentHooks.flatMap(e => e.hooks).slice(0, 10).map(h => `• ${h.substring(0, 100)}`).join('\n')}\nGenerate hooks with DIFFERENT angles, techniques, and phrasing than these recent ones.\n`
+      : '';
+
     const prompt = `You are India's best social media copywriter. Write 10 scroll-stopping opening hooks.
 
 TOPIC: ${hookTopic || hookNiche}
 FORMAT: ${hookFormat}
 NICHE: ${hookNiche || 'D2C / brand marketing India'}
+${brandCtx ? `\n${brandCtx}\n` : ''}
 ${libraryHooks}
 ${livePatterns}
+${hookHistoryNote}
 
 Five elements every hook must have:
 SPECIFICITY — "Surat ka textile brand" not "a brand in India"
@@ -321,6 +334,9 @@ START immediately with HOOK 1. No intro.`;
       const result = await streamFromAPI([{ role: 'user', content: prompt }], 0.85, 'hooks');
       setHooksResult(result);
       setHooksStage('done');
+      const brandCtx = getBrandContextFromSettings();
+      const hookLines = result.split('\n').filter(l => l.startsWith('HOOK ') && l.includes('—')).slice(0, 10);
+      saveHooks(hookTopic || hookNiche, hookFormat, brandCtx?.name || '', hookLines);
     } catch (e: any) {
       setHooksResult(`Error: ${e.message}`);
       setHooksStage('done');
@@ -577,9 +593,18 @@ FORMAT: Start with HOOK, then deliver the full post/thread. Make it genuinely va
             <label className="lbl">Niche</label>
             <input value={hookNiche} onChange={(e) => setHookNiche(e.target.value)} placeholder="e.g. nutrition, personal finance, fashion" />
           </div>
-          <button className="run-btn" onClick={runHooks} disabled={buttonState.disabled}>
-            {getButtonLabel()}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button className="run-btn" onClick={runHooks} disabled={buttonState.disabled}>
+              {getButtonLabel()}
+            </button>
+            <button
+              onClick={() => { clearHookHistory(); alert('Hook history cleared'); }}
+              style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #333', borderRadius: '6px', color: '#71717a', fontSize: '11px', cursor: 'pointer' }}
+              title="Clear hook history"
+            >
+              🗑️ Clear history
+            </button>
+          </div>
           {currentResult && (
             <div className="output-wrap show">
               <div className="output-header">

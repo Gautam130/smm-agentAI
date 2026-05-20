@@ -6,6 +6,7 @@ import { getFestivalsForMonth, getPostingDays, MONTH_NAMES, DAY_NAMES, type Fest
 import { saveOutput } from '@/lib/save';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { getBrandContextFromSettings, formatBrandContext } from '@/lib/brand';
 
 export default function CalendarPage() {
   const [brand, setBrand] = useState('');
@@ -55,16 +56,34 @@ export default function CalendarPage() {
 
   const generate = async () => {
     if (!brand.trim()) return;
-    
-    const festivalList = festivals.map(f => `${f.day} ${f.name}`).join(', ') || 'No major festivals this month';
-    const postingDaysStr = postingDays.join(', ');
-    
-    const prompt = `Generate a content calendar for ${brand} for ${month} ${year}. 
 
+    const brandCtx = formatBrandContext(getBrandContextFromSettings());
+
+    // Tag posting days with nearby festivals (±4 days)
+    const postingDaysWithFestivals = postingDays.map(day => {
+      const nearby = festivals.filter(f => Math.abs(f.day - day) <= 4);
+      return { day, nearbyFestivals: nearby.map(f => f.name) };
+    });
+
+    const festivalList = festivals.map(f => `${f.day} ${f.name}`).join(', ') || 'No major festivals this month';
+
+    const scheduleStr = postingDaysWithFestivals
+      .map(pd => {
+        const dayOfWeek = DAY_NAMES[new Date(parseInt(year), monthIndex, pd.day).getDay()];
+        const festivalNote = pd.nearbyFestivals.length > 0
+          ? ` 🎉 Nearby: ${pd.nearbyFestivals.join(', ')}`
+          : '';
+        return `${dayOfWeek}, ${month} ${pd.day}${festivalNote}`;
+      })
+      .join('\n');
+
+    const prompt = `Generate a content calendar for ${brand} for ${month} ${year}. 
+${brandCtx ? `\n${brandCtx}\n` : ''}
 POSTING SCHEDULE:
-- Frequency: ${frequency}  
-- Posting days: ${postingDaysStr}
+- Frequency: ${frequency}
 - Date range: ${startDate} - ${endDate}
+- Posting days with nearby festivals:
+${scheduleStr}
 
 INDIAN FESTIVALS THIS MONTH:
 ${festivalList}
@@ -75,7 +94,7 @@ KEY CAMPAIGNS: ${events}
 For each posting day, provide:
 - Date and day name
 - Content type (Reel, Carousel, Story, Static)
-- Hook/Topic idea
+- Hook/Topic idea — if a festival is nearby, make the content festival-themed
 - Relevant festival (if any)
 - 3-5 hashtags
 
@@ -172,7 +191,7 @@ Make it actionable and specific to Indian audience.`;
           }}>
             {postingDays.slice(0, 15).map((day, idx) => {
               const dayOfWeek = new Date(parseInt(year), monthIndex, day).getDay();
-              const festival = festivals.find(f => f.day === day);
+              const nearby = festivals.filter(f => Math.abs(f.day - day) <= 4);
               return (
                 <div key={idx} style={{ 
                   display: 'flex', 
@@ -181,7 +200,7 @@ Make it actionable and specific to Indian audience.`;
                   borderBottom: idx < postingDays.length - 1 ? '1px solid var(--border)' : 'none'
                 }}>
                   <span>{DAY_NAMES[dayOfWeek]}, {month} {day}</span>
-                  {festival && <span style={{ color: '#00ffcc' }}>🎉 {festival.name}</span>}
+                  {nearby.length > 0 && <span style={{ color: '#00ffcc', fontSize: '11px', textAlign: 'right' }}>🎉 {nearby.map(f => f.name).join(', ')}</span>}
                 </div>
               );
             })}
